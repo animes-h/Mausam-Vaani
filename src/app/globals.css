@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #f2fcf6;
+    color: #141d1a;
+    font-family: 'Noto Sans', 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e6f0eb;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #bfc9c1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #707973;
+}
+
+/* Material Symbols font helper */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Pulsing audio animations */
+@keyframes wave-bounce {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-wave-1 {
+  animation: wave-bounce 1s ease-in-out infinite;
+}
+.animate-wave-2 {
+  animation: wave-bounce 1s ease-in-out infinite 0.15s;
+}
+.animate-wave-3 {
+  animation: wave-bounce 1s ease-in-out infinite 0.3s;
+}
+.animate-wave-4 {
+  animation: wave-bounce 1s ease-in-out infinite 0.45s;
+}
+.animate-wave-5 {
+  animation: wave-bounce 1s ease-in-out infinite 0.6s;
+}
