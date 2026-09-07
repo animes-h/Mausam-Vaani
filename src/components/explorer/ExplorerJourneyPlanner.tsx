@@ -11,57 +11,56 @@ export default function ExplorerJourneyPlanner() {
 
   const [activeTab, setActiveTab] = useState<'transit' | 'safety'>('transit');
   const [departureOffset, setDepartureOffset] = useState<number>(0); // in hours
+  const [isRecalculating, setIsRecalculating] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<WorkSafetyHour | null>(null);
 
-  const routeSegments: RouteWaypoint[] = [
-    {
-      name: 'Indore → Sanwer',
-      distanceKm: 32,
-      eta: '14:00 - 14:45 IST',
-      temperature: 31,
-      condition: 'Clear / Dry',
-      icon: 'wb_sunny',
-      windGustKm: 14,
-      visibilityKm: 10,
-      surfaceStatus: 'Dry',
-      riskLevel: 'low',
-    },
-    {
-      name: 'Sanwer → Dewas Bypass',
-      distanceKm: 44,
-      eta: '14:45 - 15:30 IST',
-      temperature: 29,
-      condition: 'Overcast / Sprinkles',
-      icon: 'partly_cloudy_day',
-      windGustKm: 24,
-      visibilityKm: 6,
-      surfaceStatus: 'Damp',
-      riskLevel: 'moderate',
-    },
-    {
-      name: 'Dewas Ghats → Ashta',
-      distanceKm: 58,
-      eta: '15:30 - 16:35 IST',
-      temperature: 26,
-      condition: 'Severe Squall / Rain',
-      icon: 'thunderstorm',
-      windGustKm: 48,
-      visibilityKm: 2,
-      surfaceStatus: 'Waterlogged',
-      riskLevel: 'severe',
-    },
-    {
-      name: 'Ashta → Bhopal MP Nagar',
-      distanceKm: 58,
-      eta: '16:35 - 17:24 IST',
-      temperature: 27,
-      condition: 'Moderate Showers',
-      icon: 'rainy',
-      windGustKm: 28,
-      visibilityKm: 5,
-      surfaceStatus: 'Damp',
-      riskLevel: 'moderate',
-    },
-  ];
+  const getBaseTime = (offsetH: number, addMins: number) => {
+    const totalMinutes = 14 * 60 + offsetH * 60 + addMins;
+    const h = Math.floor((totalMinutes / 60) % 24);
+    const m = Math.floor(totalMinutes % 60);
+    return `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m} IST`;
+  };
+
+  const getDynamicSegments = (offset: number): RouteWaypoint[] => {
+    const seg1Start = getBaseTime(offset, 0);
+    const seg1End = getBaseTime(offset, 45);
+    const seg2End = getBaseTime(offset, 90);
+    const seg3End = getBaseTime(offset, 155);
+    const seg4End = getBaseTime(offset, 204);
+
+    if (offset < 0) {
+      // Early departure before squall reaches Dewas
+      return [
+        { name: 'Indore → Sanwer', distanceKm: 32, eta: `${seg1Start} - ${seg1End}`, temperature: 30, condition: 'Clear / Dry', icon: 'wb_sunny', windGustKm: 12, visibilityKm: 10, surfaceStatus: 'Dry', riskLevel: 'low' },
+        { name: 'Sanwer → Dewas Bypass', distanceKm: 44, eta: `${seg1End} - ${seg2End}`, temperature: 30, condition: 'Partly Cloudy', icon: 'partly_cloudy_day', windGustKm: 18, visibilityKm: 8, surfaceStatus: 'Dry', riskLevel: 'low' },
+        { name: 'Dewas Ghats → Ashta', distanceKm: 58, eta: `${seg2End} - ${seg3End}`, temperature: 28, condition: 'Approaching Front', icon: 'cloud', windGustKm: 28, visibilityKm: 6, surfaceStatus: 'Damp', riskLevel: 'moderate' },
+        { name: 'Ashta → Bhopal MP Nagar', distanceKm: 58, eta: `${seg3End} - ${seg4End}`, temperature: 28, condition: 'Light Sprinkles', icon: 'rainy', windGustKm: 20, visibilityKm: 7, surfaceStatus: 'Damp', riskLevel: 'low' },
+      ];
+    } else if (offset >= 2) {
+      // Post-storm clearance
+      return [
+        { name: 'Indore → Sanwer', distanceKm: 32, eta: `${seg1Start} - ${seg1End}`, temperature: 27, condition: 'Clearing Skies', icon: 'partly_cloudy_day', windGustKm: 16, visibilityKm: 8, surfaceStatus: 'Damp', riskLevel: 'low' },
+        { name: 'Sanwer → Dewas Bypass', distanceKm: 44, eta: `${seg1End} - ${seg2End}`, temperature: 26, condition: 'Mild Breeze', icon: 'air', windGustKm: 20, visibilityKm: 8, surfaceStatus: 'Damp', riskLevel: 'low' },
+        { name: 'Dewas Ghats → Ashta', distanceKm: 58, eta: `${seg2End} - ${seg3End}`, temperature: 25, condition: 'Post-Rain Wet Road', icon: 'water_drop', windGustKm: 22, visibilityKm: 7, surfaceStatus: 'Damp', riskLevel: 'moderate' },
+        { name: 'Ashta → Bhopal MP Nagar', distanceKm: 58, eta: `${seg3End} - ${seg4End}`, temperature: 25, condition: 'Clear Evening', icon: 'nights_stay', windGustKm: 14, visibilityKm: 9, surfaceStatus: 'Damp', riskLevel: 'low' },
+      ];
+    }
+
+    // Default: Squall line strikes Dewas Ghats corridor
+    return [
+      { name: 'Indore → Sanwer', distanceKm: 32, eta: `${seg1Start} - ${seg1End}`, temperature: 31, condition: 'Clear / Dry', icon: 'wb_sunny', windGustKm: 14, visibilityKm: 10, surfaceStatus: 'Dry', riskLevel: 'low' },
+      { name: 'Sanwer → Dewas Bypass', distanceKm: 44, eta: `${seg1End} - ${seg2End}`, temperature: 29, condition: 'Overcast / Sprinkles', icon: 'partly_cloudy_day', windGustKm: 24, visibilityKm: 6, surfaceStatus: 'Damp', riskLevel: 'moderate' },
+      { name: 'Dewas Ghats → Ashta', distanceKm: 58, eta: `${seg2End} - ${seg3End}`, temperature: 26, condition: 'Severe Squall / Rain', icon: 'thunderstorm', windGustKm: 48, visibilityKm: 2, surfaceStatus: 'Waterlogged', riskLevel: 'severe' },
+      { name: 'Ashta → Bhopal MP Nagar', distanceKm: 58, eta: `${seg3End} - ${seg4End}`, temperature: 27, condition: 'Moderate Showers', icon: 'rainy', windGustKm: 28, visibilityKm: 5, surfaceStatus: 'Damp', riskLevel: 'moderate' },
+    ];
+  };
+
+  const routeSegments = getDynamicSegments(departureOffset);
+
+  const handleRecalculate = () => {
+    setIsRecalculating(true);
+    setTimeout(() => setIsRecalculating(false), 750);
+  };
 
   const workSafetySchedule: WorkSafetyHour[] = [
     { hour: '06:00', safetyStatus: 'safe', safetyLabelEn: 'Safe for Field Work', safetyLabelHi: 'खेत कार्य हेतु सुरक्षित', temperature: 22, wbgt: 20.4, heatIndex: 22, uvIndex: 0, rainChance: 5, advisoryNoteEn: 'Optimal condition for labor, pesticide spraying & harvest.', advisoryNoteHi: 'श्रम, छिड़काव व कटाई के लिए सबसे उत्तम समय।' },
@@ -157,9 +156,22 @@ export default function ExplorerJourneyPlanner() {
                   Indore ⇄ Ujjain ⇄ Bhopal Highway Corridor (NH-52 / NH-46)
                 </h2>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
-                <span>Live Route Telemetry Synchronized</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRecalculate}
+                  disabled={isRecalculating}
+                  className="px-3 py-1.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 hover:bg-primary-container transition-all active:scale-95 cursor-pointer shadow-xs"
+                >
+                  <span className={`material-symbols-outlined text-[1rem] ${isRecalculating ? 'animate-spin' : ''}`}>
+                    sync
+                  </span>
+                  <span>{isRecalculating ? 'Recalculating...' : 'Recalculate Route'}</span>
+                </button>
+                <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+                  <span>Telemetry Live</span>
+                </div>
               </div>
             </div>
 
@@ -194,19 +206,19 @@ export default function ExplorerJourneyPlanner() {
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-outline text-[1.125rem]">schedule</span>
                 <span className="font-semibold text-on-surface">Simulate Departure Timing:</span>
-                <span className="font-bold text-primary bg-surface-container-lowest px-2 py-0.5 rounded">
-                  {departureOffset === 0 ? 'Current (14:00 IST)' : `14:00 + ${departureOffset}h IST`}
+                <span className="font-bold text-primary bg-surface-container-lowest px-2 py-0.5 rounded shadow-xs">
+                  {departureOffset === 0 ? 'Current (14:00 IST)' : departureOffset > 0 ? `14:00 + ${departureOffset}h IST` : `14:00 - 30m IST`}
                 </span>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 {[-0.5, 0, 1, 2].map(offset => (
                   <button
                     key={offset}
                     onClick={() => setDepartureOffset(offset)}
-                    className={`px-3 py-1 rounded-lg font-bold transition-colors ${
+                    className={`px-3 py-1.5 rounded-xl font-bold transition-all active:scale-95 cursor-pointer ${
                       departureOffset === offset
-                        ? 'bg-primary text-on-primary'
+                        ? 'bg-primary text-on-primary shadow-xs'
                         : 'bg-surface-container-lowest hover:bg-surface-container-high text-on-surface'
                     }`}
                     type="button"
@@ -293,12 +305,17 @@ export default function ExplorerJourneyPlanner() {
             {workSafetySchedule.map((slot, idx) => (
               <div
                 key={idx}
-                className={`p-space-sm rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm border ${
+                onClick={() => setSelectedSlot(selectedSlot?.hour === slot.hour ? null : slot)}
+                className={`p-space-sm rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm border cursor-pointer transition-all active:scale-95 ${
+                  selectedSlot?.hour === slot.hour
+                    ? 'ring-2 ring-primary shadow-md'
+                    : ''
+                } ${
                   slot.safetyStatus === 'safe'
-                    ? 'bg-surface-container-low border-primary/20'
+                    ? 'bg-surface-container-low border-primary/20 hover:bg-surface-container'
                     : slot.safetyStatus === 'caution'
-                    ? 'bg-tertiary-fixed/25 border-tertiary/30'
-                    : 'bg-secondary-fixed/30 border-secondary/40'
+                    ? 'bg-tertiary-fixed/25 border-tertiary/30 hover:bg-tertiary-fixed/40'
+                    : 'bg-secondary-fixed/30 border-secondary/40 hover:bg-secondary-fixed/50'
                 }`}
               >
                 <div className="flex items-center gap-space-md">
@@ -333,6 +350,33 @@ export default function ExplorerJourneyPlanner() {
               </div>
             ))}
           </div>
+
+          {/* Selected Slot Detailed Agronomic Protocol */}
+          {selectedSlot && (
+            <div className="p-space-md rounded-2xl bg-surface-container-low border border-primary/30 flex flex-col gap-2 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[1.25rem]">info</span>
+                  <span className="font-bold text-xs text-on-surface">
+                    Operational Safety Directive for {selectedSlot.hour} IST:
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSlot(null)}
+                  className="text-outline hover:text-on-surface p-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[1rem]">close</span>
+                </button>
+              </div>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                {language === 'hi' ? selectedSlot.advisoryNoteHi : selectedSlot.advisoryNoteEn}
+                {selectedSlot.safetyStatus === 'safe' && ' (Full mechanized field spraying & grain transport permitted).'}
+                {selectedSlot.safetyStatus === 'caution' && ' (Hydration mandatory every 30 minutes. Wear UV protective caps).'}
+                {selectedSlot.safetyStatus === 'hazardous' && ' (Cease all open-field labor immediately. Relocate tractors to covered sheds).'}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

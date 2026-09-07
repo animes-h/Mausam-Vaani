@@ -23,9 +23,77 @@ export default function ExplorerClimateAnalytics() {
     { label: 'Sun', temp: 32, lastYear: 31, rain: 0 },
   ];
 
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
   const exportDataset = (format: string) => {
     setShowExportMenu(false);
-    alert(`Exporting Western Malwa Telemetry Dataset as ${format}...`);
+
+    let content = '';
+    let mimeType = 'text/plain';
+    let fileName = 'malwa_climate_dataset';
+
+    if (format.includes('CSV')) {
+      fileName = `malwa_telemetry_${timeHorizon}_${Date.now()}.csv`;
+      mimeType = 'text/csv';
+      content = [
+        'Day,Temperature_C,LastYear_Temp_C,Precipitation_mm,DewPoint_C,Consensus_Score',
+        ...chartData.map(d => `${d.label},${d.temp},${d.lastYear},${d.rain},21.4,96.2%`),
+      ].join('\n');
+    } else if (format.includes('GeoJSON')) {
+      fileName = `malwa_boundary_grid_${Date.now()}.geojson`;
+      mimeType = 'application/geo+json';
+      content = JSON.stringify(
+        {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [location.lng, location.lat] },
+              properties: {
+                station: location.name,
+                elevation: location.elevation,
+                temperature: weather.current.temperature,
+                consensusScore: weather.consensus.confidenceScore,
+              },
+            },
+          ],
+        },
+        null,
+        2
+      );
+    } else {
+      fileName = `akash_vaani_bulletin_${Date.now()}.txt`;
+      mimeType = 'text/plain';
+      content = `=====================================================
+AKASH-VAANI METEOROLOGICAL EXECUTIVE BULLETIN
+Sector: Western Malwa Agro-Climatic Zone
+Station: ${location.name} (${location.lat}°N, ${location.lng}°E)
+Generated: ${new Date().toLocaleString('en-IN')}
+=====================================================
+Current Temperature: ${weather.current.temperature}°C
+Relative Humidity: ${weather.current.relativeHumidity}%
+Surface Wind: ${weather.current.windSpeed} km/h (${weather.current.windCompass})
+Multi-Source Consensus: ${weather.consensus.primarySource} + ${weather.consensus.secondarySource} (${weather.consensus.confidenceScore}%)
+Soil Wetness: 64% (Heavy Black Cotton Clay)
+Synoptic Assessment: Convective squall lines expected post-noon along the Dewas-Indore corridor.
+=====================================================`;
+    }
+
+    try {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setExportNotice(`Exported ${fileName}`);
+      setTimeout(() => setExportNotice(null), 3500);
+    } catch (e) {
+      console.error('Download error:', e);
+    }
   };
 
   return (
@@ -69,7 +137,7 @@ export default function ExplorerClimateAnalytics() {
 
           <div className="relative inline-block text-left">
             <button
-              className="flex items-center gap-1 px-space-md py-2 bg-primary text-on-primary rounded-full font-label-md text-xs font-bold hover:bg-primary-container shadow-xs transition-all"
+              className="flex items-center gap-1 px-space-md py-2 bg-primary text-on-primary rounded-full font-label-md text-xs font-bold hover:bg-primary-container shadow-xs transition-all active:scale-95 cursor-pointer"
               onClick={() => setShowExportMenu(!showExportMenu)}
               type="button"
             >
@@ -82,7 +150,7 @@ export default function ExplorerClimateAnalytics() {
               <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest rounded-2xl shadow-xl z-30 py-2 border border-surface-container-high animate-fadeIn">
                 <button
                   onClick={() => exportDataset('CSV (Aggregated 15m)')}
-                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-on-surface text-xs hover:bg-surface-container-low transition-colors"
+                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-on-surface text-xs hover:bg-surface-container-low transition-colors active:scale-95 cursor-pointer"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-primary text-[1rem]">table_view</span>
@@ -90,7 +158,7 @@ export default function ExplorerClimateAnalytics() {
                 </button>
                 <button
                   onClick={() => exportDataset('GeoJSON Boundary Grid')}
-                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-on-surface text-xs hover:bg-surface-container-low transition-colors"
+                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-on-surface text-xs hover:bg-surface-container-low transition-colors active:scale-95 cursor-pointer"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-secondary text-[1rem]">data_object</span>
@@ -98,7 +166,7 @@ export default function ExplorerClimateAnalytics() {
                 </button>
                 <button
                   onClick={() => exportDataset('Executive Bulletin PDF')}
-                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-on-surface text-xs hover:bg-surface-container-low transition-colors"
+                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-on-surface text-xs hover:bg-surface-container-low transition-colors active:scale-95 cursor-pointer"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-outline text-[1rem]">picture_as_pdf</span>
@@ -109,6 +177,23 @@ export default function ExplorerClimateAnalytics() {
           </div>
         </div>
       </section>
+
+      {/* Export Success Toast Notification */}
+      {exportNotice && (
+        <div className="flex items-center justify-between bg-primary text-on-primary px-space-md py-2.5 rounded-2xl shadow-md text-xs font-bold animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[1.25rem]">check_circle</span>
+            <span>{exportNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setExportNotice(null)}
+            className="p-1 hover:opacity-80 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[1rem]">close</span>
+          </button>
+        </div>
+      )}
 
       {/* Multi-Source Consensus Validation Strip */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-space-sm p-space-md bg-surface-container-low rounded-2xl border border-surface-container-high">

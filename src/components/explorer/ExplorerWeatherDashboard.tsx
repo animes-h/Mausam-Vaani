@@ -8,6 +8,7 @@ export default function ExplorerWeatherDashboard() {
   const {
     weather,
     location,
+    setLocation,
     language,
     setActiveExplorerTab,
     refreshWeather,
@@ -15,10 +16,50 @@ export default function ExplorerWeatherDashboard() {
     networkMode,
   } = useApp();
 
+  const [hourlyRange, setHourlyRange] = React.useState<12 | 24>(12);
+
+  const STATIONS = [
+    { name: 'Indore (Depalpur / Sanwer)', nameHi: 'इंदौर (देपालपुर / सांवेर)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 22.7196, lng: 75.8577, elevation: 553, district: 'Indore' },
+    { name: 'Ujjain (Tarana / Mahidpur)', nameHi: 'उज्जैन (तराना / महिदपुर)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 23.1765, lng: 75.7885, elevation: 494, district: 'Ujjain' },
+    { name: 'Dewas (Sonkatch / Tonk Khurd)', nameHi: 'देवास (सोनकच्छ / टोंक खुर्द)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 22.9676, lng: 76.0534, elevation: 535, district: 'Dewas' },
+    { name: 'Bhopal (Berasia / Huzur)', nameHi: 'भोपाल (बैरसिया / हुजूर)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 23.2599, lng: 77.4126, elevation: 527, district: 'Bhopal' },
+    { name: 'Dhar (Badnawar / Sardarpur)', nameHi: 'धार (बदनावर / सरदारपुर)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 22.5978, lng: 75.2979, elevation: 559, district: 'Dhar' },
+  ];
+
   const t = translations[language];
 
   return (
     <div className="flex flex-col gap-space-lg w-full max-w-7xl mx-auto">
+      {/* Station Selector Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-space-sm bg-surface-container-lowest p-space-sm rounded-2xl border border-surface-container-high shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[1.25rem]">cell_tower</span>
+          <span className="font-label-md text-xs font-bold text-on-surface">Select Doppler Radar Station:</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {STATIONS.map(stn => {
+            const isSelected = location.name.includes(stn.district);
+            return (
+              <button
+                key={stn.name}
+                type="button"
+                onClick={() => {
+                  setLocation(stn);
+                  refreshWeather();
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                  isSelected
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
+                }`}
+              >
+                {stn.district}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Sub-header Breadcrumb & Operational Mode Status Bar */}
       <div className="flex flex-wrap items-center justify-between gap-space-sm">
         <div className="flex items-center gap-space-xs text-on-surface-variant text-xs">
@@ -47,9 +88,9 @@ export default function ExplorerWeatherDashboard() {
             ECMWF ERA5 + IMD Mesh
           </span>
           <button
-            onClick={refreshWeather}
+            onClick={() => refreshWeather()}
             disabled={isLoadingWeather}
-            className="p-1 text-primary hover:text-primary-container"
+            className="p-1 text-primary hover:text-primary-container active:scale-95 transition-transform cursor-pointer"
             title="Refresh weather data"
             type="button"
           >
@@ -198,18 +239,41 @@ export default function ExplorerWeatherDashboard() {
 
       {/* 24-Hour Synoptic Hourly Strip */}
       <section className="bg-surface-container-lowest rounded-3xl p-space-md md:p-space-lg shadow-sm border border-surface-container-high flex flex-col gap-space-sm">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-space-xs">
           <div className="flex items-center gap-space-xs">
             <span className="material-symbols-outlined text-primary text-[1.25rem]">schedule</span>
             <h2 className="font-headline-sm text-base font-bold text-on-surface">
-              24-Hour Synoptic Timeline & Precipitation Probability
+              {hourlyRange}-Hour Synoptic Timeline & Precipitation Probability
             </h2>
           </div>
-          <span className="font-label-sm text-xs text-outline">Hourly Step ECMWF ERA5</span>
+          <div className="flex items-center gap-1 bg-surface-container p-1 rounded-full text-xs font-bold">
+            <button
+              onClick={() => setHourlyRange(12)}
+              type="button"
+              className={`px-3 py-0.5 rounded-full transition-all active:scale-95 cursor-pointer ${
+                hourlyRange === 12
+                  ? 'bg-surface-container-lowest text-primary shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              12 Hours
+            </button>
+            <button
+              onClick={() => setHourlyRange(24)}
+              type="button"
+              className={`px-3 py-0.5 rounded-full transition-all active:scale-95 cursor-pointer ${
+                hourlyRange === 24
+                  ? 'bg-surface-container-lowest text-primary shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              24 Hours
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-space-sm overflow-x-auto pb-space-xs pt-space-xs" style={{ scrollbarWidth: 'none' }}>
-          {weather.hourly.slice(0, 12).map((h, i) => (
+          {weather.hourly.slice(0, hourlyRange).map((h, i) => (
             <div
               key={i}
               className={`min-w-[100px] flex-1 p-space-sm rounded-2xl flex flex-col items-center justify-between text-center transition-all ${

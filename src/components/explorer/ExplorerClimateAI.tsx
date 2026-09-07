@@ -23,6 +23,35 @@ export default function ExplorerClimateAI() {
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const clearSession = () => {
+    setMessages([
+      {
+        id: `msg-${Date.now()}`,
+        sender: 'assistant',
+        timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        text: 'Session reset. Climate AI copilot is initialized with live ECMWF IFS and IMD Doppler boundary data. How can I assist with your meteorological research or field planning?',
+        textHi: 'सत्र रीसेट हो गया है। मैं आपकी मौसम संबंधी शोध अथवा कार्य योजना में कैसे सहायता कर सकता हूँ?',
+        consensusScore: 97.0,
+        modelBadge: 'ECMWF-IFS v48r1 • IMD Doppler MP-04',
+        sources: ['IMD Doppler Radar Station IND-042', 'Copernicus CDS ERA5 Boundary Layer'],
+      },
+    ]);
+  };
+
+  const exportTranscript = () => {
+    const text = messages.map(m => `[${m.timestamp}] ${m.sender.toUpperCase()}:\n${m.text}\n`).join('\n---\n\n');
+    const blob = new Blob([text], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `climate_ai_session_${Date.now()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -152,7 +181,7 @@ export default function ExplorerClimateAI() {
         <div className="lg:col-span-8 flex flex-col gap-space-md">
           <div className="bg-surface-container-lowest rounded-3xl shadow-sm p-space-lg border border-surface-container-high flex flex-col gap-space-md min-h-[500px]">
             {/* Active Topic Banner */}
-            <div className="flex items-center justify-between p-space-sm bg-surface-container-low rounded-2xl border border-outline-variant/30">
+            <div className="flex flex-wrap items-center justify-between gap-space-xs p-space-sm bg-surface-container-low rounded-2xl border border-outline-variant/30">
               <div className="flex items-center gap-space-xs">
                 <span className="material-symbols-outlined text-primary text-[1.25rem]">topic</span>
                 <div className="flex flex-col">
@@ -162,9 +191,29 @@ export default function ExplorerClimateAI() {
                   </span>
                 </div>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">
-                Session #AV-924
-              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={exportTranscript}
+                  title="Export session transcript"
+                  className="px-2.5 py-1 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-on-surface text-xs font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-[0.875rem]">download</span>
+                  <span>Export</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSession}
+                  title="Reset conversation"
+                  className="px-2.5 py-1 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-secondary text-xs font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-[0.875rem]">restart_alt</span>
+                  <span>Reset</span>
+                </button>
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                  Session #AV-924
+                </span>
+              </div>
             </div>
 
             {/* Chat Stream Messages */}
@@ -200,14 +249,30 @@ export default function ExplorerClimateAI() {
                               </span>
                             )}
                           </div>
-                          <button
-                            onClick={() => playSpeech(m.text)}
-                            className="text-outline hover:text-on-surface p-1"
-                            title="Speak response"
-                            type="button"
-                          >
-                            <span className="material-symbols-outlined text-[1.125rem]">volume_up</span>
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(m.text);
+                                setCopiedId(m.id);
+                                setTimeout(() => setCopiedId(null), 2000);
+                              }}
+                              className="text-outline hover:text-on-surface p-1 active:scale-95 transition-transform cursor-pointer"
+                              title="Copy response"
+                              type="button"
+                            >
+                              <span className="material-symbols-outlined text-[1.125rem]">
+                                {copiedId === m.id ? 'check' : 'content_copy'}
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => playSpeech(m.text)}
+                              className="text-outline hover:text-on-surface p-1 active:scale-95 transition-transform cursor-pointer"
+                              title="Speak response"
+                              type="button"
+                            >
+                              <span className="material-symbols-outlined text-[1.125rem]">volume_up</span>
+                            </button>
+                          </div>
                         </div>
 
                         {/* Verdict Callout Banner */}
@@ -290,7 +355,7 @@ export default function ExplorerClimateAI() {
                 />
                 <button
                   onClick={handleMicToggle}
-                  className={`p-2 rounded-xl transition-colors ${
+                  className={`p-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                     isListening ? 'bg-secondary text-on-secondary animate-pulse' : 'text-outline hover:text-on-surface'
                   }`}
                   title="Speech to text"
@@ -301,7 +366,7 @@ export default function ExplorerClimateAI() {
                 <button
                   onClick={() => handleSend()}
                   disabled={isLoading || !inputQuery.trim()}
-                  className="px-4 py-2 bg-primary text-on-primary rounded-xl font-bold text-xs hover:bg-primary-container disabled:opacity-50 transition-colors shrink-0"
+                  className="px-4 py-2 bg-primary text-on-primary rounded-xl font-bold text-xs hover:bg-primary-container disabled:opacity-50 transition-all active:scale-95 cursor-pointer shrink-0"
                   type="button"
                 >
                   Send
@@ -320,7 +385,8 @@ export default function ExplorerClimateAI() {
                   <button
                     key={idx}
                     onClick={() => handleSend(s)}
-                    className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high text-[0.7rem] transition-colors"
+                    disabled={isLoading}
+                    className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high text-[0.7rem] transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                     type="button"
                   >
                     {s}

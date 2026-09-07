@@ -16,6 +16,8 @@ export default function KisanAlerts() {
   const t = translations[language];
   const primaryAlert = alerts[0];
   const [isPlayingAlertAudio, setIsPlayingAlertAudio] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [isSirenActive, setIsSirenActive] = useState(false);
 
   const toggleEmergencyAudio = () => {
     if (isPlayingAlertAudio || isPlayingAudio) {
@@ -27,6 +29,56 @@ export default function KisanAlerts() {
         primaryAlert.audioScriptHi,
         'hi-IN'
       );
+    }
+  };
+
+  const toggleStepCompleted = (step: number) => {
+    setCompletedSteps(prev =>
+      prev.includes(step) ? prev.filter(s => s !== step) : [...prev, step]
+    );
+  };
+
+  const toggleSiren = () => {
+    if (isSirenActive) {
+      setIsSirenActive(false);
+      return;
+    }
+
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(520, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.3);
+        osc.frequency.linearRampToValueAtTime(520, ctx.currentTime + 0.6);
+        osc.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.9);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        setIsSirenActive(true);
+        setTimeout(() => {
+          try {
+            osc.stop();
+            ctx.close();
+          } catch (_) {}
+          setIsSirenActive(false);
+        }, 1500);
+      }
+    } catch (_) {
+      setIsSirenActive(false);
+    }
+  };
+
+  const shareAlertWhatsApp = () => {
+    const text = language === 'hi'
+      ? `🚨 *आकाश वाणी मौसम आपातकाल अलर्ट: ${primaryAlert.titleHi}*\nसमय: ${primaryAlert.validTo}\nविवरण: ${primaryAlert.hindiSummary}\nप्रभावित तहसीलें: ${primaryAlert.affectedTehsils.join(', ')}\n\nतुरंत सुरक्षित स्थान पर जाएं। 100% नि:शुल्क किसान मौसम सेवा।`
+      : `🚨 *Akash-Vaani Weather Emergency Warning: ${primaryAlert.titleEn}*\nValid: ${primaryAlert.validTo}\nSummary: ${primaryAlert.englishSummary}\nAffected: ${primaryAlert.affectedTehsils.join(', ')}\n\nMove to safe shelter immediately.`;
+    if (typeof window !== 'undefined') {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     }
   };
 
@@ -88,13 +140,40 @@ export default function KisanAlerts() {
             </p>
           </div>
 
+          {/* Action Row: Siren, WhatsApp Share & Audio Dispatch */}
+          <div className="flex flex-wrap items-center gap-space-sm pt-space-xs">
+            <button
+              onClick={toggleSiren}
+              type="button"
+              className={`h-11 px-4 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-md ${
+                isSirenActive
+                  ? 'bg-red-600 text-white animate-bounce'
+                  : 'bg-surface-container-lowest text-secondary hover:bg-surface-container-low'
+              }`}
+            >
+              <span className={`material-symbols-outlined text-[1.25rem] ${isSirenActive ? 'animate-spin' : ''}`}>
+                emergency
+              </span>
+              <span>{isSirenActive ? (language === 'hi' ? 'सायरन बज रहा है!' : 'Siren Sounding!') : (language === 'hi' ? 'खेत सायरन बजाएं' : 'Sound Alarm Siren')}</span>
+            </button>
+
+            <button
+              onClick={shareAlertWhatsApp}
+              type="button"
+              className="h-11 px-4 rounded-2xl bg-[#25D366] text-white font-bold text-xs flex items-center gap-2 hover:bg-[#1EBE5D] transition-all active:scale-95 cursor-pointer shadow-md"
+            >
+              <span className="material-symbols-outlined text-[1.25rem]">share</span>
+              <span>{language === 'hi' ? 'व्हाट्सएप पर शेयर करें' : 'Share Alert on WhatsApp'}</span>
+            </button>
+          </div>
+
           {/* Audio Dispatch Bar & Location Impact Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-md pt-space-xs items-center">
             {/* Audio Play Control */}
             <div className="lg:col-span-7 bg-surface-container-lowest text-on-surface rounded-2xl p-space-md shadow-md flex flex-col sm:flex-row items-center justify-between gap-space-md">
               <div className="flex items-center gap-space-sm w-full sm:w-auto">
                 <button
-                  className="shrink-0 w-12 h-12 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
+                  className="shrink-0 w-12 h-12 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer"
                   onClick={toggleEmergencyAudio}
                   type="button"
                   aria-label="Play Emergency Audio"
@@ -166,57 +245,92 @@ export default function KisanAlerts() {
               </span>
             </div>
           </div>
-          <span className="bg-primary-fixed text-on-primary-fixed font-label-sm text-xs font-bold px-3 py-1 rounded-full self-start sm:self-auto">
-            {language === 'hi' ? 'प्राथमिकता क्रम • 100% अनिवार्य' : 'High Priority • Mandatory'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="bg-primary-fixed text-on-primary-fixed font-label-sm text-xs font-bold px-3 py-1 rounded-full self-start sm:self-auto">
+              {completedSteps.length} / {primaryAlert.farmerDirectives.length} {language === 'hi' ? 'कदम पूरे' : 'Steps Done'}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full bg-surface-container-high h-2.5 rounded-full overflow-hidden">
+          <div
+            className="bg-primary h-full rounded-full transition-all duration-500"
+            style={{ width: `${(completedSteps.length / primaryAlert.farmerDirectives.length) * 100}%` }}
+          ></div>
         </div>
 
         {/* 4 High Impact Action Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-          {primaryAlert.farmerDirectives.map(directive => (
-            <div
-              key={directive.step}
-              className="bg-surface-container-lowest rounded-3xl p-space-md shadow-sm hover:shadow-md transition-all border border-surface-container-high flex flex-col justify-between gap-space-md"
-            >
-              <div className="flex items-start gap-space-md">
-                <div className="w-14 h-14 rounded-2xl bg-secondary-fixed flex items-center justify-center shrink-0 shadow-inner">
-                  <span className="material-symbols-outlined text-secondary text-[2.25rem]">
-                    {directive.icon}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <div className="flex items-center gap-space-xs">
-                    <span className="bg-secondary-fixed-dim text-on-secondary-fixed-variant font-label-sm text-[0.65rem] px-2 py-0.5 rounded font-bold">
-                      {language === 'hi' ? `कदम ${directive.step}` : `Step ${directive.step}`}
-                    </span>
-                    <span className="text-secondary font-label-sm text-xs font-semibold">
-                      {directive.urgency.toUpperCase()}
+          {primaryAlert.farmerDirectives.map(directive => {
+            const isDone = completedSteps.includes(directive.step);
+            return (
+              <div
+                key={directive.step}
+                className={`rounded-3xl p-space-md shadow-sm hover:shadow-md transition-all border flex flex-col justify-between gap-space-md ${
+                  isDone
+                    ? 'bg-primary-container/15 border-primary/40'
+                    : 'bg-surface-container-lowest border-surface-container-high'
+                }`}
+              >
+                <div className="flex items-start gap-space-md">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+                    isDone ? 'bg-primary text-on-primary' : 'bg-secondary-fixed text-secondary'
+                  }`}>
+                    <span className="material-symbols-outlined text-[2.25rem]">
+                      {isDone ? 'check_circle' : directive.icon}
                     </span>
                   </div>
-                  <h3 className="font-headline-md text-base font-bold text-on-surface leading-snug">
-                    {language === 'hi' ? directive.titleHi : directive.titleEn}
-                  </h3>
-                  <p className="font-body-md text-xs text-on-surface-variant leading-relaxed">
-                    {language === 'hi' ? directive.descriptionHi : directive.descriptionEn}
-                  </p>
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <div className="flex items-center gap-space-xs">
+                      <span className={`font-label-sm text-[0.65rem] px-2 py-0.5 rounded font-bold ${
+                        isDone ? 'bg-primary/20 text-primary' : 'bg-secondary-fixed-dim text-on-secondary-fixed-variant'
+                      }`}>
+                        {language === 'hi' ? `कदम ${directive.step}` : `Step ${directive.step}`}
+                      </span>
+                      <span className="text-secondary font-label-sm text-xs font-semibold">
+                        {directive.urgency.toUpperCase()}
+                      </span>
+                    </div>
+                    <h3 className={`font-headline-md text-base font-bold leading-snug ${
+                      isDone ? 'text-primary line-through opacity-80' : 'text-on-surface'
+                    }`}>
+                      {language === 'hi' ? directive.titleHi : directive.titleEn}
+                    </h3>
+                    <p className="font-body-md text-xs text-on-surface-variant leading-relaxed">
+                      {language === 'hi' ? directive.descriptionHi : directive.descriptionEn}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1 bg-surface-container-low p-space-sm rounded-xl">
+                  <button
+                    onClick={() => toggleStepCompleted(directive.step)}
+                    type="button"
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-label-md text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                      isDone
+                        ? 'bg-primary text-on-primary shadow-xs'
+                        : 'bg-surface-container-highest text-on-surface hover:bg-surface-container'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[1rem]">
+                      {isDone ? 'check' : 'radio_button_unchecked'}
+                    </span>
+                    <span>{isDone ? (language === 'hi' ? 'पूरा हुआ' : 'Completed') : (language === 'hi' ? 'किया गया चिन्हित करें' : 'Mark Done')}</span>
+                  </button>
+
+                  <button
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-container text-on-primary font-label-md text-xs hover:bg-primary shadow-xs transition-colors active:scale-95 cursor-pointer"
+                    onClick={() => playSpeech(directive.audioSnippetHi, 'hi-IN')}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[1rem]">volume_up</span>
+                    <span>{language === 'hi' ? 'सुनिए' : 'Listen'}</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between pt-1 bg-surface-container-low p-space-sm rounded-xl">
-                <span className="text-[0.75rem] text-outline">
-                  {language === 'hi' ? 'खेत में तुरंत अमल करें' : 'Implement on field'}
-                </span>
-                <button
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-container text-on-primary font-label-md text-xs hover:bg-primary shadow-xs transition-colors active:scale-95"
-                  onClick={() => playSpeech(directive.audioSnippetHi, 'hi-IN')}
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[1rem]">volume_up</span>
-                  <span>{language === 'hi' ? 'सुनिए' : 'Listen'}</span>
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

@@ -23,7 +23,7 @@ export default function KisanCropAdvisory() {
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'kharif' | 'lowWater' | 'cashCrop'>('all');
 
   const filteredCrops = cropRecommendations.filter(c => {
-    if (categoryFilter === 'kharif') return c.season === 'kharif';
+    if (categoryFilter === 'kharif') return c.category === 'primary' || c.sowingWindowEn.toLowerCase().includes('june');
     if (categoryFilter === 'lowWater') return c.waterDemandLevel <= 2;
     if (categoryFilter === 'cashCrop') return c.id === 'cotton' || c.id === 'mustard' || c.id === 'soybean';
     return true;

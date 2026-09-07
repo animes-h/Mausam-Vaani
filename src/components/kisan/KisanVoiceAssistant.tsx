@@ -122,7 +122,7 @@ export default function KisanVoiceAssistant() {
       const textToSpeak = language === 'hi'
         ? `${solution.titleHi} ${solution.descriptionHi} सर्वोत्तम सुरक्षित समय: ${solution.bestWindowHi}`
         : `${solution.titleEn}. ${solution.descriptionEn}. Best window is ${solution.bestWindowEn}`;
-      playSpeech(textToSpeak);
+      playSpeech(textToSpeak, undefined, slowAudio ? 0.75 : undefined);
     }
   };
 
@@ -240,10 +240,41 @@ export default function KisanVoiceAssistant() {
             </p>
           </div>
 
+          {/* Quick Question Suggestions */}
+          <div className="mt-space-sm flex flex-col gap-1.5">
+            <span className="font-label-sm text-[0.7rem] text-outline font-bold">
+              {language === 'hi' ? 'जल्दी पूछने के लिए टैप करें:' : 'Quick Tap Questions:'}
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { hi: 'क्या कल सुबह सोयाबीन में छिड़काव कर सकते हैं?', en: 'Can we spray pesticide tomorrow morning?' },
+                { hi: 'आज शाम को तेज आंधी-बारिश होगी क्या?', en: 'Will there be rain or squall this evening?' },
+                { hi: 'क्या अभी खेत में यूरिया खाद डालना सुरक्षित है?', en: 'Is it safe to apply urea fertilizer right now?' },
+                { hi: 'मंडी में फसल ले जाने का सबसे सुरक्षित समय क्या है?', en: 'Safest time window to transport harvest to mandi?' },
+              ].map((item, idx) => {
+                const text = language === 'hi' ? item.hi : item.en;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setTranscript(text);
+                      handleQuerySubmit(text);
+                    }}
+                    disabled={isProcessing}
+                    className="px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-medium transition-all active:scale-95 cursor-pointer border border-outline-variant/30 text-left"
+                  >
+                    💬 {text}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Controls */}
           <div className="mt-space-md flex flex-col gap-space-xs sm:flex-row sm:items-center">
             <button
-              className="flex min-h-[3.25rem] flex-1 items-center justify-center gap-space-xs rounded-2xl bg-primary px-space-md font-label-lg text-sm font-bold text-on-primary shadow-sm hover:bg-primary-container transition-all active:scale-95"
+              className="flex min-h-[3.25rem] flex-1 items-center justify-center gap-space-xs rounded-2xl bg-primary px-space-md font-label-lg text-sm font-bold text-on-primary shadow-sm hover:bg-primary-container transition-all active:scale-95 cursor-pointer"
               onClick={() => handleQuerySubmit()}
               disabled={isProcessing}
               type="button"
@@ -253,7 +284,7 @@ export default function KisanVoiceAssistant() {
             </button>
 
             <button
-              className="flex min-h-[3.25rem] items-center justify-center gap-space-xs rounded-2xl bg-surface-container-high px-space-md font-label-lg text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors active:scale-95"
+              className="flex min-h-[3.25rem] items-center justify-center gap-space-xs rounded-2xl bg-surface-container-high px-space-md font-label-lg text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors active:scale-95 cursor-pointer"
               onClick={() => {
                 setTranscript('');
                 toggleListening();
@@ -316,28 +347,46 @@ export default function KisanVoiceAssistant() {
               </div>
             </div>
 
-            {/* Play Answer Audio */}
-            <div className="mt-space-md rounded-2xl bg-surface-container-high p-space-sm flex items-center justify-between gap-space-sm">
-              <button
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-xs transition-transform active:scale-95 ${
-                  isPlayingAudio ? 'bg-secondary text-on-secondary animate-pulse' : 'bg-primary text-on-primary'
-                }`}
-                onClick={playSolutionAudio}
-                type="button"
-                aria-label="Listen Solution Audio"
-              >
-                <span className="material-symbols-outlined text-[1.25rem]">
-                  {isPlayingAudio ? 'stop' : 'volume_up'}
-                </span>
-              </button>
-              <div className="flex flex-col flex-1">
-                <span className="font-bold text-xs text-on-surface">
-                  {isPlayingAudio ? (language === 'hi' ? 'आवाज़ बज रही है...' : 'Playing Audio...') : (language === 'hi' ? 'आवाज़ में सुनें' : 'Listen to Answer')}
-                </span>
-                <span className="text-[0.7rem] text-on-surface-variant">
-                  {language === 'hi' ? 'स्पष्ट बोली में समाधान' : 'Spoken bilingual audio synthesis'}
-                </span>
+            {/* Play Answer Audio & Share */}
+            <div className="mt-space-md flex flex-col gap-2">
+              <div className="rounded-2xl bg-surface-container-high p-space-sm flex items-center justify-between gap-space-sm">
+                <button
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-xs transition-transform active:scale-95 cursor-pointer ${
+                    isPlayingAudio ? 'bg-secondary text-on-secondary animate-pulse' : 'bg-primary text-on-primary'
+                  }`}
+                  onClick={playSolutionAudio}
+                  type="button"
+                  aria-label="Listen Solution Audio"
+                >
+                  <span className="material-symbols-outlined text-[1.25rem]">
+                    {isPlayingAudio ? 'stop' : 'volume_up'}
+                  </span>
+                </button>
+                <div className="flex flex-col flex-1">
+                  <span className="font-bold text-xs text-on-surface">
+                    {isPlayingAudio ? (language === 'hi' ? 'आवाज़ बज रही है...' : 'Playing Audio...') : (language === 'hi' ? 'आवाज़ में सुनें' : 'Listen to Answer')}
+                  </span>
+                  <span className="text-[0.7rem] text-on-surface-variant">
+                    {language === 'hi' ? 'स्पष्ट बोली में समाधान' : 'Spoken bilingual audio synthesis'}
+                  </span>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const shareText = language === 'hi'
+                    ? `🌱 *आकाश वाणी कृषि सलाह*\nप्रश्न: ${transcript}\nनिर्णय: ${solution.titleHi}\nविवरण: ${solution.descriptionHi}\nसुरक्षित समय: ${solution.bestWindowHi}\n\nआकाश वाणी - आपका मौसम साथी`
+                    : `🌱 *Akash-Vaani Agronomic Advisory*\nQuery: ${transcript}\nVerdict: ${solution.titleEn}\nDetails: ${solution.descriptionEn}\nBest Window: ${solution.bestWindowEn}`;
+                  if (typeof window !== 'undefined') {
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
+                  }
+                }}
+                className="w-full py-2 bg-[#25D366] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 hover:bg-[#1EBE5D] transition-all active:scale-95 cursor-pointer shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[1.125rem]">share</span>
+                <span>{language === 'hi' ? 'सलाह WhatsApp पर साझा करें' : 'Share Solution on WhatsApp'}</span>
+              </button>
             </div>
           </div>
         </section>
