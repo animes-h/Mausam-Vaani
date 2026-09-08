@@ -13,7 +13,7 @@ export const translations = {
     detailedTrends: 'Detailed Trends',
     alertsCenter: 'Alerts Center',
     journeyPlanner: 'Journey Planner',
-    workSafety: 'Work Safety',
+    workSafety: 'Field Work Safety',
     climateAI: 'Climate AI',
     consensusEngine: 'Consensus Engine',
     consensusSubtext: 'All systems live • Cross-checked across IMD & ECMWF',

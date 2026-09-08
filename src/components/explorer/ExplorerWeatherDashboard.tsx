@@ -346,17 +346,17 @@ export default function ExplorerWeatherDashboard() {
       </section>
 
       {/* Quick Navigation Cards to Explorer Tools */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
         <div
           onClick={() => setActiveExplorerTab('trends')}
           className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <span className="material-symbols-outlined text-[1.5rem]">monitoring</span>
+          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <span className="material-symbols-outlined text-[1.375rem]">monitoring</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-headline-sm text-sm font-bold text-on-surface">Climate Analytics & Trends</span>
-            <span className="text-xs text-on-surface-variant">Multi-decadal historical comparison & soil physics</span>
+            <span className="font-headline-sm text-sm font-bold text-on-surface">{t.detailedTrends}</span>
+            <span className="text-xs text-on-surface-variant line-clamp-1">Multi-decadal trends & soil physics</span>
           </div>
         </div>
 
@@ -364,12 +364,25 @@ export default function ExplorerWeatherDashboard() {
           onClick={() => setActiveExplorerTab('journey')}
           className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <span className="material-symbols-outlined text-[1.5rem]">route</span>
+          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <span className="material-symbols-outlined text-[1.375rem]">route</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-headline-sm text-sm font-bold text-on-surface">Journey & Work Safety</span>
-            <span className="text-xs text-on-surface-variant">Waypoint corridor weather & safer labor windows</span>
+            <span className="font-headline-sm text-sm font-bold text-on-surface">{t.journeyPlanner}</span>
+            <span className="text-xs text-on-surface-variant line-clamp-1">Point A to Point B corridor weather</span>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveExplorerTab('work-safety')}
+          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <span className="material-symbols-outlined text-[1.375rem]">health_and_safety</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-headline-sm text-sm font-bold text-on-surface">{t.workSafety}</span>
+            <span className="text-xs text-on-surface-variant line-clamp-1">WBGT thermal strain & safer labor windows</span>
           </div>
         </div>
 
@@ -377,12 +390,12 @@ export default function ExplorerWeatherDashboard() {
           onClick={() => setActiveExplorerTab('climate-ai')}
           className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <span className="material-symbols-outlined text-[1.5rem]">psychology</span>
+          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <span className="material-symbols-outlined text-[1.375rem]">psychology</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-headline-sm text-sm font-bold text-on-surface">Climate AI Conversational Copilot</span>
-            <span className="text-xs text-on-surface-variant">Natural language research query engine with session memory</span>
+            <span className="font-headline-sm text-sm font-bold text-on-surface">{t.climateAI}</span>
+            <span className="text-xs text-on-surface-variant line-clamp-1">Agronomic conversational copilot</span>
           </div>
         </div>
       </section>

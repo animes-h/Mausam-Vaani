@@ -9,6 +9,7 @@ import ExplorerWeatherDashboard from '@/components/explorer/ExplorerWeatherDashb
 import ExplorerClimateAnalytics from '@/components/explorer/ExplorerClimateAnalytics';
 import ExplorerAlertsCenter from '@/components/explorer/ExplorerAlertsCenter';
 import ExplorerJourneyPlanner from '@/components/explorer/ExplorerJourneyPlanner';
+import ExplorerWorkSafety from '@/components/explorer/ExplorerWorkSafety';
 import ExplorerClimateAI from '@/components/explorer/ExplorerClimateAI';
 
 export default function ExplorerPage() {
@@ -36,7 +37,7 @@ export default function ExplorerPage() {
           {activeExplorerTab === 'trends' && <ExplorerClimateAnalytics />}
           {activeExplorerTab === 'alerts-center' && <ExplorerAlertsCenter />}
           {activeExplorerTab === 'journey' && <ExplorerJourneyPlanner />}
-          {activeExplorerTab === 'work-safety' && <ExplorerJourneyPlanner />}
+          {activeExplorerTab === 'work-safety' && <ExplorerWorkSafety />}
           {activeExplorerTab === 'climate-ai' && <ExplorerClimateAI />}
         </main>
       </div>
