@@ -1,5 +1,6 @@
 import { CropRecommendation, SoilConfig } from '@/types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateContentWithFallback, cleanJsonString } from './geminiHelper';
 
 export const STANDARD_SOIL_TYPES = [
   {
@@ -182,7 +183,6 @@ export async function getCropRecommendations(soil: SoilConfig, locationName: str
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `You are an expert Indian Agronomist AI for the Akash Vaani platform.
 Given:
@@ -223,10 +223,9 @@ Generate a JSON array of 3 top recommended crops with this exact structure:
 ]
 Return ONLY valid raw JSON array, without markdown backticks.`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
-    const cleanJson = text.replace(/^```json/, '').replace(/```$/, '').trim();
-    const parsed = JSON.parse(cleanJson);
+    const { result } = await generateContentWithFallback(genAI, prompt);
+    const text = cleanJsonString(result.response.text());
+    const parsed = JSON.parse(text);
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed.map((item, idx) => ({
         ...item,
@@ -276,7 +275,6 @@ export async function diagnoseSoilFromPhoto(imageBase64: string): Promise<{
   if (apiKey) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const prompt = `Analyze this soil photograph for agricultural assessment in Central India (Malwa Plateau).
 Identify:
 1. Soil type (e.g. Deep Black Cotton, Medium Loamy, Red Murrum, Sandy Loam)
@@ -295,7 +293,7 @@ Return ONLY a JSON object:
   "phEstimate": 7.4,
   "recommendationNote": "Ideal for Soybean, Maize, and Bt Cotton"
 }`;
-      const res = await model.generateContent([
+      const { result } = await generateContentWithFallback(genAI, [
         prompt,
         {
           inlineData: {
@@ -304,7 +302,7 @@ Return ONLY a JSON object:
           },
         },
       ]);
-      const cleanJson = res.response.text().trim().replace(/^```json/, '').replace(/```$/, '').trim();
+      const cleanJson = cleanJsonString(result.response.text());
       const parsed = JSON.parse(cleanJson);
       return { ...parsed, isApproximate: true };
     } catch (e) {

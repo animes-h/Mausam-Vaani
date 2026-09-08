@@ -1,6 +1,7 @@
 import { ChatMessage, LocationInfo, WeatherCurrent } from '@/types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getCachedResponse, setCachedResponse } from './cacheService';
+import { generateContentWithFallback, cleanJsonString } from './geminiHelper';
 
 export async function askClimateCopilot(
   userQuery: string,
@@ -44,7 +45,7 @@ export async function askClimateCopilot(
             text: language === 'hi' ? parsed.textHi || parsed.text : parsed.text,
             textHi: parsed.textHi,
             consensusScore: parsed.consensusScore || 96.4,
-            modelBadge: 'Gemini 1.5 Flash • Multi-Model Grounded',
+            modelBadge: parsed.modelBadge || 'Gemini • Multi-Model Grounded',
             sources: ['IMD Doppler Radar Station IND-042', 'Copernicus CDS ERA5 Boundary Layer'],
             verdictCallout: parsed.verdictTitle ? {
               type: parsed.verdictType || 'info',
@@ -73,7 +74,6 @@ export async function askClimateCopilot(
   if (apiKey) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       // Session context grounding
       const historyContext = history.slice(-4).map(m => `${m.sender}: ${m.text}`).join('\n');
@@ -97,8 +97,8 @@ Respond with a JSON object:
 }
 Return ONLY valid JSON.`;
 
-      const res = await model.generateContent(systemGrounding);
-      const text = res.response.text().trim().replace(/^```json/, '').replace(/```$/, '').trim();
+      const { result, modelName } = await generateContentWithFallback(genAI, systemGrounding);
+      const text = cleanJsonString(result.response.text());
       const parsed = JSON.parse(text);
 
       const responseMessage: ChatMessage = {
@@ -108,7 +108,7 @@ Return ONLY valid JSON.`;
         text: language === 'hi' ? parsed.textHi || parsed.text : parsed.text,
         textHi: parsed.textHi,
         consensusScore: parsed.consensusScore || 96.2,
-        modelBadge: 'Gemini 1.5 Flash • ERA5 Boundary Layer',
+        modelBadge: `${modelName} • Multi-Model Grounded`,
         sources: ['IMD Doppler Radar Bhopal Hub', 'ECMWF IFS v48r1 High-Res'],
         verdictCallout: parsed.verdictTitle ? {
           type: parsed.verdictType || 'info',
