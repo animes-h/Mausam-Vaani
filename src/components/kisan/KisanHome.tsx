@@ -39,14 +39,19 @@ export default function KisanHome() {
   const handleMicClick = () => {
     if (isRecording) {
       setIsRecording(false);
+      const spoken = SpeechHandler.stopListening(true);
+      if (spoken && spoken.trim()) {
+        setVoiceQueryText(spoken);
+        processSpokenQuery(spoken);
+      }
       return;
     }
 
     if (networkMode === 'degraded') {
       alert(
         language === 'hi'
-          ? 'धीमे 2G नेटवर्क में आवाज़ रोक दी गई है। कृपया नीचे दिए गए सवालों में से किसी एक पर टैप करें।'
-          : 'Voice input paused in 2G mode. Please tap any quick question below.'
+          ? 'धीमे 2G नेटवर्क में वॉयस इनपुट सीमित है।'
+          : 'Voice paused in 2G mode.'
       );
       return;
     }
@@ -56,20 +61,38 @@ export default function KisanHome() {
 
     SpeechHandler.startListening(
       async (transcript) => {
-        setIsRecording(false);
-        setVoiceQueryText(transcript);
-        await processSpokenQuery(transcript);
+        if (transcript && transcript.trim()) {
+          setIsRecording(false);
+          setVoiceQueryText(transcript);
+          await processSpokenQuery(transcript);
+        } else {
+          setIsRecording(false);
+        }
       },
       (err) => {
         setIsRecording(false);
         console.warn('Voice error:', err);
-        setVoiceQueryText(
-          language === 'hi'
-            ? 'आवाज़ साफ़ नहीं आई। कृपया नीचे दिए गए बटन से पूछें।'
-            : 'Could not hear clearly. Please tap a question below.'
-        );
+        const errMsg = typeof err === 'string' ? err : err?.message || '';
+        if (errMsg.includes('permission') || errMsg.includes('not-allowed')) {
+          setVoiceQueryText(
+            language === 'hi'
+              ? 'कृपया माइक्रोफ़ोन की अनुमति प्रदान करें।'
+              : 'Please allow microphone access.'
+          );
+        } else {
+          setVoiceQueryText(
+            language === 'hi'
+              ? 'आवाज़ साफ़ नहीं आई। कृपया नीचे दिए गए बटन से पूछें।'
+              : 'Could not hear clearly. Please tap a question below.'
+          );
+        }
       },
-      language === 'hi' ? 'hi-IN' : 'en-IN'
+      language === 'hi' ? 'hi-IN' : 'en-IN',
+      (interim) => {
+        if (interim && interim.trim()) {
+          setVoiceQueryText(interim);
+        }
+      }
     );
   };
 

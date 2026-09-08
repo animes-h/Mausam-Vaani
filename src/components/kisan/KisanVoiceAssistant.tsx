@@ -53,6 +53,11 @@ export default function KisanVoiceAssistant() {
   const toggleListening = () => {
     if (isListening) {
       setIsListening(false);
+      const spoken = SpeechHandler.stopListening(true);
+      if (spoken && spoken.trim()) {
+        setTranscript(spoken);
+        handleQuerySubmit(spoken);
+      }
       return;
     }
 
@@ -71,20 +76,46 @@ export default function KisanVoiceAssistant() {
 
     SpeechHandler.startListening(
       async (resultText) => {
-        setTranscript(resultText);
-        setIsListening(false);
-        await handleQuerySubmit(resultText);
+        if (resultText && resultText.trim()) {
+          setTranscript(resultText);
+          setIsListening(false);
+          await handleQuerySubmit(resultText);
+        } else {
+          setIsListening(false);
+        }
       },
       (err) => {
         setIsListening(false);
         console.warn('Speech err:', err);
+        const errMsg = typeof err === 'string' ? err : err?.message || '';
+        if (errMsg.includes('permission') || errMsg.includes('not-allowed')) {
+          alert(
+            language === 'hi'
+              ? 'कृपया ब्राउज़र में माइक्रोफ़ोन की अनुमति (Permission) प्रदान करें।'
+              : 'Please allow microphone access in your browser.'
+          );
+        }
       },
-      language === 'hi' ? 'hi-IN' : 'en-IN'
+      language === 'hi' ? 'hi-IN' : 'en-IN',
+      (interimText) => {
+        if (interimText && interimText.trim()) {
+          setTranscript(interimText);
+        }
+      }
     );
   };
 
   const handleQuerySubmit = async (queryToSubmit?: string) => {
+    if (isListening) {
+      SpeechHandler.stopListening(false);
+      setIsListening(false);
+    }
+
     const q = queryToSubmit || transcript;
+    if (!q || q === 'बोलिए, सुन रहा है...' || q === 'Listening... please speak now') {
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
@@ -205,15 +236,24 @@ export default function KisanVoiceAssistant() {
               <div className="absolute h-28 w-28 rounded-full bg-primary-container shadow-[0_0_30px_rgba(45,106,79,0.35)]"></div>
 
               <button
-                className={`relative z-10 flex h-24 w-24 items-center justify-center rounded-full text-on-primary shadow-xl transition-transform active:scale-95 hover:scale-105 ${
-                  isListening ? 'bg-secondary animate-bounce' : 'bg-primary'
+                className={`relative z-10 flex h-24 w-24 items-center justify-center rounded-full text-on-primary shadow-xl transition-all active:scale-95 hover:scale-105 cursor-pointer ${
+                  isListening ? 'bg-secondary ring-4 ring-secondary/40 shadow-[0_0_35px_rgba(239,68,68,0.5)]' : 'bg-primary'
                 }`}
                 onClick={toggleListening}
                 type="button"
                 aria-label="Toggle Microphone"
               >
-                <span className="material-symbols-outlined text-[3rem]">mic</span>
+                <span className="material-symbols-outlined text-[3rem]">{isListening ? 'stop' : 'mic'}</span>
               </button>
+            </div>
+
+            {/* Guidance Hint */}
+            <div className="mt-3 text-center">
+              <span className={`text-xs font-bold ${isListening ? 'text-secondary animate-pulse' : 'text-on-surface-variant'}`}>
+                {isListening
+                  ? (language === 'hi' ? 'बोलिए, सुन रहा है... रुकने पर स्वतः उत्तर आएगा (या लाल बटन दबाएं)' : 'Listening... pause when done or tap button to submit')
+                  : (language === 'hi' ? 'माइक दबाकर बोलना शुरू करें' : 'Tap microphone to speak')}
+              </span>
             </div>
 
             {/* Audio Equalizer Waves */}

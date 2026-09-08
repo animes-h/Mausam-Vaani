@@ -114,6 +114,11 @@ export default function ExplorerClimateAI() {
   const handleMicToggle = () => {
     if (isListening) {
       setIsListening(false);
+      const spoken = SpeechHandler.stopListening(true);
+      if (spoken && spoken.trim()) {
+        setInputQuery(spoken);
+        handleSend(spoken);
+      }
       return;
     }
 
@@ -125,12 +130,24 @@ export default function ExplorerClimateAI() {
     setIsListening(true);
     SpeechHandler.startListening(
       (transcript) => {
-        setIsListening(false);
-        setInputQuery(transcript);
-        handleSend(transcript);
+        if (transcript && transcript.trim()) {
+          setIsListening(false);
+          setInputQuery(transcript);
+          handleSend(transcript);
+        } else {
+          setIsListening(false);
+        }
       },
-      () => setIsListening(false),
-      language === 'hi' ? 'hi-IN' : 'en-IN'
+      (err) => {
+        setIsListening(false);
+        console.warn('Voice error:', err);
+      },
+      language === 'hi' ? 'hi-IN' : 'en-IN',
+      (interim) => {
+        if (interim && interim.trim()) {
+          setInputQuery(interim);
+        }
+      }
     );
   };
 
