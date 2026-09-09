@@ -2,10 +2,9 @@ import { GoogleGenerativeAI, GenerateContentResult } from '@google/generative-ai
 
 // Ordered candidate list for high availability and future deprecation resilience
 export const CANDIDATE_GEMINI_MODELS: string[] = [
-  process.env.GEMINI_MODEL || '',
-  'gemini-3.5-flash-lite',
-  'gemini-3.5-flash',
   'gemini-3.6-flash',
+  process.env.GEMINI_MODEL || '',
+  'gemini-3.5-flash',
   'gemini-flash-latest',
 ].filter(Boolean);
 

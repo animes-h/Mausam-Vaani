@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
-import { askClimateCopilot } from '@/lib/aiCopilotService';
+import { askClimateCopilot, askClimateCopilotWithAudio } from '@/lib/aiCopilotService';
 import { ChatMessage } from '@/types';
 import { SpeechHandler } from '@/lib/speechService';
 
@@ -111,14 +111,10 @@ export default function ExplorerClimateAI() {
     }
   };
 
-  const handleMicToggle = () => {
+  const handleMicToggle = async () => {
     if (isListening) {
       setIsListening(false);
-      const spoken = SpeechHandler.stopListening(true);
-      if (spoken && spoken.trim()) {
-        setInputQuery(spoken);
-        handleSend(spoken);
-      }
+      SpeechHandler.stopListening(true);
       return;
     }
 
@@ -128,27 +124,58 @@ export default function ExplorerClimateAI() {
     }
 
     setIsListening(true);
-    SpeechHandler.startListening(
-      (transcript) => {
-        if (transcript && transcript.trim()) {
-          setIsListening(false);
-          setInputQuery(transcript);
-          handleSend(transcript);
+    setInputQuery(language === 'hi' ? 'बोलिए, सुन रहा है...' : 'Listening... please speak now');
+
+    await SpeechHandler.startListening({
+      onResult: async (transcript, audioBlob) => {
+        setIsListening(false);
+        const cleanText = transcript ? transcript.trim() : '';
+        const isPlaceholder =
+          cleanText === 'बोलिए, सुन रहा है...' ||
+          cleanText === 'Listening... please speak now' ||
+          cleanText.includes('रिकॉर्ड हो रही है') ||
+          cleanText.includes('Recording your voice');
+
+        if (cleanText && !isPlaceholder) {
+          setInputQuery(cleanText);
+          await handleSend(cleanText);
+        } else if (audioBlob && audioBlob.size > 1500) {
+          setIsLoading(true);
+          setInputQuery(language === 'hi' ? 'आवाज़ का विश्लेषण...' : 'Analyzing voice...');
+          try {
+            const voiceResult = await askClimateCopilotWithAudio(
+              audioBlob,
+              location,
+              weather.current,
+              language
+            );
+            if (voiceResult.transcription) {
+              setInputQuery(voiceResult.transcription);
+            }
+            setMessages((prev) => [...prev, voiceResult.message]);
+            playSpeech(voiceResult.message.textHi || voiceResult.message.text);
+          } catch (e) {
+            setInputQuery('');
+          } finally {
+            setIsLoading(false);
+          }
         } else {
-          setIsListening(false);
+          setInputQuery('');
         }
       },
-      (err) => {
+      onError: (err) => {
         setIsListening(false);
         console.warn('Voice error:', err);
       },
-      language === 'hi' ? 'hi-IN' : 'en-IN',
-      (interim) => {
+      onInterim: (interim) => {
         if (interim && interim.trim()) {
           setInputQuery(interim);
         }
-      }
-    );
+      },
+      lang: language === 'hi' ? 'hi-IN' : 'en-IN',
+      pauseTimeoutMs: 3000,
+      initialTimeoutMs: 15000,
+    });
   };
 
   return (
@@ -257,7 +284,7 @@ export default function ExplorerClimateAI() {
                       <div className="flex flex-col gap-space-xs w-full min-w-0">
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-space-xs">
-                            <span className="font-bold text-primary">Akash Vaani Atmospheric Engine</span>
+                            <span className="font-bold text-primary">Mausam Vaani Atmospheric Engine</span>
                             <span className="text-outline">•</span>
                             <span className="text-outline">{m.timestamp}</span>
                             {m.modelBadge && (

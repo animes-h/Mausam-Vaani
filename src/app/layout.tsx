@@ -3,7 +3,7 @@ import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 
 export const metadata: Metadata = {
-  title: 'Akash Vaani — AI-Powered Multilingual Weather & Agri-Advisory Platform',
+  title: 'Mausam Vaani — AI-Powered Multilingual Weather & Agri-Advisory Platform',
   description: 'AI-Powered Multilingual Weather & Agri-Advisory Platform (SIH 2026 PS SIH26068)',
   icons: {
     icon: '/images/logo.png',

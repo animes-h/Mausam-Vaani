@@ -62,10 +62,10 @@ export default function ExplorerClimateAnalytics() {
         2
       );
     } else {
-      fileName = `akash_vaani_bulletin_${Date.now()}.txt`;
+      fileName = `mausam_vaani_bulletin_${Date.now()}.txt`;
       mimeType = 'text/plain';
       content = `=====================================================
-AKASH-VAANI METEOROLOGICAL EXECUTIVE BULLETIN
+MAUSAM-VAANI METEOROLOGICAL EXECUTIVE BULLETIN
 Sector: Western Malwa Agro-Climatic Zone
 Station: ${location.name} (${location.lat}°N, ${location.lng}°E)
 Generated: ${new Date().toLocaleString('en-IN')}

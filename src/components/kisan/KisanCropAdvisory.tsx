@@ -447,8 +447,8 @@ export default function KisanCropAdvisory() {
                   <button
                     onClick={() => {
                       const shareText = language === 'hi'
-                        ? `🌾 *आकाश वाणी फसल सलाह: ${selectedCrop.nameHi} (${selectedCrop.variety})*\nअनुशंसित किस्म: ${selectedCrop.variety}\nअनुमानित उपज: ${selectedCrop.estimatedYieldHi}\nकारण: ${selectedCrop.rationaleHi}\n\nआकाश वाणी - मध्य प्रदेश मौसम व फसल केंद्र`
-                        : `🌾 *Akash-Vaani Crop Advisory: ${selectedCrop.nameEn} (${selectedCrop.variety})*\nVariety: ${selectedCrop.variety}\nYield: ${selectedCrop.estimatedYieldEn}\nRationale: ${selectedCrop.rationaleEn}\n\nAkash-Vaani Agrometeorology`;
+                        ? `🌾 *मौसम वाणी फसल सलाह: ${selectedCrop.nameHi} (${selectedCrop.variety})*\nअनुशंसित किस्म: ${selectedCrop.variety}\nअनुमानित उपज: ${selectedCrop.estimatedYieldHi}\nकारण: ${selectedCrop.rationaleHi}\n\nमौसम वाणी - मध्य प्रदेश मौसम व फसल केंद्र`
+                        : `🌾 *Mausam-Vaani Crop Advisory: ${selectedCrop.nameEn} (${selectedCrop.variety})*\nVariety: ${selectedCrop.variety}\nYield: ${selectedCrop.estimatedYieldEn}\nRationale: ${selectedCrop.rationaleEn}\n\nMausam-Vaani Agrometeorology`;
                       if (typeof window !== 'undefined') {
                         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
                       }

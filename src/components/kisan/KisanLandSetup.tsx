@@ -277,7 +277,7 @@ export default function KisanLandSetup() {
                   </div>
                   <p className="font-body-md text-xs text-on-surface-variant mt-0.5">
                     {language === 'hi'
-                      ? 'यदि मिट्टी का प्रकार नहीं पता, तो खेत की ज़मीन का फोटो लें। आकाश वाणी AI अपने आप नमी और प्रकार पहचान लेगा।'
+                      ? 'यदि मिट्टी का प्रकार नहीं पता, तो खेत की ज़मीन का फोटो लें। मौसम वाणी AI अपने आप नमी और प्रकार पहचान लेगा।'
                       : 'Capture a photo of your field soil. AI diagnoses soil texture and moisture level.'}
                   </p>
                 </div>
@@ -395,7 +395,7 @@ export default function KisanLandSetup() {
             </div>
             <p className="font-body-sm text-xs text-on-surface-variant">
               {language === 'hi'
-                ? 'सिंचाई सुविधा अनुसार आकाश वाणी पानी देने का सही समय बताएगा:'
+                ? 'सिंचाई सुविधा अनुसार मौसम वाणी पानी देने का सही समय बताएगा:'
                 : 'Recommendations adapt based on your water availability:'}
             </p>
 

@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       ? history.slice(-4).map((m: any) => `${m.sender}: ${m.text}`).join('\n')
       : '';
 
-    const systemGrounding = `You are Akash Vaani (आकाश-वाणी) Climate Copilot & Senior Agronomist AI for Central India.
+    const systemGrounding = `You are Mausam Vaani (मौसम-वाणी) Climate Copilot & Senior Agronomist AI for Central India.
 Current Location: ${location?.name || 'Indore, MP'} (${location?.lat || 22.7196}°N, ${location?.lng || 75.8577}°E).
 Current Telemetry:
 - Temperature: ${weather?.temperature ?? 31}°C (Apparent: ${weather?.apparentTemperature ?? 34}°C)

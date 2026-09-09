@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 import { SpeechHandler } from '@/lib/speechService';
-import { askClimateCopilot } from '@/lib/aiCopilotService';
+import { askClimateCopilot, askClimateCopilotWithAudio } from '@/lib/aiCopilotService';
 
 export default function KisanHome() {
   const {
@@ -36,14 +36,10 @@ export default function KisanHome() {
     }
   };
 
-  const handleMicClick = () => {
+  const handleMicClick = async () => {
     if (isRecording) {
       setIsRecording(false);
-      const spoken = SpeechHandler.stopListening(true);
-      if (spoken && spoken.trim()) {
-        setVoiceQueryText(spoken);
-        processSpokenQuery(spoken);
-      }
+      SpeechHandler.stopListening(true);
       return;
     }
 
@@ -59,41 +55,72 @@ export default function KisanHome() {
     setIsRecording(true);
     setVoiceQueryText(language === 'hi' ? 'सुन रहा है... कृपया बोलिए' : 'Listening... please speak now');
 
-    SpeechHandler.startListening(
-      async (transcript) => {
-        if (transcript && transcript.trim()) {
-          setIsRecording(false);
-          setVoiceQueryText(transcript);
-          await processSpokenQuery(transcript);
+    await SpeechHandler.startListening({
+      onResult: async (transcript, audioBlob) => {
+        setIsRecording(false);
+        const cleanText = transcript ? transcript.trim() : '';
+        const isPlaceholder =
+          cleanText === 'सुन रहा है... कृपया बोलिए' ||
+          cleanText === 'Listening... please speak now' ||
+          cleanText.includes('रिकॉर्ड हो रही है') ||
+          cleanText.includes('Recording your voice');
+
+        if (cleanText && !isPlaceholder) {
+          setVoiceQueryText(cleanText);
+          await processSpokenQuery(cleanText);
+        } else if (audioBlob && audioBlob.size > 1500) {
+          setIsProcessing(true);
+          setVoiceQueryText(language === 'hi' ? 'आवाज़ का विश्लेषण हो रहा है...' : 'Processing spoken query...');
+          try {
+            const voiceResult = await askClimateCopilotWithAudio(
+              audioBlob,
+              location,
+              weather.current,
+              language
+            );
+            if (voiceResult.transcription) {
+              setVoiceQueryText(voiceResult.transcription);
+            }
+            setQuickResponse(voiceResult.message.textHi || voiceResult.message.text);
+            playSpeech(voiceResult.message.textHi || voiceResult.message.text);
+          } catch (e) {
+            setVoiceQueryText(
+              language === 'hi'
+                ? 'आवाज़ साफ़ नहीं आई। कृपया नीचे दिए गए विकल्पों से पूछें।'
+                : 'Could not hear clearly. Please tap a question below.'
+            );
+          } finally {
+            setIsProcessing(false);
+          }
         } else {
-          setIsRecording(false);
+          setVoiceQueryText(
+            language === 'hi'
+              ? 'आवाज़ नहीं सुनी गई। कृपया माइक दबाकर पुनः बोलें।'
+              : 'No audio detected. Please tap mic and speak again.'
+          );
         }
       },
-      (err) => {
+      onError: (err) => {
         setIsRecording(false);
         console.warn('Voice error:', err);
         const errMsg = typeof err === 'string' ? err : err?.message || '';
-        if (errMsg.includes('permission') || errMsg.includes('not-allowed')) {
+        if (errMsg.includes('permission') || errMsg.includes('not-allowed') || errMsg.includes('denied')) {
           setVoiceQueryText(
             language === 'hi'
               ? 'कृपया माइक्रोफ़ोन की अनुमति प्रदान करें।'
-              : 'Please allow microphone access.'
-          );
-        } else {
-          setVoiceQueryText(
-            language === 'hi'
-              ? 'आवाज़ साफ़ नहीं आई। कृपया नीचे दिए गए बटन से पूछें।'
-              : 'Could not hear clearly. Please tap a question below.'
+              : 'Please allow microphone access in your browser settings.'
           );
         }
       },
-      language === 'hi' ? 'hi-IN' : 'en-IN',
-      (interim) => {
+      onInterim: (interim) => {
         if (interim && interim.trim()) {
           setVoiceQueryText(interim);
         }
-      }
-    );
+      },
+      lang: language === 'hi' ? 'hi-IN' : 'en-IN',
+      pauseTimeoutMs: 3000,
+      initialTimeoutMs: 15000,
+    });
   };
 
   const processSpokenQuery = async (query: string) => {
@@ -243,7 +270,7 @@ export default function KisanHome() {
         <div className="relative z-10 flex flex-col items-center max-w-2xl mx-auto w-full">
           <span className="px-space-md py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-xs font-bold uppercase tracking-wider flex items-center gap-space-xs mb-space-sm shadow-xs">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            <span>{language === 'hi' ? 'आकाश वाणी वाक सहायक • 24x7 निःशुल्क आवाज़ सेवा' : 'Akash Vaani Rural Voice Assistant • 24x7 Free'}</span>
+            <span>{language === 'hi' ? 'मौसम वाणी वाक सहायक • 24x7 निःशुल्क आवाज़ सेवा' : 'Mausam Vaani Rural Voice Assistant • 24x7 Free'}</span>
           </span>
 
           <h2 className="font-headline-lg text-headline-lg text-on-surface font-extrabold tracking-tight mb-1">
@@ -295,7 +322,7 @@ export default function KisanHome() {
                   <span className="material-symbols-outlined text-primary text-[1.75rem] mt-0.5">psychology</span>
                   <div className="flex flex-col">
                     <span className="font-label-sm text-xs font-bold text-primary uppercase flex items-center gap-1">
-                      <span>{language === 'hi' ? 'आकाश वाणी सलाह' : 'Akash Vaani Advisory'}</span>
+                      <span>{language === 'hi' ? 'मौसम वाणी सलाह' : 'Mausam Vaani Advisory'}</span>
                       <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-[0.65rem]">AI Live</span>
                     </span>
                     <p className="font-body-md text-xs sm:text-sm text-on-surface font-semibold mt-1 leading-relaxed">

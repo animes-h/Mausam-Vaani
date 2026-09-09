@@ -25,7 +25,7 @@ export default function Sidebar() {
         <div className="bg-surface-container-low rounded-xl p-space-sm flex flex-col gap-space-2xs border border-outline-variant/30">
           <div className="flex items-center justify-between">
             <span className="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wide">
-              {language === 'hi' ? 'आकाश वाणी वाक (Voice)' : 'Voice Assistant'}
+              {language === 'hi' ? 'मौसम वाणी वाक (Voice)' : 'Voice Assistant'}
             </span>
             <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
           </div>

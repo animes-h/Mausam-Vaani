@@ -75,8 +75,8 @@ export default function KisanAlerts() {
 
   const shareAlertWhatsApp = () => {
     const text = language === 'hi'
-      ? `🚨 *आकाश वाणी मौसम आपातकाल अलर्ट: ${primaryAlert.titleHi}*\nसमय: ${primaryAlert.validTo}\nविवरण: ${primaryAlert.hindiSummary}\nप्रभावित तहसीलें: ${primaryAlert.affectedTehsils.join(', ')}\n\nतुरंत सुरक्षित स्थान पर जाएं। 100% नि:शुल्क किसान मौसम सेवा।`
-      : `🚨 *Akash-Vaani Weather Emergency Warning: ${primaryAlert.titleEn}*\nValid: ${primaryAlert.validTo}\nSummary: ${primaryAlert.englishSummary}\nAffected: ${primaryAlert.affectedTehsils.join(', ')}\n\nMove to safe shelter immediately.`;
+      ? `🚨 *मौसम वाणी मौसम आपातकाल अलर्ट: ${primaryAlert.titleHi}*\nसमय: ${primaryAlert.validTo}\nविवरण: ${primaryAlert.hindiSummary}\nप्रभावित तहसीलें: ${primaryAlert.affectedTehsils.join(', ')}\n\nतुरंत सुरक्षित स्थान पर जाएं। 100% नि:शुल्क किसान मौसम सेवा।`
+      : `🚨 *Mausam-Vaani Weather Emergency Warning: ${primaryAlert.titleEn}*\nValid: ${primaryAlert.validTo}\nSummary: ${primaryAlert.englishSummary}\nAffected: ${primaryAlert.affectedTehsils.join(', ')}\n\nMove to safe shelter immediately.`;
     if (typeof window !== 'undefined') {
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     }

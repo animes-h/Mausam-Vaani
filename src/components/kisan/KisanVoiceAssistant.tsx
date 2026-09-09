@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 import { SpeechHandler } from '@/lib/speechService';
-import { askClimateCopilot } from '@/lib/aiCopilotService';
+import { askClimateCopilot, askClimateCopilotWithAudio } from '@/lib/aiCopilotService';
 
 export default function KisanVoiceAssistant() {
   const {
@@ -20,6 +20,7 @@ export default function KisanVoiceAssistant() {
 
   const t = translations[language];
   const [isListening, setIsListening] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(0);
   const [transcript, setTranscript] = useState(
     language === 'hi'
       ? 'क्या कल सुबह सोयाबीन में कीटनाशक का छिड़काव कर सकते हैं?'
@@ -50,14 +51,11 @@ export default function KisanVoiceAssistant() {
     return () => clearInterval(interval);
   }, [isListening]);
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (isListening) {
       setIsListening(false);
-      const spoken = SpeechHandler.stopListening(true);
-      if (spoken && spoken.trim()) {
-        setTranscript(spoken);
-        handleQuerySubmit(spoken);
-      }
+      setAudioVolume(0);
+      SpeechHandler.stopListening(true);
       return;
     }
 
@@ -71,38 +69,103 @@ export default function KisanVoiceAssistant() {
     }
 
     setIsListening(true);
+    setAudioVolume(0);
     setTimerSeconds(0);
     setTranscript(language === 'hi' ? 'बोलिए, सुन रहा है...' : 'Listening... please speak now');
 
-    SpeechHandler.startListening(
-      async (resultText) => {
-        if (resultText && resultText.trim()) {
-          setTranscript(resultText);
-          setIsListening(false);
-          await handleQuerySubmit(resultText);
-        } else {
-          setIsListening(false);
-        }
-      },
-      (err) => {
+    await SpeechHandler.startListening({
+      onResult: async (resultText, audioBlob) => {
         setIsListening(false);
-        console.warn('Speech err:', err);
-        const errMsg = typeof err === 'string' ? err : err?.message || '';
-        if (errMsg.includes('permission') || errMsg.includes('not-allowed')) {
-          alert(
+        setAudioVolume(0);
+
+        const cleanText = resultText ? resultText.trim() : '';
+        const isPlaceholder =
+          cleanText === 'बोलिए, सुन रहा है...' ||
+          cleanText === 'Listening... please speak now' ||
+          cleanText.includes('रिकॉर्ड हो रही है') ||
+          cleanText.includes('Recording your voice');
+
+        if (cleanText && !isPlaceholder) {
+          setTranscript(cleanText);
+          await handleQuerySubmit(cleanText);
+        } else if (audioBlob && audioBlob.size > 1500) {
+          // Send recorded audio to Gemini voice-query route!
+          setIsProcessing(true);
+          setTranscript(
             language === 'hi'
-              ? 'कृपया ब्राउज़र में माइक्रोफ़ोन की अनुमति (Permission) प्रदान करें।'
-              : 'Please allow microphone access in your browser.'
+              ? 'आवाज़ का विश्लेषण हो रहा है...'
+              : 'Analyzing your spoken query with Gemini...'
+          );
+          try {
+            const voiceResult = await askClimateCopilotWithAudio(
+              audioBlob,
+              location,
+              weather.current,
+              language
+            );
+
+            if (voiceResult.transcription && voiceResult.transcription.trim()) {
+              setTranscript(voiceResult.transcription);
+            }
+
+            if (voiceResult.message.verdictCallout) {
+              setSolution({
+                titleHi: voiceResult.message.verdictCallout.title,
+                titleEn: voiceResult.message.verdictCallout.title,
+                descriptionHi: voiceResult.message.textHi || voiceResult.message.text,
+                descriptionEn: voiceResult.message.text,
+                bestWindowHi: 'परसों (गुरुवार) सुबह 6:30 से 10:00 बजे तक',
+                bestWindowEn: 'Thursday 06:30 - 10:00 IST',
+                bestWindowDetailHi: voiceResult.message.verdictCallout.description,
+                bestWindowDetailEn: voiceResult.message.verdictCallout.description,
+              });
+            }
+
+            playSpeech(voiceResult.message.textHi || voiceResult.message.text);
+          } catch (audioErr) {
+            console.warn('Voice processing error:', audioErr);
+            setTranscript(
+              language === 'hi'
+                ? 'आवाज़ साफ़ नहीं आई। कृपया नीचे दिए गए विकल्पों में से चुनें।'
+                : 'Could not hear clearly. Please choose an option below.'
+            );
+          } finally {
+            setIsProcessing(false);
+          }
+        } else {
+          setTranscript(
+            language === 'hi'
+              ? 'कोई आवाज़ नहीं सुनी गई। कृपया माइक दबाकर फिर से बोलें।'
+              : 'No audio detected. Please tap the mic and speak again.'
           );
         }
       },
-      language === 'hi' ? 'hi-IN' : 'en-IN',
-      (interimText) => {
+      onError: (err) => {
+        setIsListening(false);
+        setAudioVolume(0);
+        console.warn('Speech err:', err);
+        const errMsg = typeof err === 'string' ? err : err?.message || '';
+        if (errMsg.includes('permission') || errMsg.includes('not-allowed') || errMsg.includes('denied')) {
+          alert(
+            language === 'hi'
+              ? 'कृपया ब्राउज़र में माइक्रोफ़ोन की अनुमति (Permission) प्रदान करें।'
+              : 'Please allow microphone access in your browser settings.'
+          );
+        }
+      },
+      onInterim: (interimText) => {
         if (interimText && interimText.trim()) {
           setTranscript(interimText);
         }
-      }
-    );
+      },
+      onVolumeChange: (vol) => {
+        setAudioVolume(vol);
+      },
+      lang: language === 'hi' ? 'hi-IN' : 'en-IN',
+      pauseTimeoutMs: 3000,
+      initialTimeoutMs: 15000,
+      maxDurationMs: 45000,
+    });
   };
 
   const handleQuerySubmit = async (queryToSubmit?: string) => {
@@ -170,7 +233,7 @@ export default function KisanVoiceAssistant() {
             <div className="flex flex-col">
               <div className="flex flex-wrap items-center gap-space-xs">
                 <span className="font-headline-sm text-base font-bold text-primary">
-                  {language === 'hi' ? 'आकाश वाणी आवाज़ सहायक' : 'Akash Vaani Voice Assistant'}
+                  {language === 'hi' ? 'मौसम वाणी आवाज़ सहायक' : 'Mausam Vaani Voice Assistant'}
                 </span>
                 <span className="rounded-full bg-secondary/15 px-space-xs py-0.5 font-label-sm text-xs font-semibold text-secondary">
                   {isListening
@@ -256,28 +319,55 @@ export default function KisanVoiceAssistant() {
               </span>
             </div>
 
-            {/* Audio Equalizer Waves */}
-            <div className="mt-space-lg flex h-8 items-center justify-center gap-1.5">
-              <span className={`w-1.5 rounded-full bg-primary ${isListening ? 'animate-wave-1' : 'h-3'}`}></span>
-              <span className={`w-1.5 rounded-full bg-primary ${isListening ? 'animate-wave-2' : 'h-5'}`}></span>
-              <span className={`w-1.5 rounded-full bg-primary ${isListening ? 'animate-wave-3' : 'h-7'}`}></span>
-              <span className={`w-1.5 rounded-full bg-tertiary ${isListening ? 'animate-wave-4' : 'h-4'}`}></span>
-              <span className={`w-1.5 rounded-full bg-primary ${isListening ? 'animate-wave-5' : 'h-6'}`}></span>
-              <span className={`w-1.5 rounded-full bg-primary ${isListening ? 'animate-wave-1' : 'h-3'}`}></span>
+            {/* Audio Equalizer Waves with Real Microphone Telemetry */}
+            <div className="mt-space-lg flex h-10 items-center justify-center gap-1.5">
+              {[0, 1, 2, 3, 4, 5, 6].map((i) => {
+                const dynamicHeight = isListening
+                  ? Math.max(8, Math.min(38, Math.round((audioVolume * 0.35) + ((i % 3) + 1) * 6)))
+                  : 8;
+                return (
+                  <span
+                    key={i}
+                    style={{ height: `${dynamicHeight}px` }}
+                    className={`w-2 rounded-full transition-all duration-100 ${
+                      isListening
+                        ? i % 2 === 0
+                          ? 'bg-secondary animate-pulse'
+                          : 'bg-primary'
+                        : 'bg-surface-container-high'
+                    }`}
+                  />
+                );
+              })}
             </div>
           </div>
 
-          {/* Transcript Box */}
+          {/* Transcript Box with Interactive Edit Support */}
           <div className="rounded-2xl bg-surface-container-low p-space-md border border-outline-variant/30">
-            <div className="flex items-center gap-1 text-outline">
-              <span className="material-symbols-outlined text-[1rem]">graphic_eq</span>
-              <span className="font-label-sm text-[0.7rem] font-bold uppercase tracking-wider text-primary">
-                {language === 'hi' ? 'आप बोल रहे हैं • Spoken Query' : 'Live Transcript'}
-              </span>
+            <div className="flex items-center justify-between text-outline">
+              <div className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[1rem]">graphic_eq</span>
+                <span className="font-label-sm text-[0.7rem] font-bold uppercase tracking-wider text-primary">
+                  {language === 'hi' ? 'आप बोल रहे हैं • Spoken Query' : 'Live Transcript'}
+                </span>
+              </div>
+              {transcript && (
+                <button
+                  type="button"
+                  onClick={() => setTranscript('')}
+                  className="text-[0.7rem] text-on-surface-variant hover:text-primary transition-colors font-semibold"
+                >
+                  {language === 'hi' ? 'साफ़ करें' : 'Clear'}
+                </button>
+              )}
             </div>
-            <p className="mt-1 font-headline-sm text-sm sm:text-base font-bold text-on-surface leading-snug">
-              "{transcript}"
-            </p>
+            <textarea
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
+              rows={2}
+              className="mt-1 w-full resize-none rounded-lg bg-transparent font-headline-sm text-sm sm:text-base font-bold text-on-surface leading-snug border-none outline-none focus:ring-1 focus:ring-primary/40 p-1"
+              placeholder={language === 'hi' ? 'यहाँ बोलें या प्रश्न लिखें...' : 'Speak or type your question here...'}
+            />
           </div>
 
           {/* Quick Question Suggestions */}
@@ -344,7 +434,7 @@ export default function KisanVoiceAssistant() {
               <div className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-primary text-[1.25rem]">psychology_alt</span>
                 <span className="font-label-md text-xs font-bold text-primary uppercase tracking-wide">
-                  {language === 'hi' ? 'आकाश वाणी त्वरित समाधान' : 'Instant AI Solution'}
+                  {language === 'hi' ? 'मौसम वाणी त्वरित समाधान' : 'Instant AI Solution'}
                 </span>
               </div>
               <span className="rounded-full bg-primary/10 px-2 py-0.5 font-label-sm text-[0.7rem] font-bold text-primary">
@@ -416,8 +506,8 @@ export default function KisanVoiceAssistant() {
                 type="button"
                 onClick={() => {
                   const shareText = language === 'hi'
-                    ? `🌱 *आकाश वाणी कृषि सलाह*\nप्रश्न: ${transcript}\nनिर्णय: ${solution.titleHi}\nविवरण: ${solution.descriptionHi}\nसुरक्षित समय: ${solution.bestWindowHi}\n\nआकाश वाणी - आपका मौसम साथी`
-                    : `🌱 *Akash-Vaani Agronomic Advisory*\nQuery: ${transcript}\nVerdict: ${solution.titleEn}\nDetails: ${solution.descriptionEn}\nBest Window: ${solution.bestWindowEn}`;
+                    ? `🌱 *मौसम वाणी कृषि सलाह*\nप्रश्न: ${transcript}\nनिर्णय: ${solution.titleHi}\nविवरण: ${solution.descriptionHi}\nसुरक्षित समय: ${solution.bestWindowHi}\n\nमौसम वाणी - आपका मौसम साथी`
+                    : `🌱 *Mausam-Vaani Agronomic Advisory*\nQuery: ${transcript}\nVerdict: ${solution.titleEn}\nDetails: ${solution.descriptionEn}\nBest Window: ${solution.bestWindowEn}`;
                   if (typeof window !== 'undefined') {
                     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
                   }

@@ -1,6 +1,6 @@
 export const translations = {
   en: {
-    appName: 'Akash Vaani',
+    appName: 'Mausam Vaani',
     tagline: 'Atmospheric & Agronomic Intelligence',
     kisanMode: 'Kisan Mode',
     explorerMode: 'Explorer Mode',
@@ -44,7 +44,7 @@ export const translations = {
     evapotranspiration: 'Evapotranspiration',
   },
   hi: {
-    appName: 'आकाश वाणी',
+    appName: 'मौसम वाणी',
     tagline: 'मौसम एवं उन्नत कृषि परामर्श केंद्र',
     kisanMode: 'किसान मोड',
     explorerMode: 'विश्लेषक मोड',

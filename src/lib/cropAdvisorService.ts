@@ -184,7 +184,7 @@ export async function getCropRecommendations(soil: SoilConfig, locationName: str
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    const prompt = `You are an expert Indian Agronomist AI for the Akash Vaani platform.
+    const prompt = `You are an expert Indian Agronomist AI for the Mausam Vaani platform.
 Given:
 - Location: ${locationName}
 - Soil: ${soil.soilNameEn} (${soil.soilClass}), pH: ${soil.phValue}, Moisture: ${soil.moistureCapacity}

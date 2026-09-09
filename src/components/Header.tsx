@@ -85,10 +85,10 @@ export default function Header() {
             <div className="flex flex-col">
               <div className="flex items-baseline gap-space-xs">
                 <span className="font-headline-sm text-headline-sm text-primary tracking-tight font-bold">
-                  {language === 'hi' ? 'आकाश वाणी' : 'Akash Vaani'}
+                  {language === 'hi' ? 'मौसम वाणी' : 'Mausam Vaani'}
                 </span>
                 <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">
-                  {language === 'hi' ? 'Akash Vaani' : 'आकाश वाणी'}
+                  {language === 'hi' ? 'Mausam Vaani' : 'मौसम वाणी'}
                 </span>
               </div>
               <span className="font-label-sm text-label-sm text-on-surface-variant hidden sm:inline">
