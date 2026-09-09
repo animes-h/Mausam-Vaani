@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
+import MobileNavDrawer from './MobileNavDrawer';
 
 const PRESET_LOCATIONS = [
   { name: 'Indore, Madhya Pradesh', nameHi: 'इंदौर, मध्य प्रदेश', district: 'Indore', state: 'MP', lat: 22.7196, lng: 75.8577, elevation: 553 },
@@ -30,6 +31,7 @@ export default function Header() {
 
   const t = translations[language];
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLocating, setIsLocating] = useState(false);
 
@@ -70,37 +72,50 @@ export default function Header() {
   return (
     <>
       <header className="fixed top-0 inset-x-0 h-20 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 transition-colors">
-        <div className="w-full h-full px-space-lg flex items-center justify-between gap-space-md">
-          {/* Logo & Brand Identity */}
-          <div
-            className="flex items-center gap-space-sm cursor-pointer"
-            onClick={() => {
-              if (mode === 'kisan') setActiveKisanTab('home');
-              else setActiveExplorerTab('current-weather');
-            }}
-          >
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm">
-              <span className="material-symbols-outlined text-[1.5rem]">cloud_sync</span>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-baseline gap-space-xs">
-                <span className="font-headline-sm text-headline-sm text-primary tracking-tight font-bold">
-                  {language === 'hi' ? 'मौसम वाणी' : 'Mausam Vaani'}
-                </span>
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">
-                  {language === 'hi' ? 'Mausam Vaani' : 'मौसम वाणी'}
+        <div className="w-full h-full px-2 sm:px-4 md:px-space-lg flex items-center justify-between gap-1.5 sm:gap-space-md">
+          {/* Left: Mobile Hamburger & Logo */}
+          <div className="flex items-center gap-1 sm:gap-space-sm min-w-0">
+            <button
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="md:hidden p-1.5 rounded-xl text-primary hover:bg-surface-container-high transition-colors -ml-1 cursor-pointer"
+              type="button"
+              aria-label="Open navigation menu"
+              title="Open menu"
+            >
+              <span className="material-symbols-outlined text-[1.6rem]">menu</span>
+            </button>
+
+            {/* Logo & Brand Identity */}
+            <div
+              className="flex items-center gap-1.5 sm:gap-space-sm cursor-pointer min-w-0"
+              onClick={() => {
+                if (mode === 'kisan') setActiveKisanTab('home');
+                else setActiveExplorerTab('current-weather');
+              }}
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm shrink-0">
+                <span className="material-symbols-outlined text-[1.35rem] sm:text-[1.5rem]">cloud_sync</span>
+              </div>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-baseline gap-1 sm:gap-space-xs">
+                  <span className="font-headline-sm text-sm sm:text-headline-sm text-primary tracking-tight font-bold truncate">
+                    {language === 'hi' ? 'मौसम वाणी' : 'Mausam Vaani'}
+                  </span>
+                  <span className="font-label-sm text-[0.65rem] sm:text-label-sm text-outline uppercase tracking-wider font-semibold hidden md:inline">
+                    {language === 'hi' ? 'Mausam Vaani' : 'मौसम वाणी'}
+                  </span>
+                </div>
+                <span className="font-label-sm text-label-sm text-on-surface-variant hidden lg:inline">
+                  {t.tagline}
                 </span>
               </div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant hidden sm:inline">
-                {t.tagline}
-              </span>
             </div>
           </div>
 
-          {/* Universal Mode Switcher (Kisan Mode vs Explorer Mode) */}
-          <div className="flex items-center bg-surface-container-high p-1 rounded-full shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+          {/* Center: Universal Mode Switcher (Kisan Mode vs Explorer Mode) */}
+          <div className="flex items-center bg-surface-container-high p-0.5 sm:p-1 rounded-full shadow-[0_1px_4px_rgba(0,0,0,0.03)] shrink-0">
             <button
-              className={`flex items-center gap-1 sm:gap-space-xs px-2.5 sm:px-space-md py-1.5 sm:py-space-xs rounded-full transition-all cursor-pointer active:scale-95 text-xs sm:text-sm ${
+              className={`flex items-center gap-1 sm:gap-space-xs px-2 sm:px-space-md py-1 sm:py-space-xs rounded-full transition-all cursor-pointer active:scale-95 text-[0.7rem] sm:text-sm ${
                 mode === 'kisan'
                   ? 'bg-surface-container-lowest text-primary font-bold shadow-[0_2px_6px_rgba(45,106,79,0.12)]'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -108,14 +123,14 @@ export default function Header() {
               onClick={() => setMode('kisan')}
               type="button"
             >
-              <span className="material-symbols-outlined text-[1.125rem]">agriculture</span>
+              <span className="material-symbols-outlined text-[1rem] sm:text-[1.125rem]">agriculture</span>
               <span className="font-label-md font-bold">
                 <span className="inline sm:hidden">किसान</span>
                 <span className="hidden sm:inline">किसान मोड (Kisan)</span>
               </span>
             </button>
             <button
-              className={`flex items-center gap-1 sm:gap-space-xs px-2.5 sm:px-space-md py-1.5 sm:py-space-xs rounded-full transition-all cursor-pointer active:scale-95 text-xs sm:text-sm ${
+              className={`flex items-center gap-1 sm:gap-space-xs px-2 sm:px-space-md py-1 sm:py-space-xs rounded-full transition-all cursor-pointer active:scale-95 text-[0.7rem] sm:text-sm ${
                 mode === 'explorer'
                   ? 'bg-surface-container-lowest text-primary font-bold shadow-[0_2px_6px_rgba(45,106,79,0.12)]'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -123,7 +138,7 @@ export default function Header() {
               onClick={() => setMode('explorer')}
               type="button"
             >
-              <span className="material-symbols-outlined text-[1.125rem]">insights</span>
+              <span className="material-symbols-outlined text-[1rem] sm:text-[1.125rem]">insights</span>
               <span className="font-label-md font-bold">
                 <span className="inline sm:hidden">Explorer</span>
                 <span className="hidden sm:inline">Explorer Mode</span>
@@ -131,21 +146,21 @@ export default function Header() {
             </button>
           </div>
 
-          {/* Location Badge, Language, Network Toggle & Profile */}
-          <div className="flex items-center gap-1.5 sm:gap-space-sm md:gap-space-md">
-            {/* Location Selector Pill */}
+          {/* Right: Location Badge, Language, Network Toggle & Alerts */}
+          <div className="flex items-center gap-1 sm:gap-space-sm md:gap-space-md shrink-0">
+            {/* Location Selector Pill - Now VISIBLE ON ALL SCREENS INCLUDING MOBILE */}
             <button
-              className="hidden sm:flex items-center gap-space-xs bg-surface-container-low hover:bg-surface-container px-space-sm py-space-xs rounded-full text-on-surface transition-all cursor-pointer active:scale-95"
+              className="flex items-center gap-1 bg-surface-container-low hover:bg-surface-container px-2 sm:px-space-sm py-1 sm:py-space-xs rounded-full text-on-surface transition-all cursor-pointer active:scale-95"
               onClick={() => setShowLocationModal(true)}
               type="button"
               title="Click to change location"
             >
-              <span className="material-symbols-outlined text-primary text-[1.25rem]">location_on</span>
-              <span className="font-label-sm text-label-sm font-semibold max-w-[120px] truncate">
+              <span className="material-symbols-outlined text-primary text-[1.1rem] sm:text-[1.25rem]">location_on</span>
+              <span className="font-label-sm text-[0.7rem] sm:text-label-sm font-semibold max-w-[64px] sm:max-w-[120px] truncate">
                 {language === 'hi' ? location.nameHi || location.name : location.name}
               </span>
-              <span className="text-outline text-label-sm">•</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">
+              <span className="text-outline text-label-sm hidden md:inline">•</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant hidden md:inline">
                 {location.lat}° N
               </span>
             </button>
@@ -153,7 +168,7 @@ export default function Header() {
             {/* Network Degradation Indicator / Tester (FR-8) */}
             <button
               onClick={toggleNetworkMode}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[0.75rem] font-bold transition-all shadow-xs cursor-pointer active:scale-95 ${
+              className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[0.75rem] font-bold transition-all shadow-xs cursor-pointer active:scale-95 ${
                 networkMode === 'degraded'
                   ? 'bg-secondary text-on-secondary animate-pulse'
                   : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
@@ -170,9 +185,9 @@ export default function Header() {
             </button>
 
             {/* Language Switcher (EN | हिन्दी) */}
-            <div className="flex items-center bg-surface-container p-0.5 sm:p-space-2xs rounded-full">
+            <div className="flex items-center bg-surface-container p-0.5 rounded-full">
               <button
-                className={`px-2 sm:px-space-xs py-1 sm:py-space-2xs rounded-full font-label-sm text-xs sm:text-label-sm transition-all cursor-pointer active:scale-95 ${
+                className={`px-1.5 sm:px-space-xs py-0.5 sm:py-space-2xs rounded-full font-label-sm text-[0.65rem] sm:text-label-sm transition-all cursor-pointer active:scale-95 ${
                   language === 'en'
                     ? 'bg-primary-container text-on-primary font-bold shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
@@ -182,9 +197,9 @@ export default function Header() {
               >
                 EN
               </button>
-              <span className="text-outline text-xs mx-0.5">|</span>
+              <span className="text-outline text-[0.65rem] sm:text-xs mx-0.5">|</span>
               <button
-                className={`px-2 sm:px-space-xs py-1 sm:py-space-2xs rounded-full font-label-sm text-xs sm:text-label-sm transition-all cursor-pointer active:scale-95 ${
+                className={`px-1.5 sm:px-space-xs py-0.5 sm:py-space-2xs rounded-full font-label-sm text-[0.65rem] sm:text-label-sm transition-all cursor-pointer active:scale-95 ${
                   language === 'hi'
                     ? 'bg-primary-container text-on-primary font-bold shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
@@ -198,7 +213,7 @@ export default function Header() {
 
             {/* Alerts Notification Button */}
             <button
-              className="relative flex items-center justify-center p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer active:scale-95"
+              className="relative flex items-center justify-center p-1.5 sm:p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer active:scale-95"
               onClick={() => {
                 if (mode === 'kisan') setActiveKisanTab('alerts');
                 else setActiveExplorerTab('alerts-center');
@@ -206,15 +221,15 @@ export default function Header() {
               type="button"
               aria-label="View Active Alerts"
             >
-              <span className="material-symbols-outlined">notifications</span>
+              <span className="material-symbols-outlined text-[1.25rem] sm:text-[1.5rem]">notifications</span>
               {alerts.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-secondary animate-ping"></span>
+                <span className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-secondary animate-ping"></span>
               )}
             </button>
 
             {/* Ramesh Patel Profile */}
             <div
-              className="flex items-center gap-1.5 pl-1 cursor-pointer"
+              className="hidden sm:flex items-center gap-1.5 pl-1 cursor-pointer"
               onClick={() => {
                 if (mode === 'kisan') setActiveKisanTab('land');
               }}
@@ -320,6 +335,13 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      {/* Mobile Navigation Drawer */}
+      <MobileNavDrawer
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        onOpenLocationModal={() => setShowLocationModal(true)}
+      />
     </>
   );
 }

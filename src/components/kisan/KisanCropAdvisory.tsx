@@ -269,7 +269,7 @@ export default function KisanCropAdvisory() {
             <div
               key={crop.id}
               onClick={() => setSelectedCrop(crop)}
-              className="min-w-[300px] md:min-w-[360px] max-w-[380px] flex-1 snap-start bg-surface-container-lowest rounded-3xl p-space-md shadow-sm border border-surface-container-high flex flex-col justify-between hover:shadow-md transition-all group cursor-pointer active:scale-[0.99]"
+              className="min-w-[260px] sm:min-w-[320px] md:min-w-[360px] max-w-[380px] flex-1 snap-start bg-surface-container-lowest rounded-3xl p-space-md shadow-sm border border-surface-container-high flex flex-col justify-between hover:shadow-md transition-all group cursor-pointer active:scale-[0.99]"
             >
               <div className="flex flex-col">
                 <div className="flex items-start justify-between gap-space-xs mb-space-xs">

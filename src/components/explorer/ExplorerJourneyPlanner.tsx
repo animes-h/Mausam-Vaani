@@ -936,7 +936,7 @@ export default function ExplorerJourneyPlanner() {
           </div>
 
           {/* Insertion Target Switcher Pill */}
-          <div className="flex items-center gap-1 bg-surface-container p-1 rounded-2xl self-start lg:self-auto text-xs font-bold shrink-0">
+          <div className="flex flex-wrap items-center gap-1 bg-surface-container p-1 rounded-2xl self-start lg:self-auto text-xs font-bold">
             <span className="text-[0.7rem] text-on-surface-variant px-2 hidden sm:inline">
               {language === 'hi' ? 'चिप लक्ष्य:' : 'Insert into:'}
             </span>

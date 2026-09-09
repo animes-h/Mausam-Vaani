@@ -43,60 +43,71 @@ export default function ExplorerPage() {
       </div>
 
       {/* Mobile Sticky Bottom Bar */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 bg-surface-container-lowest/95 backdrop-blur-lg border-t border-surface-container-high py-2 px-3 z-40 flex items-center justify-around shadow-lg">
+      <div className="md:hidden fixed bottom-0 inset-x-0 bg-surface-container-lowest/95 backdrop-blur-lg border-t border-surface-container-high py-1.5 px-2 z-40 flex items-center justify-around shadow-lg">
         <button
           onClick={() => setActiveExplorerTab('current-weather')}
-          className={`flex flex-col items-center gap-0.5 min-w-[56px] min-h-[48px] justify-center ${
+          className={`flex flex-col items-center gap-0.5 min-w-[48px] min-h-[46px] justify-center ${
             activeExplorerTab === 'current-weather' ? 'text-primary font-bold' : 'text-on-surface-variant'
           }`}
           type="button"
         >
-          <span className="material-symbols-outlined text-[1.5rem]">thermostat</span>
-          <span className="text-[0.65rem]">Weather</span>
+          <span className="material-symbols-outlined text-[1.35rem]">thermostat</span>
+          <span className="text-[0.6rem]">Weather</span>
         </button>
 
         <button
           onClick={() => setActiveExplorerTab('trends')}
-          className={`flex flex-col items-center gap-0.5 min-w-[56px] min-h-[48px] justify-center ${
+          className={`flex flex-col items-center gap-0.5 min-w-[48px] min-h-[46px] justify-center ${
             activeExplorerTab === 'trends' ? 'text-primary font-bold' : 'text-on-surface-variant'
           }`}
           type="button"
         >
-          <span className="material-symbols-outlined text-[1.5rem]">monitoring</span>
-          <span className="text-[0.65rem]">Trends</span>
-        </button>
-
-        <button
-          onClick={() => setActiveExplorerTab('climate-ai')}
-          className="flex flex-col items-center justify-center -mt-5"
-          type="button"
-        >
-          <div className="w-14 h-14 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg active:scale-95">
-            <span className="material-symbols-outlined text-[2rem]">psychology</span>
-          </div>
-          <span className="text-[0.65rem] font-bold text-primary mt-0.5">AI Copilot</span>
+          <span className="material-symbols-outlined text-[1.35rem]">monitoring</span>
+          <span className="text-[0.6rem]">Trends</span>
         </button>
 
         <button
           onClick={() => setActiveExplorerTab('journey')}
-          className={`flex flex-col items-center gap-0.5 min-w-[56px] min-h-[48px] justify-center ${
+          className={`flex flex-col items-center gap-0.5 min-w-[48px] min-h-[46px] justify-center ${
             activeExplorerTab === 'journey' ? 'text-primary font-bold' : 'text-on-surface-variant'
           }`}
           type="button"
         >
-          <span className="material-symbols-outlined text-[1.5rem]">route</span>
-          <span className="text-[0.65rem]">Journey</span>
+          <span className="material-symbols-outlined text-[1.35rem]">route</span>
+          <span className="text-[0.6rem]">Journey</span>
+        </button>
+
+        <button
+          onClick={() => setActiveExplorerTab('climate-ai')}
+          className="flex flex-col items-center justify-center -mt-4 min-w-[48px]"
+          type="button"
+        >
+          <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg active:scale-95">
+            <span className="material-symbols-outlined text-[1.75rem]">psychology</span>
+          </div>
+          <span className="text-[0.6rem] font-bold text-primary mt-0.5">Copilot</span>
+        </button>
+
+        <button
+          onClick={() => setActiveExplorerTab('work-safety')}
+          className={`flex flex-col items-center gap-0.5 min-w-[48px] min-h-[46px] justify-center ${
+            activeExplorerTab === 'work-safety' ? 'text-primary font-bold' : 'text-on-surface-variant'
+          }`}
+          type="button"
+        >
+          <span className="material-symbols-outlined text-[1.35rem]">health_and_safety</span>
+          <span className="text-[0.6rem]">Safety</span>
         </button>
 
         <button
           onClick={() => setActiveExplorerTab('alerts-center')}
-          className={`flex flex-col items-center gap-0.5 min-w-[56px] min-h-[48px] justify-center ${
+          className={`flex flex-col items-center gap-0.5 min-w-[48px] min-h-[46px] justify-center ${
             activeExplorerTab === 'alerts-center' ? 'text-secondary font-bold' : 'text-on-surface-variant'
           }`}
           type="button"
         >
-          <span className="material-symbols-outlined text-[1.5rem]">notifications_active</span>
-          <span className="text-[0.65rem]">Alerts</span>
+          <span className="material-symbols-outlined text-[1.35rem]">notifications_active</span>
+          <span className="text-[0.6rem]">Alerts</span>
         </button>
       </div>
     </div>
