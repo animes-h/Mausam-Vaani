@@ -123,7 +123,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // If under degraded mode, speech is paused per FR-8.2
     if (networkMode === 'degraded') return;
 
-    const speechLang = lang || (language === 'hi' ? 'hi-IN' : 'en-IN');
+    // Detect actual script from text if lang not explicitly provided:
+    // If text contains Devanagari characters, always speak in Hindi ('hi-IN')
+    // If text contains English characters, speak in English ('en-IN')
+    const detectedLang = /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-IN';
+    const speechLang = lang || detectedLang;
+
     SpeechHandler.speak(
       text,
       speechLang,

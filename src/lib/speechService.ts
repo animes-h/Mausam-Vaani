@@ -1,6 +1,45 @@
 // Web Speech API Voice Layer (STT & TTS) + MediaRecorder Audio Resilience
 // Satisfies FR-5.2 and rural accessibility (bilingual voice input/output)
 
+/**
+ * Detects whether a query is primarily Hindi (Devanagari or Hinglish) or English.
+ */
+export function detectQueryLanguage(text: string): 'hi' | 'en' {
+  if (!text || !text.trim()) return 'hi';
+
+  // 1. Devanagari script: Unicode \u0900 - \u097F
+  if (/[\u0900-\u097F]/.test(text)) {
+    return 'hi';
+  }
+
+  const clean = text.toLowerCase().trim();
+
+  // 2. Common Hindi/Hinglish agricultural terms in Latin script
+  const hindiKeywords = [
+    'kya', 'kyun', 'kaise', 'kab', 'kitna', 'kitni', 'kisko', 'kahan',
+    'kal', 'aaj', 'parson', 'pani', 'paani', 'barish', 'barsat', 'badal',
+    'hogi', 'hoga', 'honge', 'rahega', 'rahegi', 'chhidkaw', 'chhidkao',
+    'kheti', 'fasal', 'kisan', 'soya', 'soyabean', 'dhan', 'gehu', 'pyaj',
+    'lahsun', 'kapas', 'mitti', 'urvarak', 'khad', 'sinchai', 'mausam',
+    'namaste', 'batao', 'bataiye', 'kare', 'karein', 'sakte', 'sakta',
+    'dawa', 'keeda', 'rog', 'kheto', 'khet', 'mandee', 'mandi'
+  ];
+
+  const words = clean.split(/[\s,?.!]+/);
+  let hindiMatches = 0;
+  for (const w of words) {
+    if (hindiKeywords.includes(w)) {
+      hindiMatches++;
+    }
+  }
+
+  if (hindiMatches > 0) {
+    return 'hi';
+  }
+
+  return 'en';
+}
+
 export interface StartListeningOptions {
   onResult: (transcript: string, audioBlob?: Blob) => void;
   onInterim?: (interimTranscript: string) => void;
@@ -25,6 +64,10 @@ export class SpeechHandler {
   private static onErrorCallback: ((err: any) => void) | null = null;
   private static onEndCallback: (() => void) | null = null;
   private static onVolumeChangeCallback: ((volume: number) => void) | null = null;
+
+  // TTS utterance management
+  private static currentUtterance: SpeechSynthesisUtterance | null = null;
+  private static resumeInterval: any = null;
 
   // MediaStream and Audio Recording fallback handles
   private static activeMediaStream: MediaStream | null = null;
@@ -288,22 +331,17 @@ export class SpeechHandler {
       recognition.onend = () => {
         console.log('[SpeechHandler] recognition.onend. isListeningActive:', this.isListeningActive, 'cloudBlocked:', this.isCloudSttBlocked);
 
-        if (this.isListeningActive) {
-          if (this.accumulatedTranscript.trim()) {
-            // User finished speaking and recognition completed
-            this.finalizeAndSubmit();
-          } else if (!this.isCloudSttBlocked) {
-            // Restart recognition gracefully after a slight delay to avoid Chrome InvalidStateError
-            setTimeout(() => {
-              if (this.isListeningActive && this.recognitionInstance && !this.isCloudSttBlocked) {
-                try {
-                  this.recognitionInstance.start();
-                } catch (restartErr) {
-                  console.log('[SpeechHandler] Seamless restart deferred:', restartErr);
-                }
+        if (this.isListeningActive && !this.isCloudSttBlocked) {
+          // Seamless restart so user can speak multiple words/sentences without premature cut-off
+          setTimeout(() => {
+            if (this.isListeningActive && this.recognitionInstance && !this.isCloudSttBlocked) {
+              try {
+                this.recognitionInstance.start();
+              } catch (restartErr) {
+                console.log('[SpeechHandler] Seamless restart deferred:', restartErr);
               }
-            }, 350);
-          }
+            }
+          }, 200);
         }
       };
 
@@ -329,9 +367,57 @@ export class SpeechHandler {
   }
 
   /**
+   * Safely flushes buffered audio chunks from MediaRecorder and returns audio Blob.
+   */
+  private static async flushAndGetAudioBlob(): Promise<Blob | undefined> {
+    if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+      if (this.recordedChunks.length > 0) {
+        const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+        return new Blob(this.recordedChunks, { type: mimeType });
+      }
+      return undefined;
+    }
+
+    return new Promise<Blob | undefined>((resolve) => {
+      const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+
+      const timeout = setTimeout(() => {
+        if (this.recordedChunks.length > 0) {
+          resolve(new Blob(this.recordedChunks, { type: mimeType }));
+        } else {
+          resolve(undefined);
+        }
+      }, 400);
+
+      this.mediaRecorder!.onstop = () => {
+        clearTimeout(timeout);
+        if (this.recordedChunks.length > 0) {
+          resolve(new Blob(this.recordedChunks, { type: mimeType }));
+        } else {
+          resolve(undefined);
+        }
+      };
+
+      try {
+        if (this.mediaRecorder!.state === 'recording') {
+          this.mediaRecorder!.requestData();
+        }
+        this.mediaRecorder!.stop();
+      } catch {
+        clearTimeout(timeout);
+        if (this.recordedChunks.length > 0) {
+          resolve(new Blob(this.recordedChunks, { type: mimeType }));
+        } else {
+          resolve(undefined);
+        }
+      }
+    });
+  }
+
+  /**
    * Finalize and deliver accumulated transcript and recorded audio blob
    */
-  private static finalizeAndSubmit(): void {
+  private static async finalizeAndSubmit(): Promise<void> {
     if (!this.isListeningActive) return;
     this.isListeningActive = false;
 
@@ -347,18 +433,7 @@ export class SpeechHandler {
       this.recognitionInstance = null;
     }
 
-    // Stop MediaRecorder and build blob
-    let audioBlob: Blob | undefined;
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      try {
-        this.mediaRecorder.stop();
-      } catch (_) {}
-    }
-
-    if (this.recordedChunks.length > 0) {
-      const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
-      audioBlob = new Blob(this.recordedChunks, { type: mimeType });
-    }
+    const audioBlob = await this.flushAndGetAudioBlob();
 
     // Release microphone hardware tracks
     this.releaseMediaStream();
@@ -376,7 +451,7 @@ export class SpeechHandler {
    * Explicitly stop listening.
    * If submitIfText is true, submits whatever has been captured so far.
    */
-  static stopListening(submitIfText: boolean = true): { text: string; audioBlob?: Blob } {
+  static async stopListening(submitIfText: boolean = true): Promise<{ text: string; audioBlob?: Blob }> {
     const wasActive = this.isListeningActive;
     this.isListeningActive = false;
 
@@ -391,18 +466,7 @@ export class SpeechHandler {
       this.recognitionInstance = null;
     }
 
-    let audioBlob: Blob | undefined;
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      try {
-        this.mediaRecorder.stop();
-      } catch (_) {}
-    }
-
-    if (this.recordedChunks.length > 0) {
-      const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
-      audioBlob = new Blob(this.recordedChunks, { type: mimeType });
-    }
-
+    const audioBlob = await this.flushAndGetAudioBlob();
     this.releaseMediaStream();
 
     const text = this.accumulatedTranscript.trim();
@@ -441,15 +505,14 @@ export class SpeechHandler {
 
   static speak(
     text: string,
-    lang: 'hi-IN' | 'en-IN' = 'hi-IN',
+    lang?: 'hi-IN' | 'en-IN',
     onStart?: () => void,
     onEnd?: () => void,
     rate?: number
   ): void {
     if (!this.isSynthesisSupported()) return;
 
-    // Cancel active utterance
-    window.speechSynthesis.cancel();
+    this.stopSpeaking();
 
     // Clean text of markdown formatting (asterisks, hashtags, backticks, emojis)
     const cleanText = text
@@ -457,17 +520,36 @@ export class SpeechHandler {
       .replace(/https?:\/\/\S+/g, '')
       .trim();
 
+    if (!cleanText) return;
+
+    // Detect actual language from the text content:
+    // If text contains Devanagari characters, it is Hindi!
+    const isHindiText = /[\u0900-\u097F]/.test(cleanText);
+    const targetLang: 'hi-IN' | 'en-IN' = lang || (isHindiText ? 'hi-IN' : 'en-IN');
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = lang;
-    utterance.rate = rate !== undefined ? rate : (lang === 'hi-IN' ? 0.95 : 1.0);
+    utterance.lang = targetLang;
+    utterance.rate = rate !== undefined ? rate : (targetLang === 'hi-IN' ? 0.95 : 1.0);
     utterance.pitch = 1.0;
 
     // Pick best matching voice
     const voices = window.speechSynthesis.getVoices();
-    const matchedVoice = voices.find(v => v.lang === lang || v.lang.startsWith(lang.substring(0, 2)));
+    let matchedVoice: SpeechSynthesisVoice | undefined;
+
+    if (targetLang === 'hi-IN') {
+      // Prioritize Hindi voice
+      matchedVoice = voices.find(v => v.lang === 'hi-IN' || v.lang === 'hi' || /hindi/i.test(v.name) || /हिन्दी/i.test(v.name));
+    } else {
+      // Prioritize Indian English, then standard English
+      matchedVoice = voices.find(v => v.lang === 'en-IN' || (/india/i.test(v.name) && v.lang.startsWith('en')))
+        || voices.find(v => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang.startsWith('en'));
+    }
+
     if (matchedVoice) {
       utterance.voice = matchedVoice;
     }
+
+    this.currentUtterance = utterance;
 
     utterance.onstart = () => {
       this.isSpeaking = true;
@@ -476,21 +558,46 @@ export class SpeechHandler {
 
     utterance.onend = () => {
       this.isSpeaking = false;
+      this.currentUtterance = null;
+      if (this.resumeInterval) {
+        clearInterval(this.resumeInterval);
+        this.resumeInterval = null;
+      }
       if (onEnd) onEnd();
     };
 
-    utterance.onerror = () => {
+    utterance.onerror = (e) => {
+      console.warn('[SpeechHandler] TTS utterance error:', e);
       this.isSpeaking = false;
+      this.currentUtterance = null;
+      if (this.resumeInterval) {
+        clearInterval(this.resumeInterval);
+        this.resumeInterval = null;
+      }
       if (onEnd) onEnd();
     };
+
+    // Chrome keeps utterances from freezing on longer responses
+    if (this.resumeInterval) clearInterval(this.resumeInterval);
+    this.resumeInterval = setInterval(() => {
+      if (typeof window !== 'undefined' && window.speechSynthesis?.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 10000);
 
     window.speechSynthesis.speak(utterance);
   }
 
   static stopSpeaking(): void {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (this.resumeInterval) {
+        clearInterval(this.resumeInterval);
+        this.resumeInterval = null;
+      }
       window.speechSynthesis.cancel();
       this.isSpeaking = false;
+      this.currentUtterance = null;
     }
   }
 }

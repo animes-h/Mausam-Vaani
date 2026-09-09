@@ -2,6 +2,7 @@ import { ChatMessage, LocationInfo, WeatherCurrent } from '@/types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getCachedResponse, setCachedResponse } from './cacheService';
 import { generateContentWithFallback, cleanJsonString } from './geminiHelper';
+import { detectQueryLanguage } from './speechService';
 
 export async function askClimateCopilot(
   userQuery: string,
@@ -10,15 +11,20 @@ export async function askClimateCopilot(
   weather: WeatherCurrent,
   language: 'en' | 'hi' = 'en'
 ): Promise<ChatMessage> {
+  const queryLang = detectQueryLanguage(userQuery);
+
   // Check instant semantic cache (FR-8.3 & NFR-1 target <300ms)
   const cached = getCachedResponse(userQuery);
   if (cached) {
+    const isHi = queryLang === 'hi';
     return {
       id: `cached-${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      text: language === 'hi' ? cached.text : cached.textEn,
+      text: isHi ? cached.text : cached.textEn,
       textHi: cached.text,
+      detectedLanguage: queryLang,
+      spokenResponse: isHi ? cached.text : cached.textEn,
       consensusScore: 98.4,
       modelBadge: 'Cached Instant Inference (<50ms)',
       sources: ['Semantic Knowledge Cache (Pre-verified IMD/ECMWF)'],
@@ -37,20 +43,32 @@ export async function askClimateCopilot(
 
       if (apiRes.ok) {
         const parsed = await apiRes.json();
-        if (parsed && (parsed.text || parsed.textHi)) {
+        if (parsed && (parsed.text || parsed.textHi || parsed.reply)) {
+          const effectiveLang: 'hi' | 'en' = parsed.detectedLanguage || queryLang;
+          const isHi = effectiveLang === 'hi';
+          const primaryText = isHi
+            ? (parsed.textHi || parsed.reply || parsed.text)
+            : (parsed.reply || parsed.text || parsed.textHi);
+
           const responseMessage: ChatMessage = {
             id: `ai-${Date.now()}`,
             sender: 'assistant',
             timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-            text: language === 'hi' ? parsed.textHi || parsed.text : parsed.text,
-            textHi: parsed.textHi,
+            text: primaryText,
+            textHi: parsed.textHi || parsed.text,
+            detectedLanguage: effectiveLang,
+            spokenResponse: parsed.spokenResponse || primaryText,
             consensusScore: parsed.consensusScore || 96.4,
             modelBadge: parsed.modelBadge || 'Gemini • Multi-Model Grounded',
             sources: ['IMD Doppler Radar Station IND-042', 'Copernicus CDS ERA5 Boundary Layer'],
             verdictCallout: parsed.verdictTitle ? {
               type: parsed.verdictType || 'info',
-              title: parsed.verdictTitle,
-              description: parsed.verdictDesc,
+              title: isHi ? (parsed.verdictTitleHi || parsed.verdictTitle) : (parsed.verdictTitleEn || parsed.verdictTitle),
+              titleEn: parsed.verdictTitleEn || parsed.verdictTitle,
+              titleHi: parsed.verdictTitleHi || parsed.verdictTitle,
+              description: isHi ? (parsed.verdictDescHi || parsed.verdictDesc) : (parsed.verdictDescEn || parsed.verdictDesc),
+              descriptionEn: parsed.verdictDescEn || parsed.verdictDesc,
+              descriptionHi: parsed.verdictDescHi || parsed.verdictDesc,
             } : undefined,
             tableData: parsed.tableData,
           };
@@ -167,12 +185,15 @@ Return ONLY valid JSON.`;
     };
   }
 
+  const isHi = queryLang === 'hi';
   const response: ChatMessage = {
     id: `resp-${Date.now()}`,
     sender: 'assistant',
     timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-    text: language === 'hi' ? textHi : textEn,
+    text: isHi ? textHi : textEn,
     textHi,
+    detectedLanguage: queryLang,
+    spokenResponse: isHi ? textHi : textEn,
     consensusScore: 96.4,
     modelBadge: 'ECMWF-IFS + IMD Radar Consensus',
     sources: ['IMD Doppler Radar Station IND-042', 'ECMWF 0.1° High-Res Grid'],
@@ -224,20 +245,32 @@ export async function askClimateCopilotWithAudio(
 
     if (apiRes.ok) {
       const parsed = await apiRes.json();
-      const transcription = parsed.transcription || (language === 'hi' ? 'वॉयस प्रश्न' : 'Voice Query');
+      const detectedLang: 'hi' | 'en' = parsed.detectedLanguage || (language === 'en' ? 'en' : 'hi');
+      const isHi = detectedLang === 'hi';
+      const transcription = parsed.transcription || (isHi ? 'मौसम व फसल प्रश्न' : 'Weather & Crop Query');
+      const primaryText = isHi
+        ? (parsed.textHi || parsed.spokenResponse || parsed.text)
+        : (parsed.text || parsed.spokenResponse || parsed.textHi);
+
       const responseMessage: ChatMessage = {
         id: `ai-voice-${Date.now()}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-        text: language === 'hi' ? parsed.textHi || parsed.text : parsed.text,
-        textHi: parsed.textHi,
+        text: primaryText,
+        textHi: parsed.textHi || parsed.text,
+        detectedLanguage: detectedLang,
+        spokenResponse: parsed.spokenResponse || primaryText,
         consensusScore: parsed.consensusScore || 96.5,
         modelBadge: parsed.modelBadge || 'Gemini 3.6 • Voice Grounded',
         sources: ['IMD Doppler Radar Station IND-042', 'Live Acoustic Telemetry'],
         verdictCallout: parsed.verdictTitle ? {
           type: parsed.verdictType || 'info',
-          title: parsed.verdictTitle,
-          description: parsed.verdictDesc,
+          title: isHi ? (parsed.verdictTitleHi || parsed.verdictTitle) : (parsed.verdictTitleEn || parsed.verdictTitle),
+          titleEn: parsed.verdictTitleEn || parsed.verdictTitle,
+          titleHi: parsed.verdictTitleHi || parsed.verdictTitle,
+          description: isHi ? (parsed.verdictDescHi || parsed.verdictDesc) : (parsed.verdictDescEn || parsed.verdictDesc),
+          descriptionEn: parsed.verdictDescEn || parsed.verdictDesc,
+          descriptionHi: parsed.verdictDescHi || parsed.verdictDesc,
         } : undefined,
       };
       return { message: responseMessage, transcription };
@@ -246,8 +279,9 @@ export async function askClimateCopilotWithAudio(
     console.warn('[askClimateCopilotWithAudio] Audio query failed, using fallback:', err);
   }
 
+  const fallbackQuery = language === 'hi' ? 'मौसम व फसल परामर्श' : 'Crop and weather advisory';
   const fallbackMsg = await askClimateCopilot(
-    language === 'hi' ? 'मौसम व फसल परामर्श' : 'Crop and weather advisory',
+    fallbackQuery,
     [],
     location,
     weather,
@@ -255,7 +289,7 @@ export async function askClimateCopilotWithAudio(
   );
   return {
     message: fallbackMsg,
-    transcription: language === 'hi' ? 'मौसम व फसल परामर्श' : 'Crop & Weather Advisory',
+    transcription: fallbackQuery,
   };
 }
 

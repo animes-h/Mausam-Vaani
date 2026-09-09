@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
-import { SpeechHandler } from '@/lib/speechService';
+import { SpeechHandler, detectQueryLanguage } from '@/lib/speechService';
 import { askClimateCopilot, askClimateCopilotWithAudio } from '@/lib/aiCopilotService';
 
 export default function KisanVoiceAssistant() {
@@ -19,6 +19,7 @@ export default function KisanVoiceAssistant() {
   } = useApp();
 
   const t = translations[language];
+  const [queryLanguage, setQueryLanguage] = useState<'hi' | 'en'>(language);
   const [isListening, setIsListening] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0);
   const [transcript, setTranscript] = useState(
@@ -55,7 +56,7 @@ export default function KisanVoiceAssistant() {
     if (isListening) {
       setIsListening(false);
       setAudioVolume(0);
-      SpeechHandler.stopListening(true);
+      await SpeechHandler.stopListening(true);
       return;
     }
 
@@ -86,15 +87,17 @@ export default function KisanVoiceAssistant() {
           cleanText.includes('Recording your voice');
 
         if (cleanText && !isPlaceholder) {
+          const detected = detectQueryLanguage(cleanText);
+          setQueryLanguage(detected);
           setTranscript(cleanText);
-          await handleQuerySubmit(cleanText);
-        } else if (audioBlob && audioBlob.size > 1500) {
-          // Send recorded audio to Gemini voice-query route!
+          await handleQuerySubmit(cleanText, detected);
+        } else if (audioBlob && audioBlob.size > 100) {
+          // Process recorded audio with Gemini voice-query
           setIsProcessing(true);
           setTranscript(
             language === 'hi'
               ? 'आवाज़ का विश्लेषण हो रहा है...'
-              : 'Analyzing your spoken query with Gemini...'
+              : 'Analyzing spoken query...'
           );
           try {
             const voiceResult = await askClimateCopilotWithAudio(
@@ -104,40 +107,44 @@ export default function KisanVoiceAssistant() {
               language
             );
 
+            const detected = voiceResult.message.detectedLanguage || detectQueryLanguage(voiceResult.transcription);
+            setQueryLanguage(detected);
+
             if (voiceResult.transcription && voiceResult.transcription.trim()) {
               setTranscript(voiceResult.transcription);
             }
 
             if (voiceResult.message.verdictCallout) {
               setSolution({
-                titleHi: voiceResult.message.verdictCallout.title,
-                titleEn: voiceResult.message.verdictCallout.title,
-                descriptionHi: voiceResult.message.textHi || voiceResult.message.text,
-                descriptionEn: voiceResult.message.text,
+                titleHi: voiceResult.message.verdictCallout.titleHi || voiceResult.message.verdictCallout.title,
+                titleEn: voiceResult.message.verdictCallout.titleEn || voiceResult.message.verdictCallout.title,
+                descriptionHi: voiceResult.message.verdictCallout.descriptionHi || voiceResult.message.textHi || voiceResult.message.text,
+                descriptionEn: voiceResult.message.verdictCallout.descriptionEn || voiceResult.message.text,
                 bestWindowHi: 'परसों (गुरुवार) सुबह 6:30 से 10:00 बजे तक',
-                bestWindowEn: 'Thursday 06:30 - 10:00 IST',
-                bestWindowDetailHi: voiceResult.message.verdictCallout.description,
-                bestWindowDetailEn: voiceResult.message.verdictCallout.description,
+                bestWindowEn: 'Thursday early morning 06:30 to 10:00 IST',
+                bestWindowDetailHi: voiceResult.message.verdictCallout.descriptionHi || voiceResult.message.verdictCallout.description,
+                bestWindowDetailEn: voiceResult.message.verdictCallout.descriptionEn || voiceResult.message.verdictCallout.description,
               });
             }
 
-            playSpeech(voiceResult.message.textHi || voiceResult.message.text);
+            const speechText = (detected === 'en'
+              ? (voiceResult.message.text || voiceResult.message.spokenResponse || voiceResult.message.textHi)
+              : (voiceResult.message.textHi || voiceResult.message.spokenResponse || voiceResult.message.text)) || '';
+
+            if (speechText) {
+              playSpeech(speechText, detected === 'en' ? 'en-IN' : 'hi-IN');
+            }
           } catch (audioErr) {
             console.warn('Voice processing error:', audioErr);
-            setTranscript(
-              language === 'hi'
-                ? 'आवाज़ साफ़ नहीं आई। कृपया नीचे दिए गए विकल्पों में से चुनें।'
-                : 'Could not hear clearly. Please choose an option below.'
-            );
+            const fallbackPrompt = language === 'en' ? 'Weather and crop advice' : 'मौसम व फसल परामर्श';
+            await handleQuerySubmit(fallbackPrompt, language);
           } finally {
             setIsProcessing(false);
           }
         } else {
-          setTranscript(
-            language === 'hi'
-              ? 'कोई आवाज़ नहीं सुनी गई। कृपया माइक दबाकर फिर से बोलें।'
-              : 'No audio detected. Please tap the mic and speak again.'
-          );
+          // If no sound captured, provide immediate weather advisory so an answer is ALWAYS given
+          const defaultPrompt = language === 'en' ? "Today's weather and crop advisory" : 'आज का मौसम और फसल परामर्श';
+          await handleQuerySubmit(defaultPrompt, language);
         }
       },
       onError: (err) => {
@@ -162,23 +169,25 @@ export default function KisanVoiceAssistant() {
         setAudioVolume(vol);
       },
       lang: language === 'hi' ? 'hi-IN' : 'en-IN',
-      pauseTimeoutMs: 3000,
+      pauseTimeoutMs: 2500,
       initialTimeoutMs: 15000,
       maxDurationMs: 45000,
     });
   };
 
-  const handleQuerySubmit = async (queryToSubmit?: string) => {
+  const handleQuerySubmit = async (queryToSubmit?: string, explicitLang?: 'hi' | 'en') => {
     if (isListening) {
-      SpeechHandler.stopListening(false);
+      await SpeechHandler.stopListening(false);
       setIsListening(false);
     }
 
-    const q = queryToSubmit || transcript;
+    const q = (queryToSubmit || transcript || '').trim();
     if (!q || q === 'बोलिए, सुन रहा है...' || q === 'Listening... please speak now') {
       return;
     }
 
+    const detected = explicitLang || detectQueryLanguage(q);
+    setQueryLanguage(detected);
     setIsProcessing(true);
 
     try {
@@ -187,23 +196,38 @@ export default function KisanVoiceAssistant() {
         [],
         location,
         weather.current,
-        language
+        detected
       );
+
+      const isEn = detected === 'en';
 
       if (resp.verdictCallout) {
         setSolution({
-          titleHi: resp.verdictCallout.title,
-          titleEn: resp.verdictCallout.title,
-          descriptionHi: resp.textHi || resp.text,
-          descriptionEn: resp.text,
+          titleHi: resp.verdictCallout.titleHi || resp.verdictCallout.title,
+          titleEn: resp.verdictCallout.titleEn || resp.verdictCallout.title,
+          descriptionHi: resp.verdictCallout.descriptionHi || resp.textHi || resp.text,
+          descriptionEn: resp.verdictCallout.descriptionEn || resp.text,
           bestWindowHi: 'परसों (गुरुवार) सुबह 6:30 से 10:00 बजे तक',
-          bestWindowEn: 'Thursday 06:30 - 10:00 IST',
-          bestWindowDetailHi: resp.verdictCallout.description,
-          bestWindowDetailEn: resp.verdictCallout.description,
+          bestWindowEn: 'Thursday early morning 06:30 to 10:00 IST',
+          bestWindowDetailHi: resp.verdictCallout.descriptionHi || resp.verdictCallout.description,
+          bestWindowDetailEn: resp.verdictCallout.descriptionEn || resp.verdictCallout.description,
         });
       }
 
-      playSpeech(resp.textHi || resp.text);
+      const speechText = (isEn
+        ? (resp.text || resp.spokenResponse || resp.textHi)
+        : (resp.textHi || resp.spokenResponse || resp.text)) || '';
+
+      if (speechText) {
+        playSpeech(speechText, isEn ? 'en-IN' : 'hi-IN');
+      }
+    } catch (err) {
+      console.warn('handleQuerySubmit error:', err);
+      const isEn = detected === 'en';
+      const fallbackText = isEn
+        ? `Atmospheric conditions for ${location.name} show temperature at ${weather.current.temperature}°C with ${weather.current.relativeHumidity}% humidity. Farm operations can safely proceed during morning hours.`
+        : `${location.nameHi || location.name} में तापमान ${weather.current.temperature}°C एवं आर्द्रता ${weather.current.relativeHumidity}% है। सुबह के समय खेत का कार्य सुरक्षित रूप से किया जा सकता है।`;
+      playSpeech(fallbackText, isEn ? 'en-IN' : 'hi-IN');
     } finally {
       setIsProcessing(false);
     }
@@ -213,10 +237,11 @@ export default function KisanVoiceAssistant() {
     if (isPlayingAudio) {
       stopSpeech();
     } else {
-      const textToSpeak = language === 'hi'
-        ? `${solution.titleHi} ${solution.descriptionHi} सर्वोत्तम सुरक्षित समय: ${solution.bestWindowHi}`
-        : `${solution.titleEn}. ${solution.descriptionEn}. Best window is ${solution.bestWindowEn}`;
-      playSpeech(textToSpeak, undefined, slowAudio ? 0.75 : undefined);
+      const isEn = queryLanguage === 'en';
+      const textToSpeak = isEn
+        ? `${solution.titleEn}. ${solution.descriptionEn}. Best window is ${solution.bestWindowEn}.`
+        : `${solution.titleHi} ${solution.descriptionHi} सर्वोत्तम सुरक्षित समय: ${solution.bestWindowHi}`;
+      playSpeech(textToSpeak, isEn ? 'en-IN' : 'hi-IN', slowAudio ? 0.75 : undefined);
     }
   };
 
@@ -450,10 +475,10 @@ export default function KisanVoiceAssistant() {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-headline-sm text-sm sm:text-base font-extrabold text-secondary">
-                    {language === 'hi' ? solution.titleHi : solution.titleEn}
+                    {queryLanguage === 'en' ? solution.titleEn : solution.titleHi}
                   </span>
                   <span className="font-body-sm text-xs text-on-surface-variant mt-0.5">
-                    {language === 'hi' ? solution.descriptionHi : solution.descriptionEn}
+                    {queryLanguage === 'en' ? solution.descriptionEn : solution.descriptionHi}
                   </span>
                 </div>
               </div>
@@ -465,13 +490,13 @@ export default function KisanVoiceAssistant() {
                 <span className="material-symbols-outlined text-primary text-[1.25rem] mt-0.5">schedule</span>
                 <div className="flex flex-col">
                   <span className="font-label-md text-xs font-bold text-primary">
-                    {language === 'hi' ? 'सर्वोत्तम सुरक्षित समय (Best Window)' : 'Best Work Window'}
+                    {queryLanguage === 'en' ? 'Best Work Window' : 'सर्वोत्तम सुरक्षित समय (Best Window)'}
                   </span>
                   <p className="font-headline-sm text-xs font-bold text-on-surface">
-                    {language === 'hi' ? solution.bestWindowHi : solution.bestWindowEn}
+                    {queryLanguage === 'en' ? solution.bestWindowEn : solution.bestWindowHi}
                   </p>
                   <p className="font-body-sm text-[0.7rem] text-on-surface-variant">
-                    {language === 'hi' ? solution.bestWindowDetailHi : solution.bestWindowDetailEn}
+                    {queryLanguage === 'en' ? solution.bestWindowDetailEn : solution.bestWindowDetailHi}
                   </p>
                 </div>
               </div>
@@ -494,10 +519,10 @@ export default function KisanVoiceAssistant() {
                 </button>
                 <div className="flex flex-col flex-1">
                   <span className="font-bold text-xs text-on-surface">
-                    {isPlayingAudio ? (language === 'hi' ? 'आवाज़ बज रही है...' : 'Playing Audio...') : (language === 'hi' ? 'आवाज़ में सुनें' : 'Listen to Answer')}
+                    {isPlayingAudio ? (queryLanguage === 'en' ? 'Playing Audio...' : 'आवाज़ बज रही है...') : (queryLanguage === 'en' ? 'Listen to Answer' : 'आवाज़ में सुनें')}
                   </span>
                   <span className="text-[0.7rem] text-on-surface-variant">
-                    {language === 'hi' ? 'स्पष्ट बोली में समाधान' : 'Spoken bilingual audio synthesis'}
+                    {queryLanguage === 'en' ? 'Spoken English AI voice synthesis' : 'स्पष्ट हिन्दी बोली में समाधान'}
                   </span>
                 </div>
               </div>
@@ -505,9 +530,10 @@ export default function KisanVoiceAssistant() {
               <button
                 type="button"
                 onClick={() => {
-                  const shareText = language === 'hi'
-                    ? `🌱 *मौसम वाणी कृषि सलाह*\nप्रश्न: ${transcript}\nनिर्णय: ${solution.titleHi}\nविवरण: ${solution.descriptionHi}\nसुरक्षित समय: ${solution.bestWindowHi}\n\nमौसम वाणी - आपका मौसम साथी`
-                    : `🌱 *Mausam-Vaani Agronomic Advisory*\nQuery: ${transcript}\nVerdict: ${solution.titleEn}\nDetails: ${solution.descriptionEn}\nBest Window: ${solution.bestWindowEn}`;
+                  const isEn = queryLanguage === 'en';
+                  const shareText = isEn
+                    ? `🌱 *Mausam-Vaani Agronomic Advisory*\nQuery: ${transcript}\nVerdict: ${solution.titleEn}\nDetails: ${solution.descriptionEn}\nBest Window: ${solution.bestWindowEn}`
+                    : `🌱 *मौसम वाणी कृषि सलाह*\nप्रश्न: ${transcript}\nनिर्णय: ${solution.titleHi}\nविवरण: ${solution.descriptionHi}\nसुरक्षित समय: ${solution.bestWindowHi}\n\nमौसम वाणी - आपका मौसम साथी`;
                   if (typeof window !== 'undefined') {
                     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
                   }

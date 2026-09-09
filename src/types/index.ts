@@ -182,6 +182,8 @@ export interface ChatMessage {
   timestamp: string;
   text: string;
   textHi?: string;
+  detectedLanguage?: 'hi' | 'en';
+  spokenResponse?: string;
   consensusScore?: number;
   modelBadge?: string;
   sources?: string[];
@@ -189,6 +191,10 @@ export interface ChatMessage {
   verdictCallout?: {
     type: 'warning' | 'info' | 'success';
     title: string;
+    titleEn?: string;
+    titleHi?: string;
     description: string;
+    descriptionEn?: string;
+    descriptionHi?: string;
   };
 }

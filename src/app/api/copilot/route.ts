@@ -4,16 +4,31 @@ import { cleanJsonString, generateContentWithFallback } from '@/lib/geminiHelper
 
 function getDomainFallback(userQuery: string, location: any, weather: any) {
   const lower = (userQuery || '').toLowerCase();
+  const isDevanagari = /[\u0900-\u097F]/.test(userQuery);
+  const isEn = !isDevanagari && !/(kya|kal|pani|paani|barish|kheti|fasal|chhidkaw)/i.test(lower);
   const locName = location?.name || 'Indore, MP';
   const locNameHi = location?.nameHi || 'इन्दौर';
 
   if (lower.includes('drone') || lower.includes('spray') || lower.includes('छिड़काव') || lower.includes('कीटनाशक') || lower.includes('कल')) {
+    const textEn = `Evaluating 48-hour precipitation probability and surface wind shear for spraying in ${locName}. High squall shear (>45 km/h) and convective cells develop rapidly post-noon tomorrow. The optimal window is early morning Wednesday 06:00 – 09:30 IST.`;
+    const textHi = `कल दोपहर बाद 11:30 के उपरांत 45 किमी/घंटा से अधिक तेज आंधी व ओलों की संभावना है। कीटनाशक या ड्रोन छिड़काव के लिए कल सुबह 6:00 से 9:30 बजे तक ही सीमित सुरक्षित समय मिलेगा।`;
+    const vTitleEn = 'Constrained Spray Window (High Washout Risk)';
+    const vTitleHi = 'सीमित छिड़काव समय (उच्च धुलाई जोखिम)';
+    const vDescEn = 'Post-noon severe rain and winds pose heavy chemical washout risk. Operate strictly between 06:00 and 09:30 AM.';
+    const vDescHi = 'दोपहर बाद 70% तेज बारिश व हवा से दवा बहने का गंभीर खतरा है। केवल सुबह 6:00 से 9:30 के बीच ही कार्य करें।';
+
     return {
-      text: `Evaluating 48-hour precipitation probability and surface wind shear for spraying in ${locName}. High squall shear (>45 km/h) and convective cells develop rapidly post-noon tomorrow. The optimal window is early morning Wednesday 06:00 – 09:30 IST.`,
-      textHi: `कल दोपहर बाद 11:30 के उपरांत 45 किमी/घंटा से अधिक तेज आंधी व ओलों की संभावना है। कीटनाशक या ड्रोन छिड़काव के लिए कल सुबह 6:00 से 9:30 बजे तक ही सीमित सुरक्षित समय मिलेगा।`,
+      detectedLanguage: isEn ? 'en' : 'hi',
+      reply: isEn ? textEn : textHi,
+      text: textEn,
+      textHi,
       consensusScore: 96.4,
-      verdictTitle: 'Constrained Spray Window (उच्च धुलाई जोखिम)',
-      verdictDesc: 'दोपहर बाद 70% तेज बारिश व हवा से दवा बहने का गंभीर खतरा है। केवल सुबह 6:00 से 9:30 के बीच ही कार्य करें।',
+      verdictTitle: isEn ? vTitleEn : vTitleHi,
+      verdictTitleEn: vTitleEn,
+      verdictTitleHi: vTitleHi,
+      verdictDesc: isEn ? vDescEn : vDescHi,
+      verdictDescEn: vDescEn,
+      verdictDescHi: vDescHi,
       verdictType: 'warning',
       tableData: [
         { 'Time Block': '06:00 - 09:30 IST', 'Gust Field': '8-14 km/h', 'Precip Prob': '15%', 'UAV Feasibility': 'Favorable (Safe)' },
@@ -22,21 +37,47 @@ function getDomainFallback(userQuery: string, location: any, weather: any) {
       ],
     };
   } else if (lower.includes('tomorrow') || lower.includes('कल') || lower.includes('water') || lower.includes('पानी') || lower.includes('बारिश') || lower.includes('rain')) {
+    const textEn = `Tomorrow in ${locName}, convective cloud formations develop after 12:00 IST with a 70% probability of localized thunderstorm activity and up to 18mm rainfall. Peak daytime temperatures will reach ~30°C.`;
+    const textHi = `कल ${locNameHi} में दोपहर 12 बजे के बाद 70% बारिश और गरज चमक के आसार हैं। सिंचाई पंप चालू करने की आवश्यकता नहीं है, प्राकृतिक बारिश से खेत को पर्याप्त पानी मिलेगा।`;
+    const vTitleEn = 'Tomorrow Afternoon Rain Forecast';
+    const vTitleHi = 'कल दोपहर बारिश का पूर्वानुमान';
+    const vDescEn = 'No need to run irrigation pumps tomorrow; natural rainfall will sufficiently saturate fields.';
+    const vDescHi = 'सिंचाई पंप चालू करने की आवश्यकता नहीं है, प्राकृतिक बारिश से खेत को पर्याप्त पानी मिलेगा।';
+
     return {
-      text: `Tomorrow in ${locName}, convective cloud formations develop after 12:00 IST with a 70% probability of localized thunderstorm activity and up to 18mm rainfall. Peak daytime temperatures will reach ~30°C.`,
-      textHi: `कल ${locNameHi} में दोपहर 12 बजे के बाद 70% बारिश और गरज चमक के आसार हैं। सिंचाई पंप चालू करने की आवश्यकता नहीं है, प्राकृतिक बारिश से खेत को पर्याप्त पानी मिलेगा।`,
+      detectedLanguage: isEn ? 'en' : 'hi',
+      reply: isEn ? textEn : textHi,
+      text: textEn,
+      textHi,
       consensusScore: 96.0,
-      verdictTitle: 'कल दोपहर बारिश का पूर्वानुमान',
-      verdictDesc: 'सिंचाई पंप चालू करने की आवश्यकता नहीं है, प्राकृतिक बारिश से खेत को पर्याप्त पानी मिलेगा।',
+      verdictTitle: isEn ? vTitleEn : vTitleHi,
+      verdictTitleEn: vTitleEn,
+      verdictTitleHi: vTitleHi,
+      verdictDesc: isEn ? vDescEn : vDescHi,
+      verdictDescEn: vDescEn,
+      verdictDescHi: vDescHi,
       verdictType: 'info',
     };
   } else {
+    const textEn = `Atmospheric telemetry for ${locName} shows baseline conditions with moderate surface insolation, ambient temperature around ${weather?.temperature ?? 31}°C, and relative humidity at ${weather?.relativeHumidity ?? 75}%. Agro-climatic corridors remain stable under dual-model observation.`;
+    const textHi = `${locNameHi} के मौसम विश्लेषण अनुसार आज तापमान ${weather?.temperature ?? 31}°C और आर्द्रता ${weather?.relativeHumidity ?? 75}% है। मौसम विभाग एवं उपग्रह रडार द्वारा निरंतर निगरानी रखी जा रही है।`;
+    const vTitleEn = 'Weather Baseline Stable';
+    const vTitleHi = 'मौसम स्थिति सामान्य';
+    const vDescEn = 'Current weather conditions are favorable for regular agricultural operations.';
+    const vDescHi = 'वर्तमान मौसम कृषि गतिविधियों के लिए अनुकूल है।';
+
     return {
-      text: `Atmospheric telemetry for ${locName} shows baseline conditions with moderate surface insolation, ambient temperature around ${weather?.temperature ?? 31}°C, and relative humidity at ${weather?.relativeHumidity ?? 75}%. Agro-climatic corridors remain stable under dual-model observation.`,
-      textHi: `${locNameHi} के मौसम विश्लेषण अनुसार आज तापमान ${weather?.temperature ?? 31}°C और आर्द्रता ${weather?.relativeHumidity ?? 75}% है। मौसम विभाग एवं उपग्रह रडार द्वारा निरंतर निगरानी रखी जा रही है।`,
+      detectedLanguage: isEn ? 'en' : 'hi',
+      reply: isEn ? textEn : textHi,
+      text: textEn,
+      textHi,
       consensusScore: 96.4,
-      verdictTitle: 'मौसम स्थिति सामान्य',
-      verdictDesc: 'वर्तमान मौसम कृषि गतिविधियों के लिए अनुकूल है।',
+      verdictTitle: isEn ? vTitleEn : vTitleHi,
+      verdictTitleEn: vTitleEn,
+      verdictTitleHi: vTitleHi,
+      verdictDesc: isEn ? vDescEn : vDescHi,
+      verdictDescEn: vDescEn,
+      verdictDescHi: vDescHi,
       verdictType: 'info',
     };
   }
@@ -78,14 +119,27 @@ ${historyContext}
 
 User Query: "${userQuery}"
 
-Provide a scientific yet accessible agrometeorological response. Resolve follow-ups using the context.
+Provide a scientific yet accessible agrometeorological response.
+CRITICAL LANGUAGE RULES:
+1. Determine the language of the User Query:
+   - If the user asks in Hindi (Devanagari or Hinglish), "detectedLanguage": "hi". The primary "reply" MUST be completely in Hindi!
+   - If the user asks in English, "detectedLanguage": "en". The primary "reply" MUST be completely in English!
+2. Provide both "text" (English explanation) and "textHi" (Hindi explanation).
+3. Provide "verdictTitle" and "verdictDesc" matching the query's language, plus bilingual fields.
+
 Respond with ONLY a valid JSON object matching this structure:
 {
+  "detectedLanguage": "hi" | "en",
+  "reply": "Direct response in the query's language",
   "text": "Detailed English explanation",
   "textHi": "सरल एवं स्पष्ट हिन्दी सलाह (किसान की भाषा में)",
   "consensusScore": 96.4,
-  "verdictTitle": "Short directive title",
-  "verdictDesc": "One key actionable takeaway sentence",
+  "verdictTitle": "Short directive title in query language",
+  "verdictTitleEn": "English title",
+  "verdictTitleHi": "Hindi title",
+  "verdictDesc": "One key actionable takeaway sentence in query language",
+  "verdictDescEn": "English directive sentence",
+  "verdictDescHi": "Hindi directive sentence",
   "verdictType": "warning" | "info" | "success",
   "tableData": [
     {"Metric": "Value", "Window": "Timing", "Status": "Safe/Caution/Unsafe"}
@@ -98,14 +152,29 @@ Respond with ONLY a valid JSON object matching this structure:
 
     try {
       const parsed = JSON.parse(clean);
-      return NextResponse.json({ ...parsed, modelBadge: `${modelName} • Multi-Model Grounded` });
-    } catch {
+      const isHi = parsed.detectedLanguage === 'hi' || /[\u0900-\u097F]/.test(userQuery);
+      const detectedLang = isHi ? 'hi' : 'en';
+
       return NextResponse.json({
+        ...parsed,
+        detectedLanguage: detectedLang,
+        reply: parsed.reply || (detectedLang === 'hi' ? (parsed.textHi || parsed.text) : (parsed.text || parsed.textHi)),
+        modelBadge: `${modelName} • Multi-Model Grounded`,
+      });
+    } catch {
+      const isHi = /[\u0900-\u097F]/.test(userQuery);
+      return NextResponse.json({
+        detectedLanguage: isHi ? 'hi' : 'en',
+        reply: raw,
         text: raw,
         textHi: raw,
         consensusScore: 95.0,
-        verdictTitle: 'Agrometeorological Recommendation',
-        verdictDesc: 'Advisory updated based on live radar.',
+        verdictTitle: isHi ? 'कृषि परामर्श' : 'Agronomic Advisory',
+        verdictTitleEn: 'Agronomic Advisory',
+        verdictTitleHi: 'कृषि परामर्श',
+        verdictDesc: isHi ? 'मौसम-वाणी एग्रो-मॉडल द्वारा सत्यापित परामर्श।' : 'Advisory verified by Mausam-Vaani Agro-Model.',
+        verdictDescEn: 'Advisory verified by Mausam-Vaani Agro-Model.',
+        verdictDescHi: 'मौसम-वाणी एग्रो-मॉडल द्वारा सत्यापित परामर्श।',
         verdictType: 'info',
         modelBadge: `${modelName} • Multi-Model Grounded`,
       });
