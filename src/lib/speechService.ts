@@ -14,27 +14,41 @@ export function detectQueryLanguage(text: string): 'hi' | 'en' {
 
   const clean = text.toLowerCase().trim();
 
-  // 2. Common Hindi/Hinglish agricultural terms in Latin script
+  // 2. Comprehensive Hindi / Hinglish keywords
   const hindiKeywords = [
-    'kya', 'kyun', 'kaise', 'kab', 'kitna', 'kitni', 'kisko', 'kahan',
-    'kal', 'aaj', 'parson', 'pani', 'paani', 'barish', 'barsat', 'badal',
-    'hogi', 'hoga', 'honge', 'rahega', 'rahegi', 'chhidkaw', 'chhidkao',
-    'kheti', 'fasal', 'kisan', 'soya', 'soyabean', 'dhan', 'gehu', 'pyaj',
-    'lahsun', 'kapas', 'mitti', 'urvarak', 'khad', 'sinchai', 'mausam',
-    'namaste', 'batao', 'bataiye', 'kare', 'karein', 'sakte', 'sakta',
-    'dawa', 'keeda', 'rog', 'kheto', 'khet', 'mandee', 'mandi'
+    // Question & interrogatives
+    'kya', 'kyun', 'kyu', 'kaise', 'kaisa', 'kaisi', 'kab', 'kahan', 'kaha',
+    'kitna', 'kitni', 'kitne', 'kaun', 'kaunsa', 'kaunsi', 'kis', 'kisko', 'kisse',
+    // Time & calendar
+    'kal', 'aaj', 'parso', 'parson', 'tarso', 'subah', 'dopahar', 'shaam', 'sham', 'raat',
+    'hafte', 'mahine', 'samay', 'waqt', 'din',
+    // Weather & meteorology
+    'pani', 'paani', 'barish', 'barsat', 'badal', 'hava', 'hawa', 'aandhi', 'toofan',
+    'dhoop', 'thand', 'sardi', 'garmi', 'mausam', 'tapman', 'kohra', 'ole', 'gira', 'girne',
+    'hogi', 'hoga', 'honge', 'rahega', 'rahegi', 'rahenge', 'aayegi', 'aayega', 'padega', 'padegi',
+    // Agriculture & farming
+    'kheti', 'fasal', 'faslo', 'kisan', 'kisano', 'soya', 'soyabean', 'dhan', 'gehu', 'pyaj',
+    'lahsun', 'kapas', 'mitti', 'urvarak', 'khad', 'sinchai', 'dawa', 'dawai', 'keeda', 'keede',
+    'rog', 'bimari', 'kheto', 'khet', 'mandee', 'mandi', 'chhidkaw', 'chhidkao', 'chhidkav',
+    'buwai', 'katai', 'beej', 'rakba', 'bhav', 'daam', 'upaj',
+    // Conversational & verbs
+    'namaste', 'namaskar', 'pranam', 'ram', 'bhai', 'sahab', 'ji', 'batao', 'bataiye', 'bolie',
+    'suno', 'kare', 'karein', 'karo', 'karna', 'sakte', 'sakta', 'sakti', 'chahiye',
+    'hai', 'hain', 'hoon', 'tha', 'thi', 'the', 'nahi', 'mat', 'theek', 'achha', 'bahut', 'jyada', 'kam'
   ];
 
-  const words = clean.split(/[\s,?.!]+/);
-  let hindiMatches = 0;
+  const words = clean.split(/[\s,?.!;:()"\-]+/);
   for (const w of words) {
     if (hindiKeywords.includes(w)) {
-      hindiMatches++;
+      return 'hi';
     }
   }
 
-  if (hindiMatches > 0) {
-    return 'hi';
+  // Also check common multi-word sub-phrases
+  for (const kw of hindiKeywords) {
+    if (kw.length >= 3 && clean.includes(kw)) {
+      return 'hi';
+    }
   }
 
   return 'en';
@@ -65,9 +79,10 @@ export class SpeechHandler {
   private static onEndCallback: (() => void) | null = null;
   private static onVolumeChangeCallback: ((volume: number) => void) | null = null;
 
-  // TTS utterance management
+  // TTS utterance & audio element management
   private static currentUtterance: SpeechSynthesisUtterance | null = null;
   private static resumeInterval: any = null;
+  private static activeAudioElement: HTMLAudioElement | null = null;
 
   // MediaStream and Audio Recording fallback handles
   private static activeMediaStream: MediaStream | null = null;
@@ -503,6 +518,18 @@ export class SpeechHandler {
     return this.isListeningActive;
   }
 
+  static hasHindiVoice(): boolean {
+    if (typeof window === 'undefined' || !this.isSynthesisSupported()) return false;
+    const voices = window.speechSynthesis.getVoices();
+    return voices.some(
+      (v) =>
+        v.lang === 'hi-IN' ||
+        v.lang === 'hi' ||
+        v.lang.startsWith('hi-') ||
+        /hindi|हिन्दी/i.test(v.name)
+    );
+  }
+
   static speak(
     text: string,
     lang?: 'hi-IN' | 'en-IN',
@@ -510,11 +537,9 @@ export class SpeechHandler {
     onEnd?: () => void,
     rate?: number
   ): void {
-    if (!this.isSynthesisSupported()) return;
-
     this.stopSpeaking();
 
-    // Clean text of markdown formatting (asterisks, hashtags, backticks, emojis)
+    // Clean text of markdown formatting (asterisks, hashtags, backticks, emojis, URLs)
     const cleanText = text
       .replace(/[*#_`~]/g, '')
       .replace(/https?:\/\/\S+/g, '')
@@ -523,73 +548,197 @@ export class SpeechHandler {
     if (!cleanText) return;
 
     // Detect actual language from the text content:
-    // If text contains Devanagari characters, it is Hindi!
-    const isHindiText = /[\u0900-\u097F]/.test(cleanText);
-    const targetLang: 'hi-IN' | 'en-IN' = lang || (isHindiText ? 'hi-IN' : 'en-IN');
+    // If text contains ANY Devanagari characters, it is 100% Hindi and MUST be spoken in Hindi!
+    const isDevanagari = /[\u0900-\u097F]/.test(cleanText);
+    const targetLang: 'hi-IN' | 'en-IN' = isDevanagari ? 'hi-IN' : (lang || 'en-IN');
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = targetLang;
-    utterance.rate = rate !== undefined ? rate : (targetLang === 'hi-IN' ? 0.95 : 1.0);
-    utterance.pitch = 1.0;
-
-    // Pick best matching voice
-    const voices = window.speechSynthesis.getVoices();
-    let matchedVoice: SpeechSynthesisVoice | undefined;
-
+    // 1. If Hindi:
     if (targetLang === 'hi-IN') {
-      // Prioritize Hindi voice
-      matchedVoice = voices.find(v => v.lang === 'hi-IN' || v.lang === 'hi' || /hindi/i.test(v.name) || /हिन्दी/i.test(v.name));
+      const voices =
+        typeof window !== 'undefined' && this.isSynthesisSupported()
+          ? window.speechSynthesis.getVoices()
+          : [];
+      const matchedHindiVoice = voices.find(
+        (v) =>
+          v.lang === 'hi-IN' ||
+          v.lang === 'hi' ||
+          v.lang.startsWith('hi-') ||
+          /hindi|हिन्दी/i.test(v.name)
+      );
+
+      // If browser has a native Hindi voice, use SpeechSynthesisUtterance
+      if (matchedHindiVoice && this.isSynthesisSupported()) {
+        try {
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          utterance.lang = 'hi-IN';
+          utterance.rate = rate !== undefined ? rate : 0.95;
+          utterance.pitch = 1.0;
+          utterance.voice = matchedHindiVoice;
+
+          this.currentUtterance = utterance;
+
+          utterance.onstart = () => {
+            this.isSpeaking = true;
+            if (onStart) onStart();
+          };
+
+          utterance.onend = () => {
+            this.isSpeaking = false;
+            this.currentUtterance = null;
+            if (this.resumeInterval) {
+              clearInterval(this.resumeInterval);
+              this.resumeInterval = null;
+            }
+            if (onEnd) onEnd();
+          };
+
+          utterance.onerror = (e) => {
+            console.warn('[SpeechHandler] Hindi Web Speech synthesis error, falling back to server TTS:', e);
+            this.stopSpeaking();
+            this.playViaAudioEndpoint(cleanText, 'hi', onStart, onEnd, rate);
+          };
+
+          if (this.resumeInterval) clearInterval(this.resumeInterval);
+          this.resumeInterval = setInterval(() => {
+            if (
+              typeof window !== 'undefined' &&
+              window.speechSynthesis?.speaking &&
+              !window.speechSynthesis.paused
+            ) {
+              window.speechSynthesis.pause();
+              window.speechSynthesis.resume();
+            }
+          }, 10000);
+
+          window.speechSynthesis.speak(utterance);
+          return;
+        } catch (synthErr) {
+          console.warn('[SpeechHandler] Web Speech error, falling back to server TTS:', synthErr);
+        }
+      }
+
+      // If no native Hindi voice is present in the browser or OS (very common on Windows),
+      // play crystal-clear, high-quality Hindi speech via the server-side /api/tts endpoint:
+      this.playViaAudioEndpoint(cleanText, 'hi', onStart, onEnd, rate);
+      return;
+    }
+
+    // 2. Otherwise English:
+    if (this.isSynthesisSupported()) {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'en-IN';
+      utterance.rate = rate !== undefined ? rate : 1.0;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const matchedVoice =
+        voices.find((v) => v.lang === 'en-IN' || (/india/i.test(v.name) && v.lang.startsWith('en'))) ||
+        voices.find((v) => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang.startsWith('en'));
+
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+      }
+
+      this.currentUtterance = utterance;
+
+      utterance.onstart = () => {
+        this.isSpeaking = true;
+        if (onStart) onStart();
+      };
+
+      utterance.onend = () => {
+        this.isSpeaking = false;
+        this.currentUtterance = null;
+        if (this.resumeInterval) {
+          clearInterval(this.resumeInterval);
+          this.resumeInterval = null;
+        }
+        if (onEnd) onEnd();
+      };
+
+      utterance.onerror = (e) => {
+        console.warn('[SpeechHandler] English TTS utterance error, trying audio fallback:', e);
+        this.stopSpeaking();
+        this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate);
+      };
+
+      if (this.resumeInterval) clearInterval(this.resumeInterval);
+      this.resumeInterval = setInterval(() => {
+        if (
+          typeof window !== 'undefined' &&
+          window.speechSynthesis?.speaking &&
+          !window.speechSynthesis.paused
+        ) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      }, 10000);
+
+      window.speechSynthesis.speak(utterance);
     } else {
-      // Prioritize Indian English, then standard English
-      matchedVoice = voices.find(v => v.lang === 'en-IN' || (/india/i.test(v.name) && v.lang.startsWith('en')))
-        || voices.find(v => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang.startsWith('en'));
+      this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate);
     }
+  }
 
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
-    }
+  private static playViaAudioEndpoint(
+    text: string,
+    lang: 'hi' | 'en',
+    onStart?: () => void,
+    onEnd?: () => void,
+    rate?: number
+  ): void {
+    if (typeof window === 'undefined') return;
 
-    this.currentUtterance = utterance;
-
-    utterance.onstart = () => {
+    try {
+      const audioUrl = `/api/tts?lang=${lang}&text=${encodeURIComponent(text)}`;
+      const audio = new Audio(audioUrl);
+      if (rate !== undefined) {
+        audio.playbackRate = rate;
+      }
+      this.activeAudioElement = audio;
       this.isSpeaking = true;
-      if (onStart) onStart();
-    };
 
-    utterance.onend = () => {
+      audio.onplay = () => {
+        this.isSpeaking = true;
+        if (onStart) onStart();
+      };
+
+      audio.onended = () => {
+        this.isSpeaking = false;
+        this.activeAudioElement = null;
+        if (onEnd) onEnd();
+      };
+
+      audio.onerror = (err) => {
+        console.warn('[SpeechHandler] Audio element playback error:', err);
+        this.isSpeaking = false;
+        this.activeAudioElement = null;
+        if (onEnd) onEnd();
+      };
+
+      audio.play().catch((playErr) => {
+        console.warn('[SpeechHandler] audio.play() auto-play prevented or error:', playErr);
+        this.isSpeaking = false;
+        this.activeAudioElement = null;
+        if (onEnd) onEnd();
+      });
+    } catch (err) {
+      console.warn('[SpeechHandler] Failed to initialize Audio playback:', err);
       this.isSpeaking = false;
-      this.currentUtterance = null;
-      if (this.resumeInterval) {
-        clearInterval(this.resumeInterval);
-        this.resumeInterval = null;
-      }
+      this.activeAudioElement = null;
       if (onEnd) onEnd();
-    };
-
-    utterance.onerror = (e) => {
-      console.warn('[SpeechHandler] TTS utterance error:', e);
-      this.isSpeaking = false;
-      this.currentUtterance = null;
-      if (this.resumeInterval) {
-        clearInterval(this.resumeInterval);
-        this.resumeInterval = null;
-      }
-      if (onEnd) onEnd();
-    };
-
-    // Chrome keeps utterances from freezing on longer responses
-    if (this.resumeInterval) clearInterval(this.resumeInterval);
-    this.resumeInterval = setInterval(() => {
-      if (typeof window !== 'undefined' && window.speechSynthesis?.speaking && !window.speechSynthesis.paused) {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, 10000);
-
-    window.speechSynthesis.speak(utterance);
+    }
   }
 
   static stopSpeaking(): void {
+    if (this.activeAudioElement) {
+      try {
+        this.activeAudioElement.pause();
+        this.activeAudioElement.currentTime = 0;
+      } catch (_) {}
+      this.activeAudioElement = null;
+    }
+
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       if (this.resumeInterval) {
         clearInterval(this.resumeInterval);

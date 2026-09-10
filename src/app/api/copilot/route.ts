@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { cleanJsonString, generateContentWithFallback } from '@/lib/geminiHelper';
+import { detectQueryLanguage } from '@/lib/speechService';
 
-function getDomainFallback(userQuery: string, location: any, weather: any) {
+function getDomainFallback(userQuery: string, location: any, weather: any, requestedLang?: string) {
   const lower = (userQuery || '').toLowerCase();
   const isDevanagari = /[\u0900-\u097F]/.test(userQuery);
-  const isEn = !isDevanagari && !/(kya|kal|pani|paani|barish|kheti|fasal|chhidkaw)/i.test(lower);
+  const detectedByKeywords = detectQueryLanguage(userQuery) === 'hi';
+  const isHi = isDevanagari || detectedByKeywords || requestedLang === 'hi';
+  const isEn = !isHi;
+
   const locName = location?.name || 'Indore, MP';
   const locNameHi = location?.nameHi || 'इन्दौर';
 
@@ -20,6 +24,7 @@ function getDomainFallback(userQuery: string, location: any, weather: any) {
     return {
       detectedLanguage: isEn ? 'en' : 'hi',
       reply: isEn ? textEn : textHi,
+      spokenResponse: isEn ? textEn : textHi,
       text: textEn,
       textHi,
       consensusScore: 96.4,
@@ -47,6 +52,7 @@ function getDomainFallback(userQuery: string, location: any, weather: any) {
     return {
       detectedLanguage: isEn ? 'en' : 'hi',
       reply: isEn ? textEn : textHi,
+      spokenResponse: isEn ? textEn : textHi,
       text: textEn,
       textHi,
       consensusScore: 96.0,
@@ -69,6 +75,7 @@ function getDomainFallback(userQuery: string, location: any, weather: any) {
     return {
       detectedLanguage: isEn ? 'en' : 'hi',
       reply: isEn ? textEn : textHi,
+      spokenResponse: isEn ? textEn : textHi,
       text: textEn,
       textHi,
       consensusScore: 96.4,
@@ -91,11 +98,17 @@ export async function POST(req: NextRequest) {
     body = {};
   }
 
-  const { userQuery = '', history, location, weather } = body;
+  const { userQuery = '', history, location, weather, language } = body;
+
+  const isDevanagari = /[\u0900-\u097F]/.test(userQuery);
+  const detectedByKeywords = detectQueryLanguage(userQuery) === 'hi';
+  const queryIsHindi = isDevanagari || detectedByKeywords || language === 'hi';
+  const targetLanguage: 'hi' | 'en' = queryIsHindi ? 'hi' : 'en';
+
   const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   if (!apiKey) {
-    return NextResponse.json(getDomainFallback(userQuery, location, weather));
+    return NextResponse.json(getDomainFallback(userQuery, location, weather, targetLanguage));
   }
 
   try {
@@ -119,25 +132,28 @@ ${historyContext}
 
 User Query: "${userQuery}"
 
-Provide a scientific yet accessible agrometeorological response.
-CRITICAL LANGUAGE RULES:
-1. Determine the language of the User Query:
-   - If the user asks in Hindi (Devanagari or Hinglish), "detectedLanguage": "hi". The primary "reply" MUST be completely in Hindi!
-   - If the user asks in English, "detectedLanguage": "en". The primary "reply" MUST be completely in English!
-2. Provide both "text" (English explanation) and "textHi" (Hindi explanation).
-3. Provide "verdictTitle" and "verdictDesc" matching the query's language, plus bilingual fields.
+CRITICAL LANGUAGE REQUIREMENT:
+The user asked in: ${targetLanguage === 'hi' ? 'HINDI (हिन्दी)' : 'ENGLISH'}.
+1. "detectedLanguage": "${targetLanguage}"
+2. "reply": MUST be completely in ${targetLanguage === 'hi' ? 'clear natural Hindi (Devanagari script, like किसान भाइयों...)' : 'English'}!
+3. "spokenResponse": Direct, friendly spoken answer for the farmer voice assistant. MUST be completely in ${targetLanguage === 'hi' ? 'fluent Hindi (Devanagari script)' : 'English'}!
+4. "text": English scientific explanation.
+5. "textHi": Hindi explanation in Devanagari.
+6. "verdictTitle": Directive title in ${targetLanguage === 'hi' ? 'Hindi' : 'English'}.
+7. "verdictDesc": Key actionable takeaway sentence in ${targetLanguage === 'hi' ? 'Hindi' : 'English'}.
 
 Respond with ONLY a valid JSON object matching this structure:
 {
-  "detectedLanguage": "hi" | "en",
-  "reply": "Direct response in the query's language",
+  "detectedLanguage": "${targetLanguage}",
+  "reply": "${targetLanguage === 'hi' ? 'हिन्दी में सीधा उत्तर' : 'Direct English response'}",
+  "spokenResponse": "${targetLanguage === 'hi' ? 'हिन्दी में बोलने योग्य उत्तर (Devanagari)' : 'Direct spoken response in English'}",
   "text": "Detailed English explanation",
   "textHi": "सरल एवं स्पष्ट हिन्दी सलाह (किसान की भाषा में)",
   "consensusScore": 96.4,
-  "verdictTitle": "Short directive title in query language",
+  "verdictTitle": "Short directive title",
   "verdictTitleEn": "English title",
   "verdictTitleHi": "Hindi title",
-  "verdictDesc": "One key actionable takeaway sentence in query language",
+  "verdictDesc": "One key actionable takeaway sentence",
   "verdictDescEn": "English directive sentence",
   "verdictDescHi": "Hindi directive sentence",
   "verdictType": "warning" | "info" | "success",
@@ -152,20 +168,36 @@ Respond with ONLY a valid JSON object matching this structure:
 
     try {
       const parsed = JSON.parse(clean);
-      const isHi = parsed.detectedLanguage === 'hi' || /[\u0900-\u097F]/.test(userQuery);
+      const isHi = targetLanguage === 'hi' || parsed.detectedLanguage === 'hi' || /[\u0900-\u097F]/.test(userQuery);
       const detectedLang = isHi ? 'hi' : 'en';
+
+      const hindiReply =
+        parsed.textHi ||
+        (parsed.reply && /[\u0900-\u097F]/.test(parsed.reply) ? parsed.reply : '') ||
+        (parsed.spokenResponse && /[\u0900-\u097F]/.test(parsed.spokenResponse) ? parsed.spokenResponse : '');
+      const englishReply = parsed.text || (parsed.reply && !/[\u0900-\u097F]/.test(parsed.reply) ? parsed.reply : '');
+
+      const finalReply = detectedLang === 'hi' ? (hindiReply || parsed.reply || parsed.text) : (englishReply || parsed.reply || parsed.text);
+      const finalSpoken =
+        detectedLang === 'hi'
+          ? (parsed.spokenResponse && /[\u0900-\u097F]/.test(parsed.spokenResponse) ? parsed.spokenResponse : finalReply)
+          : (parsed.spokenResponse || finalReply);
 
       return NextResponse.json({
         ...parsed,
         detectedLanguage: detectedLang,
-        reply: parsed.reply || (detectedLang === 'hi' ? (parsed.textHi || parsed.text) : (parsed.text || parsed.textHi)),
+        reply: finalReply,
+        spokenResponse: finalSpoken,
+        text: parsed.text || finalReply,
+        textHi: parsed.textHi || hindiReply || finalReply,
         modelBadge: `${modelName} • Multi-Model Grounded`,
       });
     } catch {
-      const isHi = /[\u0900-\u097F]/.test(userQuery);
+      const isHi = targetLanguage === 'hi' || /[\u0900-\u097F]/.test(userQuery);
       return NextResponse.json({
         detectedLanguage: isHi ? 'hi' : 'en',
         reply: raw,
+        spokenResponse: raw,
         text: raw,
         textHi: raw,
         consensusScore: 95.0,
@@ -181,6 +213,6 @@ Respond with ONLY a valid JSON object matching this structure:
     }
   } catch (error: any) {
     console.warn('Gemini copilot route caught error, serving verified domain fallback:', error?.message || error);
-    return NextResponse.json(getDomainFallback(userQuery, location, weather));
+    return NextResponse.json(getDomainFallback(userQuery, location, weather, targetLanguage));
   }
 }

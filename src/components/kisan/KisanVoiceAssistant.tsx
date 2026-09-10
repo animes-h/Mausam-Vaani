@@ -69,10 +69,11 @@ export default function KisanVoiceAssistant() {
       return;
     }
 
+    const listeningLang = queryLanguage === 'hi' || language === 'hi' ? 'hi-IN' : 'en-IN';
     setIsListening(true);
     setAudioVolume(0);
     setTimerSeconds(0);
-    setTranscript(language === 'hi' ? 'बोलिए, सुन रहा है...' : 'Listening... please speak now');
+    setTranscript(queryLanguage === 'hi' ? 'बोलिए, सुन रहा है...' : 'Listening... please speak now');
 
     await SpeechHandler.startListening({
       onResult: async (resultText, audioBlob) => {
@@ -95,7 +96,7 @@ export default function KisanVoiceAssistant() {
           // Process recorded audio with Gemini voice-query
           setIsProcessing(true);
           setTranscript(
-            language === 'hi'
+            queryLanguage === 'hi'
               ? 'आवाज़ का विश्लेषण हो रहा है...'
               : 'Analyzing spoken query...'
           );
@@ -104,47 +105,67 @@ export default function KisanVoiceAssistant() {
               audioBlob,
               location,
               weather.current,
-              language
+              queryLanguage
             );
 
-            const detected = voiceResult.message.detectedLanguage || detectQueryLanguage(voiceResult.transcription);
+            const detected = voiceResult.message.detectedLanguage || detectQueryLanguage(voiceResult.transcription) || queryLanguage;
             setQueryLanguage(detected);
 
             if (voiceResult.transcription && voiceResult.transcription.trim()) {
               setTranscript(voiceResult.transcription);
             }
 
+            const isHi = detected === 'hi';
+
             if (voiceResult.message.verdictCallout) {
               setSolution({
-                titleHi: voiceResult.message.verdictCallout.titleHi || voiceResult.message.verdictCallout.title,
-                titleEn: voiceResult.message.verdictCallout.titleEn || voiceResult.message.verdictCallout.title,
-                descriptionHi: voiceResult.message.verdictCallout.descriptionHi || voiceResult.message.textHi || voiceResult.message.text,
-                descriptionEn: voiceResult.message.verdictCallout.descriptionEn || voiceResult.message.text,
+                titleHi: voiceResult.message.verdictCallout.titleHi || (isHi ? voiceResult.message.verdictCallout.title : '') || 'मौसम व कृषि सलाह',
+                titleEn: voiceResult.message.verdictCallout.titleEn || (!isHi ? voiceResult.message.verdictCallout.title : '') || 'Weather & Crop Advisory',
+                descriptionHi: voiceResult.message.verdictCallout.descriptionHi || voiceResult.message.textHi || (isHi ? voiceResult.message.text : '') || 'मौसम स्थिति अनुसार खेत में कार्य करें।',
+                descriptionEn: voiceResult.message.verdictCallout.descriptionEn || voiceResult.message.text || (!isHi ? voiceResult.message.textHi : '') || 'Operations can proceed according to weather.',
                 bestWindowHi: 'परसों (गुरुवार) सुबह 6:30 से 10:00 बजे तक',
                 bestWindowEn: 'Thursday early morning 06:30 to 10:00 IST',
                 bestWindowDetailHi: voiceResult.message.verdictCallout.descriptionHi || voiceResult.message.verdictCallout.description,
                 bestWindowDetailEn: voiceResult.message.verdictCallout.descriptionEn || voiceResult.message.verdictCallout.description,
               });
+            } else {
+              setSolution((prev) => ({
+                ...prev,
+                titleHi: isHi ? 'मौसम व कृषि सलाह' : prev.titleHi,
+                titleEn: !isHi ? 'Weather & Crop Advisory' : prev.titleEn,
+                descriptionHi: isHi ? (voiceResult.message.textHi || voiceResult.message.text) : prev.descriptionHi,
+                descriptionEn: !isHi ? voiceResult.message.text : prev.descriptionEn,
+              }));
             }
 
-            const speechText = (detected === 'en'
-              ? (voiceResult.message.text || voiceResult.message.spokenResponse || voiceResult.message.textHi)
-              : (voiceResult.message.textHi || voiceResult.message.spokenResponse || voiceResult.message.text)) || '';
+            const hindiSpeech =
+              voiceResult.message.textHi ||
+              (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)
+                ? voiceResult.message.spokenResponse
+                : '') ||
+              (voiceResult.message.text && /[\u0900-\u097F]/.test(voiceResult.message.text)
+                ? voiceResult.message.text
+                : '');
+            const englishSpeech = voiceResult.message.text || voiceResult.message.spokenResponse || '';
+
+            const speechText = isHi
+              ? (hindiSpeech || voiceResult.message.spokenResponse || voiceResult.message.text)
+              : englishSpeech;
 
             if (speechText) {
-              playSpeech(speechText, detected === 'en' ? 'en-IN' : 'hi-IN');
+              playSpeech(speechText, isHi ? 'hi-IN' : 'en-IN');
             }
           } catch (audioErr) {
             console.warn('Voice processing error:', audioErr);
-            const fallbackPrompt = language === 'en' ? 'Weather and crop advice' : 'मौसम व फसल परामर्श';
-            await handleQuerySubmit(fallbackPrompt, language);
+            const fallbackPrompt = queryLanguage === 'en' ? 'Weather and crop advice' : 'मौसम व फसल परामर्श';
+            await handleQuerySubmit(fallbackPrompt, queryLanguage);
           } finally {
             setIsProcessing(false);
           }
         } else {
           // If no sound captured, provide immediate weather advisory so an answer is ALWAYS given
-          const defaultPrompt = language === 'en' ? "Today's weather and crop advisory" : 'आज का मौसम और फसल परामर्श';
-          await handleQuerySubmit(defaultPrompt, language);
+          const defaultPrompt = queryLanguage === 'en' ? "Today's weather and crop advisory" : 'आज का मौसम और फसल परामर्श';
+          await handleQuerySubmit(defaultPrompt, queryLanguage);
         }
       },
       onError: (err) => {
@@ -154,7 +175,7 @@ export default function KisanVoiceAssistant() {
         const errMsg = typeof err === 'string' ? err : err?.message || '';
         if (errMsg.includes('permission') || errMsg.includes('not-allowed') || errMsg.includes('denied')) {
           alert(
-            language === 'hi'
+            queryLanguage === 'hi'
               ? 'कृपया ब्राउज़र में माइक्रोफ़ोन की अनुमति (Permission) प्रदान करें।'
               : 'Please allow microphone access in your browser settings.'
           );
@@ -168,7 +189,7 @@ export default function KisanVoiceAssistant() {
       onVolumeChange: (vol) => {
         setAudioVolume(vol);
       },
-      lang: language === 'hi' ? 'hi-IN' : 'en-IN',
+      lang: listeningLang,
       pauseTimeoutMs: 2500,
       initialTimeoutMs: 15000,
       maxDurationMs: 45000,
@@ -199,27 +220,44 @@ export default function KisanVoiceAssistant() {
         detected
       );
 
-      const isEn = detected === 'en';
+      const effectiveLang = resp.detectedLanguage || detected;
+      const isHi = effectiveLang === 'hi';
+      const isEn = !isHi;
+      setQueryLanguage(effectiveLang);
 
       if (resp.verdictCallout) {
         setSolution({
-          titleHi: resp.verdictCallout.titleHi || resp.verdictCallout.title,
-          titleEn: resp.verdictCallout.titleEn || resp.verdictCallout.title,
-          descriptionHi: resp.verdictCallout.descriptionHi || resp.textHi || resp.text,
-          descriptionEn: resp.verdictCallout.descriptionEn || resp.text,
+          titleHi: resp.verdictCallout.titleHi || (isHi ? resp.verdictCallout.title : '') || 'कृषि मौसम परामर्श',
+          titleEn: resp.verdictCallout.titleEn || (isEn ? resp.verdictCallout.title : '') || 'Agronomic Advisory',
+          descriptionHi: resp.verdictCallout.descriptionHi || resp.textHi || (isHi ? resp.text : '') || 'मौसम स्थिति अनुसार खेत में कार्य करें।',
+          descriptionEn: resp.verdictCallout.descriptionEn || resp.text || (isEn ? resp.textHi : '') || 'Field operations can proceed according to weather.',
           bestWindowHi: 'परसों (गुरुवार) सुबह 6:30 से 10:00 बजे तक',
           bestWindowEn: 'Thursday early morning 06:30 to 10:00 IST',
           bestWindowDetailHi: resp.verdictCallout.descriptionHi || resp.verdictCallout.description,
           bestWindowDetailEn: resp.verdictCallout.descriptionEn || resp.verdictCallout.description,
         });
+      } else {
+        setSolution((prev) => ({
+          ...prev,
+          titleHi: isHi ? 'मौसम व कृषि सलाह' : prev.titleHi,
+          titleEn: isEn ? 'Weather & Crop Advisory' : prev.titleEn,
+          descriptionHi: isHi ? (resp.textHi || resp.text) : prev.descriptionHi,
+          descriptionEn: isEn ? resp.text : prev.descriptionEn,
+        }));
       }
 
-      const speechText = (isEn
-        ? (resp.text || resp.spokenResponse || resp.textHi)
-        : (resp.textHi || resp.spokenResponse || resp.text)) || '';
+      const hindiSpeech =
+        resp.textHi ||
+        (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse) ? resp.spokenResponse : '') ||
+        (resp.text && /[\u0900-\u097F]/.test(resp.text) ? resp.text : '');
+      const englishSpeech = resp.text || resp.spokenResponse || '';
+
+      const speechText = isHi
+        ? (hindiSpeech || resp.spokenResponse || resp.text)
+        : englishSpeech;
 
       if (speechText) {
-        playSpeech(speechText, isEn ? 'en-IN' : 'hi-IN');
+        playSpeech(speechText, isHi ? 'hi-IN' : 'en-IN');
       }
     } catch (err) {
       console.warn('handleQuerySubmit error:', err);
@@ -240,7 +278,7 @@ export default function KisanVoiceAssistant() {
       const isEn = queryLanguage === 'en';
       const textToSpeak = isEn
         ? `${solution.titleEn}. ${solution.descriptionEn}. Best window is ${solution.bestWindowEn}.`
-        : `${solution.titleHi} ${solution.descriptionHi} सर्वोत्तम सुरक्षित समय: ${solution.bestWindowHi}`;
+        : `${solution.titleHi}। ${solution.descriptionHi}। सर्वोत्तम सुरक्षित समय: ${solution.bestWindowHi}।`;
       playSpeech(textToSpeak, isEn ? 'en-IN' : 'hi-IN', slowAudio ? 0.75 : undefined);
     }
   };
@@ -293,24 +331,64 @@ export default function KisanVoiceAssistant() {
       <div className="grid grid-cols-1 gap-space-lg lg:grid-cols-12 items-start">
         {/* Left Section (7 cols): Microphone Stage & Transcript */}
         <section className="flex flex-col justify-between rounded-3xl bg-surface-container-lowest p-space-md md:p-space-lg shadow-sm border border-surface-container-high lg:col-span-7">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="inline-flex items-center gap-space-xs rounded-full bg-primary/10 px-space-md py-1 text-primary text-xs font-bold">
               <span className="material-symbols-outlined text-[1.125rem] animate-pulse">mic</span>
-              <span>{isListening ? `बोलिए... 00:${timerSeconds < 10 ? '0' + timerSeconds : timerSeconds}` : 'माइक तैयार है'}</span>
+              <span>
+                {isListening
+                  ? (queryLanguage === 'hi' ? `बोलिए... 00:${timerSeconds < 10 ? '0' + timerSeconds : timerSeconds}` : `Listening... 00:${timerSeconds < 10 ? '0' + timerSeconds : timerSeconds}`)
+                  : (queryLanguage === 'hi' ? 'माइक तैयार है' : 'Mic Ready')}
+              </span>
             </div>
 
-            <button
-              onClick={() => setSlowAudio(!slowAudio)}
-              className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                slowAudio
-                  ? 'bg-tertiary text-on-tertiary font-bold'
-                  : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
-              }`}
-              type="button"
-            >
-              <span className="material-symbols-outlined text-[1rem]">speed</span>
-              <span>{language === 'hi' ? 'धीमी आवाज़' : 'Slow Audio'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Voice Language Selector */}
+              <div className="flex items-center bg-surface-container rounded-full p-0.5 border border-outline-variant/30">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQueryLanguage('hi');
+                    setTranscript('क्या कल सुबह सोयाबीन में कीटनाशक का छिड़काव कर सकते हैं?');
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    queryLanguage === 'hi'
+                      ? 'bg-primary text-on-primary shadow-xs'
+                      : 'text-on-surface-variant hover:text-primary'
+                  }`}
+                  title="हिन्दी आवाज़ और उत्तर"
+                >
+                  🇮🇳 हिन्दी
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQueryLanguage('en');
+                    setTranscript('Can we spray pesticide on soybean crops tomorrow morning?');
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    queryLanguage === 'en'
+                      ? 'bg-primary text-on-primary shadow-xs'
+                      : 'text-on-surface-variant hover:text-primary'
+                  }`}
+                  title="English Voice & Answer"
+                >
+                  🌐 English
+                </button>
+              </div>
+
+              <button
+                onClick={() => setSlowAudio(!slowAudio)}
+                className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                  slowAudio
+                    ? 'bg-tertiary text-on-tertiary font-bold'
+                    : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+                }`}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[1rem]">speed</span>
+                <span>{queryLanguage === 'hi' ? 'धीमी आवाज़' : 'Slow Audio'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Concentric Circle Mic Stage */}
@@ -407,14 +485,15 @@ export default function KisanVoiceAssistant() {
                 { hi: 'क्या अभी खेत में यूरिया खाद डालना सुरक्षित है?', en: 'Is it safe to apply urea fertilizer right now?' },
                 { hi: 'मंडी में फसल ले जाने का सबसे सुरक्षित समय क्या है?', en: 'Safest time window to transport harvest to mandi?' },
               ].map((item, idx) => {
-                const text = language === 'hi' ? item.hi : item.en;
+                const text = queryLanguage === 'hi' ? item.hi : item.en;
+                const langToUse: 'hi' | 'en' = queryLanguage === 'hi' ? 'hi' : 'en';
                 return (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => {
                       setTranscript(text);
-                      handleQuerySubmit(text);
+                      handleQuerySubmit(text, langToUse);
                     }}
                     disabled={isProcessing}
                     className="px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-medium transition-all active:scale-95 cursor-pointer border border-outline-variant/30 text-left"

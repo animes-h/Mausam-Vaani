@@ -5,7 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 import { askClimateCopilot, askClimateCopilotWithAudio } from '@/lib/aiCopilotService';
 import { ChatMessage } from '@/types';
-import { SpeechHandler } from '@/lib/speechService';
+import { SpeechHandler, detectQueryLanguage } from '@/lib/speechService';
 
 export default function ExplorerClimateAI() {
   const {
@@ -153,7 +153,13 @@ export default function ExplorerClimateAI() {
               setInputQuery(voiceResult.transcription);
             }
             setMessages((prev) => [...prev, voiceResult.message]);
-            playSpeech(voiceResult.message.textHi || voiceResult.message.text);
+            const isHi = (voiceResult.message.detectedLanguage || detectQueryLanguage(voiceResult.transcription || '')) === 'hi';
+            const speechText = (isHi
+              ? (voiceResult.message.textHi || voiceResult.message.spokenResponse || voiceResult.message.text)
+              : (voiceResult.message.text || voiceResult.message.spokenResponse || voiceResult.message.textHi)) || '';
+            if (speechText) {
+              playSpeech(speechText, isHi ? 'hi-IN' : 'en-IN');
+            }
           } catch (e) {
             setInputQuery('');
           } finally {
@@ -309,7 +315,10 @@ export default function ExplorerClimateAI() {
                               </span>
                             </button>
                             <button
-                              onClick={() => playSpeech(m.text)}
+                              onClick={() => {
+                                const textToSpeak = (language === 'hi' && m.textHi) ? m.textHi : m.text;
+                                playSpeech(textToSpeak, language === 'hi' ? 'hi-IN' : 'en-IN');
+                              }}
                               className="text-outline hover:text-on-surface p-1 active:scale-95 transition-transform cursor-pointer"
                               title="Speak response"
                               type="button"

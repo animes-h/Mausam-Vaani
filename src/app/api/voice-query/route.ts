@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { cleanJsonString, generateContentWithFallback } from '@/lib/geminiHelper';
+import { detectQueryLanguage } from '@/lib/speechService';
 
 function getVoiceFallback(location: any, weather: any, language: string = 'hi', userText?: string) {
-  const isEn = language === 'en' || (userText && !/[\u0900-\u097F]/.test(userText));
+  const isDevanagari = userText ? /[\u0900-\u097F]/.test(userText) : false;
+  const isHinglish = userText ? detectQueryLanguage(userText) === 'hi' : false;
+  const isHi = isDevanagari || isHinglish || language === 'hi';
+  const isEn = !isHi;
+
   const locName = location?.name || 'Indore, MP';
   const locNameHi = location?.nameHi || 'इन्दौर';
 
@@ -43,7 +48,6 @@ export async function POST(req: NextRequest) {
   const { audioBase64, mimeType = 'audio/webm', location, weather, language = 'hi' } = body;
 
   if (!audioBase64 || typeof audioBase64 !== 'string') {
-    // If audio is missing, still return a verified agricultural answer so user is never left without response
     return NextResponse.json(getVoiceFallback(location, weather, language));
   }
 
@@ -74,18 +78,18 @@ Listen to the attached audio from the farmer carefully:
 1. Determine the language of the spoken question: 'hi' for Hindi (or regional Malvi/Nimadi/Hinglish) or 'en' for English. Set "detectedLanguage": "hi" | "en".
 2. Transcribe the user's spoken audio query accurately in 'transcription'. If spoken in Hindi, write in Hindi (Devanagari). If spoken in English, write in English.
 3. If the audio is silent or unintelligible, set "transcription": "${language === 'en' ? 'Weather & Crop Update' : 'मौसम व फसल स्थिति'}", "detectedLanguage": "${language === 'en' ? 'en' : 'hi'}", and provide expert seasonal advice.
-4. "spokenResponse": The exact spoken response for the AI agent to read out aloud.
+4. "spokenResponse": The exact spoken response for the voice assistant.
    CRITICAL REQUIREMENT:
-   - If the user asked in Hindi ("detectedLanguage": "hi"), "spokenResponse" MUST be completely in Hindi (Devanagari)!
+   - If the user asked in Hindi or language is Hindi ("detectedLanguage": "hi"), "spokenResponse" MUST be completely in fluent, warm, conversational Hindi in Devanagari script!
    - If the user asked in English ("detectedLanguage": "en"), "spokenResponse" MUST be completely in English!
-5. Provide both "text" (English explanation) and "textHi" (Hindi explanation).
+5. Provide both "text" (English explanation) and "textHi" (Hindi explanation in Devanagari).
 6. Provide "verdictTitle" and "verdictDesc" in the user's detected language, and also provide "verdictTitleEn", "verdictTitleHi", "verdictDescEn", "verdictDescHi".
 
 Respond ONLY with a valid JSON object matching:
 {
   "detectedLanguage": "hi" | "en",
   "transcription": "Transcribed question in user's language",
-  "spokenResponse": "Direct spoken answer in the EXACT language of the user's question",
+  "spokenResponse": "Direct spoken answer in the EXACT language of the user's question (Devanagari for Hindi)",
   "text": "Detailed English explanation",
   "textHi": "सरल एवं स्पष्ट हिन्दी सलाह (किसान की भाषा में)",
   "consensusScore": 96.5,
@@ -115,13 +119,35 @@ Respond ONLY with a valid JSON object matching:
 
     try {
       const parsed = JSON.parse(clean);
-      const isHi = parsed.detectedLanguage === 'hi' || /[\u0900-\u097F]/.test(parsed.transcription || '');
+      const isHi =
+        parsed.detectedLanguage === 'hi' ||
+        /[\u0900-\u097F]/.test(parsed.transcription || '') ||
+        /[\u0900-\u097F]/.test(parsed.spokenResponse || '') ||
+        detectQueryLanguage(parsed.transcription || '') === 'hi' ||
+        language === 'hi';
       const detectedLang = isHi ? 'hi' : 'en';
+
+      const hindiReply =
+        parsed.textHi ||
+        (parsed.spokenResponse && /[\u0900-\u097F]/.test(parsed.spokenResponse) ? parsed.spokenResponse : '') ||
+        (parsed.text && /[\u0900-\u097F]/.test(parsed.text) ? parsed.text : '');
+      const englishReply =
+        parsed.text ||
+        (parsed.spokenResponse && !/[\u0900-\u097F]/.test(parsed.spokenResponse) ? parsed.spokenResponse : '');
+
+      const spokenResponse =
+        detectedLang === 'hi'
+          ? (parsed.spokenResponse && /[\u0900-\u097F]/.test(parsed.spokenResponse)
+              ? parsed.spokenResponse
+              : (hindiReply || 'इंदौर क्षेत्र में आज मौसम सामान्य है। कृषि कार्य सुरक्षित रूप से कर सकते हैं।'))
+          : (parsed.spokenResponse || englishReply || parsed.text);
 
       return NextResponse.json({
         ...parsed,
         detectedLanguage: detectedLang,
-        spokenResponse: parsed.spokenResponse || (detectedLang === 'hi' ? (parsed.textHi || parsed.text) : (parsed.text || parsed.textHi)),
+        spokenResponse,
+        text: parsed.text || englishReply || spokenResponse,
+        textHi: parsed.textHi || hindiReply || spokenResponse,
         modelBadge: `${modelName} • Voice Grounded`,
       });
     } catch {

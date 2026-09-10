@@ -78,15 +78,25 @@ export default function KisanHome() {
               weather.current,
               language
             );
-            const queryLang = detectQueryLanguage(voiceResult.transcription || '');
-            const isEn = queryLang === 'en';
+            const detectedLang =
+              voiceResult.message.detectedLanguage ||
+              detectQueryLanguage(voiceResult.transcription || '') ||
+              (language === 'hi' ? 'hi' : 'en');
+            const isHi = detectedLang === 'hi';
+            const isEn = !isHi;
 
             if (voiceResult.transcription) {
               setVoiceQueryText(voiceResult.transcription);
             }
+            const hindiSpoken =
+              voiceResult.message.textHi ||
+              (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)
+                ? voiceResult.message.spokenResponse
+                : '') ||
+              voiceResult.message.text;
             const spokenReply = isEn
               ? (voiceResult.message.spokenResponse || voiceResult.message.text)
-              : (voiceResult.message.spokenResponse || voiceResult.message.textHi || voiceResult.message.text);
+              : hindiSpoken;
             const displayReply = isEn
               ? voiceResult.message.text
               : (voiceResult.message.textHi || voiceResult.message.text);
@@ -151,7 +161,6 @@ export default function KisanHome() {
     setQuickResponse(null);
 
     const queryLang = detectQueryLanguage(query);
-    const isEn = queryLang === 'en';
 
     try {
       const resp = await askClimateCopilot(
@@ -162,15 +171,24 @@ export default function KisanHome() {
         queryLang
       );
 
-      const reply = isEn
-        ? (resp.text || resp.spokenResponse || '')
-        : (resp.textHi || resp.spokenResponse || resp.text || '');
-      const spoken = resp.spokenResponse || reply;
+      const effectiveLang = resp.detectedLanguage || queryLang;
+      const isHi = effectiveLang === 'hi';
+      const isEn = !isHi;
+
+      const hindiSpoken =
+        resp.textHi ||
+        (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse) ? resp.spokenResponse : '') ||
+        (resp.text && /[\u0900-\u097F]/.test(resp.text) ? resp.text : '');
+      const englishSpoken = resp.text || resp.spokenResponse || '';
+
+      const reply = isEn ? englishSpoken : (hindiSpoken || resp.text);
+      const spoken = isEn ? (resp.spokenResponse || englishSpoken) : (hindiSpoken || resp.spokenResponse || reply);
 
       setQuickResponse(reply);
       playSpeech(spoken, isEn ? 'en-IN' : 'hi-IN');
     } catch (err) {
       console.warn('AI copilot error:', err);
+      const isEn = queryLang === 'en';
       const fallback = isEn
         ? `Today temperature is ${weather?.current?.temperature || 31}°C, winds are normal, and soil moisture is ideal.`
         : `आज का तापमान ${weather?.current?.temperature || 31} डिग्री है, हवा सामान्य है और खेत में नमी बुवाई के लिए पर्याप्त है।`;
