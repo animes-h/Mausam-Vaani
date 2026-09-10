@@ -75,6 +75,7 @@ export async function askClimateCopilot(
             timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
             text: primaryText,
             textHi: hindiText,
+            reply: parsed.reply || primaryText,
             detectedLanguage: effectiveLang,
             spokenResponse: spokenText,
             consensusScore: parsed.consensusScore || 96.4,

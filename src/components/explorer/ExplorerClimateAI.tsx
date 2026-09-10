@@ -152,11 +152,17 @@ export default function ExplorerClimateAI() {
             if (voiceResult.transcription) {
               setInputQuery(voiceResult.transcription);
             }
-            setMessages((prev) => [...prev, voiceResult.message]);
-            const isHi = (voiceResult.message.detectedLanguage || detectQueryLanguage(voiceResult.transcription || '')) === 'hi';
+            const isHi =
+              (voiceResult.message.detectedLanguage || detectQueryLanguage(voiceResult.transcription || '')) === 'hi' ||
+              language === 'hi' ||
+              /[\u0900-\u097F]/.test(voiceResult.message.textHi || '') ||
+              /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse || '') ||
+              /[\u0900-\u097F]/.test(voiceResult.message.text || '');
             const speechText = (isHi
-              ? (voiceResult.message.textHi || voiceResult.message.spokenResponse || voiceResult.message.text)
-              : (voiceResult.message.text || voiceResult.message.spokenResponse || voiceResult.message.textHi)) || '';
+              ? (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)
+                  ? voiceResult.message.spokenResponse
+                  : (voiceResult.message.textHi || voiceResult.message.text))
+              : (voiceResult.message.spokenResponse || voiceResult.message.text)) || '';
             if (speechText) {
               playSpeech(speechText, isHi ? 'hi-IN' : 'en-IN');
             }
@@ -316,8 +322,18 @@ export default function ExplorerClimateAI() {
                             </button>
                             <button
                               onClick={() => {
-                                const textToSpeak = (language === 'hi' && m.textHi) ? m.textHi : m.text;
-                                playSpeech(textToSpeak, language === 'hi' ? 'hi-IN' : 'en-IN');
+                                SpeechHandler.prewarmAudio();
+                                const isHi =
+                                  language === 'hi' ||
+                                  /[\u0900-\u097F]/.test(m.textHi || '') ||
+                                  /[\u0900-\u097F]/.test(m.spokenResponse || '') ||
+                                  /[\u0900-\u097F]/.test(m.text || '');
+                                const textToSpeak = isHi
+                                  ? (m.spokenResponse && /[\u0900-\u097F]/.test(m.spokenResponse)
+                                      ? m.spokenResponse
+                                      : (m.textHi || m.text))
+                                  : (m.spokenResponse || m.text);
+                                playSpeech(textToSpeak, isHi ? 'hi-IN' : 'en-IN');
                               }}
                               className="text-outline hover:text-on-surface p-1 active:scale-95 transition-transform cursor-pointer"
                               title="Speak response"

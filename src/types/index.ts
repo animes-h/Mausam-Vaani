@@ -182,6 +182,7 @@ export interface ChatMessage {
   timestamp: string;
   text: string;
   textHi?: string;
+  reply?: string;
   detectedLanguage?: 'hi' | 'en';
   spokenResponse?: string;
   consensusScore?: number;

@@ -29,6 +29,7 @@ export default function KisanHome() {
     : `Namaste Ramesh ji. Today in Indore the temperature is 31 degrees Celsius with partly cloudy skies. There is a 40 percent chance of rain in the afternoon. Soil moisture is optimal at 64 percent. Please withhold pesticide spraying today.`;
 
   const toggleAudioReadout = () => {
+    SpeechHandler.prewarmAudio();
     if (isPlayingAudio) {
       stopSpeech();
     } else {
@@ -37,6 +38,7 @@ export default function KisanHome() {
   };
 
   const handleMicClick = async () => {
+    SpeechHandler.prewarmAudio();
     if (isRecording) {
       setIsRecording(false);
       await SpeechHandler.stopListening(true);
@@ -78,12 +80,16 @@ export default function KisanHome() {
               weather.current,
               language
             );
-            const detectedLang =
-              voiceResult.message.detectedLanguage ||
-              detectQueryLanguage(voiceResult.transcription || '') ||
-              (language === 'hi' ? 'hi' : 'en');
-            const isHi = detectedLang === 'hi';
-            const isEn = !isHi;
+            const replyHasHindi =
+              (voiceResult.message.textHi && /[\u0900-\u097F]/.test(voiceResult.message.textHi)) ||
+              (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)) ||
+              (voiceResult.message.text && /[\u0900-\u097F]/.test(voiceResult.message.text));
+
+            const isHi =
+              voiceResult.message.detectedLanguage === 'hi' ||
+              detectQueryLanguage(voiceResult.transcription || '') === 'hi' ||
+              language === 'hi' ||
+              replyHasHindi;
 
             if (voiceResult.transcription) {
               setVoiceQueryText(voiceResult.transcription);
@@ -94,15 +100,20 @@ export default function KisanHome() {
                 ? voiceResult.message.spokenResponse
                 : '') ||
               voiceResult.message.text;
-            const spokenReply = isEn
-              ? (voiceResult.message.spokenResponse || voiceResult.message.text)
-              : hindiSpoken;
-            const displayReply = isEn
-              ? voiceResult.message.text
-              : (voiceResult.message.textHi || voiceResult.message.text);
+            const englishSpoken =
+              voiceResult.message.text ||
+              voiceResult.message.spokenResponse ||
+              '';
+
+            const displayReply = isHi ? (hindiSpoken || voiceResult.message.text) : (englishSpoken || voiceResult.message.text);
+            const spokenReply = isHi
+              ? (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)
+                  ? voiceResult.message.spokenResponse
+                  : displayReply)
+              : (voiceResult.message.spokenResponse || displayReply);
 
             setQuickResponse(displayReply);
-            playSpeech(spokenReply, isEn ? 'en-IN' : 'hi-IN');
+            playSpeech(spokenReply, isHi ? 'hi-IN' : 'en-IN');
           } catch (e) {
             console.warn('Voice query error:', e);
             const queryLang = language === 'hi' ? 'hi' : 'en';
@@ -171,24 +182,36 @@ export default function KisanHome() {
         queryLang
       );
 
-      const effectiveLang = resp.detectedLanguage || queryLang;
-      const isHi = effectiveLang === 'hi';
-      const isEn = !isHi;
+      const replyHasHindi =
+        (resp.textHi && /[\u0900-\u097F]/.test(resp.textHi)) ||
+        (resp.reply && /[\u0900-\u097F]/.test(resp.reply)) ||
+        (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse)) ||
+        (resp.text && /[\u0900-\u097F]/.test(resp.text));
+
+      const isHi = queryLang === 'hi' || resp.detectedLanguage === 'hi' || language === 'hi' || replyHasHindi;
 
       const hindiSpoken =
         resp.textHi ||
+        (resp.reply && /[\u0900-\u097F]/.test(resp.reply) ? resp.reply : '') ||
         (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse) ? resp.spokenResponse : '') ||
         (resp.text && /[\u0900-\u097F]/.test(resp.text) ? resp.text : '');
-      const englishSpoken = resp.text || resp.spokenResponse || '';
 
-      const reply = isEn ? englishSpoken : (hindiSpoken || resp.text);
-      const spoken = isEn ? (resp.spokenResponse || englishSpoken) : (hindiSpoken || resp.spokenResponse || reply);
+      const englishSpoken =
+        resp.text ||
+        (resp.reply && !/[\u0900-\u097F]/.test(resp.reply) ? resp.reply : '') ||
+        resp.spokenResponse ||
+        '';
+
+      const reply = isHi ? (hindiSpoken || resp.text) : (englishSpoken || resp.text);
+      const spoken = isHi
+        ? (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse) ? resp.spokenResponse : reply)
+        : (resp.spokenResponse || reply);
 
       setQuickResponse(reply);
-      playSpeech(spoken, isEn ? 'en-IN' : 'hi-IN');
+      playSpeech(spoken, isHi ? 'hi-IN' : 'en-IN');
     } catch (err) {
       console.warn('AI copilot error:', err);
-      const isEn = queryLang === 'en';
+      const isEn = queryLang === 'en' && language === 'en';
       const fallback = isEn
         ? `Today temperature is ${weather?.current?.temperature || 31}°C, winds are normal, and soil moisture is ideal.`
         : `आज का तापमान ${weather?.current?.temperature || 31} डिग्री है, हवा सामान्य है और खेत में नमी बुवाई के लिए पर्याप्त है।`;
@@ -200,6 +223,7 @@ export default function KisanHome() {
   };
 
   const handleQuickQuestion = async (question: string) => {
+    SpeechHandler.prewarmAudio();
     setVoiceQueryText(question);
     await processSpokenQuery(question);
   };
@@ -383,7 +407,11 @@ export default function KisanHome() {
               {/* Action Buttons on Response */}
               <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-outline-variant/30">
                 <button
-                  onClick={() => playSpeech(quickResponse)}
+                  onClick={() => {
+                    SpeechHandler.prewarmAudio();
+                    const isHi = /[\u0900-\u097F]/.test(quickResponse || '') || language === 'hi';
+                    playSpeech(quickResponse, isHi ? 'hi-IN' : 'en-IN');
+                  }}
                   className="px-3 py-1.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-bold text-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-xs"
                   title="Hear again"
                   type="button"

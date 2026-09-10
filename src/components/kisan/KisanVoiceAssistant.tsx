@@ -53,6 +53,7 @@ export default function KisanVoiceAssistant() {
   }, [isListening]);
 
   const toggleListening = async () => {
+    SpeechHandler.prewarmAudio();
     if (isListening) {
       setIsListening(false);
       setAudioVolume(0);
@@ -220,10 +221,15 @@ export default function KisanVoiceAssistant() {
         detected
       );
 
-      const effectiveLang = resp.detectedLanguage || detected;
-      const isHi = effectiveLang === 'hi';
+      const replyHasHindi =
+        (resp.textHi && /[\u0900-\u097F]/.test(resp.textHi)) ||
+        (resp.reply && /[\u0900-\u097F]/.test(resp.reply)) ||
+        (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse)) ||
+        (resp.text && /[\u0900-\u097F]/.test(resp.text));
+
+      const isHi = detected === 'hi' || resp.detectedLanguage === 'hi' || queryLanguage === 'hi' || language === 'hi' || replyHasHindi;
       const isEn = !isHi;
-      setQueryLanguage(effectiveLang);
+      setQueryLanguage(isHi ? 'hi' : 'en');
 
       if (resp.verdictCallout) {
         setSolution({
@@ -248,12 +254,15 @@ export default function KisanVoiceAssistant() {
 
       const hindiSpeech =
         resp.textHi ||
+        (resp.reply && /[\u0900-\u097F]/.test(resp.reply) ? resp.reply : '') ||
         (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse) ? resp.spokenResponse : '') ||
         (resp.text && /[\u0900-\u097F]/.test(resp.text) ? resp.text : '');
       const englishSpeech = resp.text || resp.spokenResponse || '';
 
       const speechText = isHi
-        ? (hindiSpeech || resp.spokenResponse || resp.text)
+        ? (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse)
+            ? resp.spokenResponse
+            : (hindiSpeech || resp.text))
         : englishSpeech;
 
       if (speechText) {
@@ -261,7 +270,7 @@ export default function KisanVoiceAssistant() {
       }
     } catch (err) {
       console.warn('handleQuerySubmit error:', err);
-      const isEn = detected === 'en';
+      const isEn = detected === 'en' && language === 'en';
       const fallbackText = isEn
         ? `Atmospheric conditions for ${location.name} show temperature at ${weather.current.temperature}°C with ${weather.current.relativeHumidity}% humidity. Farm operations can safely proceed during morning hours.`
         : `${location.nameHi || location.name} में तापमान ${weather.current.temperature}°C एवं आर्द्रता ${weather.current.relativeHumidity}% है। सुबह के समय खेत का कार्य सुरक्षित रूप से किया जा सकता है।`;
@@ -272,14 +281,19 @@ export default function KisanVoiceAssistant() {
   };
 
   const playSolutionAudio = () => {
+    SpeechHandler.prewarmAudio();
     if (isPlayingAudio) {
       stopSpeech();
     } else {
-      const isEn = queryLanguage === 'en';
-      const textToSpeak = isEn
+      const isHi =
+        queryLanguage === 'hi' ||
+        language === 'hi' ||
+        /[\u0900-\u097F]/.test(solution.descriptionHi || '') ||
+        /[\u0900-\u097F]/.test(solution.titleHi || '');
+      const textToSpeak = !isHi
         ? `${solution.titleEn}. ${solution.descriptionEn}. Best window is ${solution.bestWindowEn}.`
         : `${solution.titleHi}। ${solution.descriptionHi}। सर्वोत्तम सुरक्षित समय: ${solution.bestWindowHi}।`;
-      playSpeech(textToSpeak, isEn ? 'en-IN' : 'hi-IN', slowAudio ? 0.75 : undefined);
+      playSpeech(textToSpeak, isHi ? 'hi-IN' : 'en-IN', slowAudio ? 0.75 : undefined);
     }
   };
 

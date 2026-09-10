@@ -79,10 +79,12 @@ export class SpeechHandler {
   private static onEndCallback: (() => void) | null = null;
   private static onVolumeChangeCallback: ((volume: number) => void) | null = null;
 
-  // TTS utterance & audio element management
+  // TTS utterance, Web Audio & HTMLAudioElement management
   private static currentUtterance: SpeechSynthesisUtterance | null = null;
   private static resumeInterval: any = null;
   private static activeAudioElement: HTMLAudioElement | null = null;
+  private static ttsAudioContext: AudioContext | null = null;
+  private static currentBufferSource: AudioBufferSourceNode | null = null;
 
   // MediaStream and Audio Recording fallback handles
   private static activeMediaStream: MediaStream | null = null;
@@ -143,6 +145,7 @@ export class SpeechHandler {
 
     // Cancel speech synthesis so microphone doesn't pick up speaker audio
     this.stopSpeaking();
+    this.prewarmAudio();
 
     this.isListeningActive = true;
     this.accumulatedTranscript = '';
@@ -518,6 +521,25 @@ export class SpeechHandler {
     return this.isListeningActive;
   }
 
+  /**
+   * Pre-warms Web Audio Context within a synchronous user gesture (click, tap, mic).
+   * Unlocks persistent audio playback permissions in Chrome, Edge, Safari, and Firefox.
+   */
+  static prewarmAudio(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      if (!this.ttsAudioContext) {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          this.ttsAudioContext = new AudioCtx();
+        }
+      }
+      if (this.ttsAudioContext && this.ttsAudioContext.state === 'suspended') {
+        this.ttsAudioContext.resume();
+      }
+    } catch (_) {}
+  }
+
   static hasHindiVoice(): boolean {
     if (typeof window === 'undefined' || !this.isSynthesisSupported()) return false;
     const voices = window.speechSynthesis.getVoices();
@@ -552,91 +574,64 @@ export class SpeechHandler {
     const isDevanagari = /[\u0900-\u097F]/.test(cleanText);
     const targetLang: 'hi-IN' | 'en-IN' = isDevanagari ? 'hi-IN' : (lang || 'en-IN');
 
-    // 1. If Hindi:
+    // 1. If Hindi: ALWAYS prioritize high-fidelity server TTS via Web Audio API.
+    // This produces authentic, natural Hindi accent and handles numbers & agricultural terms perfectly,
+    // avoiding the common Windows issue where native Hindi voices are completely absent.
     if (targetLang === 'hi-IN') {
-      const voices =
-        typeof window !== 'undefined' && this.isSynthesisSupported()
-          ? window.speechSynthesis.getVoices()
-          : [];
-      const matchedHindiVoice = voices.find(
-        (v) =>
-          v.lang === 'hi-IN' ||
-          v.lang === 'hi' ||
-          v.lang.startsWith('hi-') ||
-          /hindi|हिन्दी/i.test(v.name)
-      );
-
-      // If browser has a native Hindi voice, use SpeechSynthesisUtterance
-      if (matchedHindiVoice && this.isSynthesisSupported()) {
-        try {
-          const utterance = new SpeechSynthesisUtterance(cleanText);
-          utterance.lang = 'hi-IN';
-          utterance.rate = rate !== undefined ? rate : 0.95;
-          utterance.pitch = 1.0;
-          utterance.voice = matchedHindiVoice;
-
-          this.currentUtterance = utterance;
-
-          utterance.onstart = () => {
-            this.isSpeaking = true;
-            if (onStart) onStart();
-          };
-
-          utterance.onend = () => {
-            this.isSpeaking = false;
-            this.currentUtterance = null;
-            if (this.resumeInterval) {
-              clearInterval(this.resumeInterval);
-              this.resumeInterval = null;
-            }
-            if (onEnd) onEnd();
-          };
-
-          utterance.onerror = (e) => {
-            console.warn('[SpeechHandler] Hindi Web Speech synthesis error, falling back to server TTS:', e);
-            this.stopSpeaking();
-            this.playViaAudioEndpoint(cleanText, 'hi', onStart, onEnd, rate);
-          };
-
-          if (this.resumeInterval) clearInterval(this.resumeInterval);
-          this.resumeInterval = setInterval(() => {
-            if (
-              typeof window !== 'undefined' &&
-              window.speechSynthesis?.speaking &&
-              !window.speechSynthesis.paused
-            ) {
-              window.speechSynthesis.pause();
-              window.speechSynthesis.resume();
-            }
-          }, 10000);
-
-          window.speechSynthesis.speak(utterance);
-          return;
-        } catch (synthErr) {
-          console.warn('[SpeechHandler] Web Speech error, falling back to server TTS:', synthErr);
-        }
-      }
-
-      // If no native Hindi voice is present in the browser or OS (very common on Windows),
-      // play crystal-clear, high-quality Hindi speech via the server-side /api/tts endpoint:
       this.playViaAudioEndpoint(cleanText, 'hi', onStart, onEnd, rate);
       return;
     }
 
-    // 2. Otherwise English:
+    // 2. If English: Try browser Web Speech API first (Microsoft David / Heera), fallback to server TTS
     if (this.isSynthesisSupported()) {
+      this.speakWithWebSpeech(
+        cleanText,
+        'en-IN',
+        onStart,
+        onEnd,
+        rate,
+        () => this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate)
+      );
+    } else {
+      this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate);
+    }
+  }
+
+  private static speakWithWebSpeech(
+    cleanText: string,
+    targetLang: 'hi-IN' | 'en-IN',
+    onStart?: () => void,
+    onEnd?: () => void,
+    rate?: number,
+    onFallback?: () => void
+  ): void {
+    if (!this.isSynthesisSupported()) {
+      if (onFallback) onFallback();
+      else if (onEnd) onEnd();
+      return;
+    }
+
+    try {
       const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'en-IN';
-      utterance.rate = rate !== undefined ? rate : 1.0;
+      utterance.lang = targetLang;
+      utterance.rate = rate !== undefined ? rate : (targetLang === 'hi-IN' ? 0.95 : 1.0);
       utterance.pitch = 1.0;
 
       const voices = window.speechSynthesis.getVoices();
-      const matchedVoice =
-        voices.find((v) => v.lang === 'en-IN' || (/india/i.test(v.name) && v.lang.startsWith('en'))) ||
-        voices.find((v) => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang.startsWith('en'));
-
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
+      if (targetLang === 'hi-IN') {
+        const matched = voices.find(
+          (v) =>
+            v.lang === 'hi-IN' ||
+            v.lang === 'hi' ||
+            v.lang.startsWith('hi-') ||
+            /hindi|हिन्दी/i.test(v.name)
+        );
+        if (matched) utterance.voice = matched;
+      } else {
+        const matched =
+          voices.find((v) => v.lang === 'en-IN' || (/india/i.test(v.name) && v.lang.startsWith('en'))) ||
+          voices.find((v) => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang.startsWith('en'));
+        if (matched) utterance.voice = matched;
       }
 
       this.currentUtterance = utterance;
@@ -657,9 +652,18 @@ export class SpeechHandler {
       };
 
       utterance.onerror = (e) => {
-        console.warn('[SpeechHandler] English TTS utterance error, trying audio fallback:', e);
-        this.stopSpeaking();
-        this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate);
+        console.warn('[SpeechHandler] Web Speech utterance error:', e);
+        this.isSpeaking = false;
+        this.currentUtterance = null;
+        if (this.resumeInterval) {
+          clearInterval(this.resumeInterval);
+          this.resumeInterval = null;
+        }
+        if (onFallback) {
+          onFallback();
+        } else if (onEnd) {
+          onEnd();
+        }
       };
 
       if (this.resumeInterval) clearInterval(this.resumeInterval);
@@ -675,20 +679,73 @@ export class SpeechHandler {
       }, 10000);
 
       window.speechSynthesis.speak(utterance);
-    } else {
-      this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate);
+    } catch (e) {
+      console.warn('[SpeechHandler] Web Speech failed:', e);
+      if (onFallback) onFallback();
+      else if (onEnd) onEnd();
     }
   }
 
-  private static playViaAudioEndpoint(
+  private static async playViaAudioEndpoint(
     text: string,
     lang: 'hi' | 'en',
     onStart?: () => void,
     onEnd?: () => void,
     rate?: number
-  ): void {
+  ): Promise<void> {
     if (typeof window === 'undefined') return;
 
+    this.stopSpeaking();
+    this.isSpeaking = true;
+    if (onStart) onStart();
+
+    // 1. Primary: High-fidelity Web Audio API playback via /api/tts POST
+    try {
+      this.prewarmAudio();
+
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, lang }),
+      });
+
+      if (res.ok) {
+        const arrayBuf = await res.arrayBuffer();
+        if (arrayBuf && arrayBuf.byteLength > 0) {
+          if (!this.ttsAudioContext) {
+            const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+            if (AudioCtx) this.ttsAudioContext = new AudioCtx();
+          }
+
+          if (this.ttsAudioContext) {
+            if (this.ttsAudioContext.state === 'suspended') {
+              await this.ttsAudioContext.resume();
+            }
+            const audioBuffer = await this.ttsAudioContext.decodeAudioData(arrayBuf);
+            const source = this.ttsAudioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            if (rate !== undefined && rate > 0) {
+              source.playbackRate.value = rate;
+            }
+            source.connect(this.ttsAudioContext.destination);
+            this.currentBufferSource = source;
+
+            source.onended = () => {
+              this.isSpeaking = false;
+              this.currentBufferSource = null;
+              if (onEnd) onEnd();
+            };
+
+            source.start(0);
+            return;
+          }
+        }
+      }
+    } catch (webAudioErr) {
+      console.warn('[SpeechHandler] Web Audio playback error, trying HTMLAudioElement:', webAudioErr);
+    }
+
+    // 2. Secondary fallback: HTMLAudioElement
     try {
       const audioUrl = `/api/tts?lang=${lang}&text=${encodeURIComponent(text)}`;
       const audio = new Audio(audioUrl);
@@ -696,12 +753,6 @@ export class SpeechHandler {
         audio.playbackRate = rate;
       }
       this.activeAudioElement = audio;
-      this.isSpeaking = true;
-
-      audio.onplay = () => {
-        this.isSpeaking = true;
-        if (onStart) onStart();
-      };
 
       audio.onended = () => {
         this.isSpeaking = false;
@@ -710,27 +761,30 @@ export class SpeechHandler {
       };
 
       audio.onerror = (err) => {
-        console.warn('[SpeechHandler] Audio element playback error:', err);
+        console.warn('[SpeechHandler] HTMLAudioElement error, falling back to Web Speech:', err);
         this.isSpeaking = false;
         this.activeAudioElement = null;
-        if (onEnd) onEnd();
+        this.speakWithWebSpeech(text, lang === 'hi' ? 'hi-IN' : 'en-IN', onStart, onEnd, rate);
       };
 
-      audio.play().catch((playErr) => {
-        console.warn('[SpeechHandler] audio.play() auto-play prevented or error:', playErr);
-        this.isSpeaking = false;
-        this.activeAudioElement = null;
-        if (onEnd) onEnd();
-      });
-    } catch (err) {
-      console.warn('[SpeechHandler] Failed to initialize Audio playback:', err);
-      this.isSpeaking = false;
+      await audio.play();
+      return;
+    } catch (audioErr) {
+      console.warn('[SpeechHandler] HTMLAudioElement play() prevented, falling back to Web Speech:', audioErr);
       this.activeAudioElement = null;
-      if (onEnd) onEnd();
+      this.speakWithWebSpeech(text, lang === 'hi' ? 'hi-IN' : 'en-IN', onStart, onEnd, rate);
     }
   }
 
   static stopSpeaking(): void {
+    if (this.currentBufferSource) {
+      try {
+        this.currentBufferSource.stop();
+        this.currentBufferSource.disconnect();
+      } catch (_) {}
+      this.currentBufferSource = null;
+    }
+
     if (this.activeAudioElement) {
       try {
         this.activeAudioElement.pause();
@@ -744,9 +798,12 @@ export class SpeechHandler {
         clearInterval(this.resumeInterval);
         this.resumeInterval = null;
       }
-      window.speechSynthesis.cancel();
-      this.isSpeaking = false;
+      try {
+        window.speechSynthesis.cancel();
+      } catch (_) {}
       this.currentUtterance = null;
     }
+
+    this.isSpeaking = false;
   }
 }
