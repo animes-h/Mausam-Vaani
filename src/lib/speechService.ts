@@ -37,18 +37,17 @@ export function detectQueryLanguage(text: string): 'hi' | 'en' {
     'hai', 'hain', 'hoon', 'tha', 'thi', 'the', 'nahi', 'mat', 'theek', 'achha', 'bahut', 'jyada', 'kam'
   ];
 
-  const words = clean.split(/[\s,?.!;:()"\-]+/);
+  const words = clean.split(/[\s,?.!;:()"\-]+/).filter(Boolean);
+  let hindiWordCount = 0;
   for (const w of words) {
     if (hindiKeywords.includes(w)) {
-      return 'hi';
+      hindiWordCount++;
     }
   }
 
-  // Also check common multi-word sub-phrases
-  for (const kw of hindiKeywords) {
-    if (kw.length >= 3 && clean.includes(kw)) {
-      return 'hi';
-    }
+  // If there are at least 2 Hindi keywords, or at least 1 keyword in a short query (<= 3 words)
+  if (hindiWordCount >= 2 || (hindiWordCount >= 1 && words.length <= 3)) {
+    return 'hi';
   }
 
   return 'en';

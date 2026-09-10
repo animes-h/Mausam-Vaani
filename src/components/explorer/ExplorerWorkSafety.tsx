@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 import { WorkSafetyHour } from '@/types';
@@ -18,112 +18,157 @@ export default function ExplorerWorkSafety() {
   const [selectedSlot, setSelectedSlot] = useState<WorkSafetyHour | null>(null);
   const [activeShiftFilter, setActiveShiftFilter] = useState<'all' | 'safe' | 'caution' | 'hazardous'>('all');
 
-  const workSafetySchedule: WorkSafetyHour[] = [
-    {
-      hour: '06:00',
-      safetyStatus: 'safe',
-      safetyLabelEn: 'Safe for Field Work',
-      safetyLabelHi: 'खेत कार्य हेतु सुरक्षित',
-      temperature: 22,
-      wbgt: 20.4,
-      heatIndex: 22,
-      uvIndex: 0,
-      rainChance: 5,
-      advisoryNoteEn: 'Optimal condition for manual labor, pesticide spraying & harvesting.',
-      advisoryNoteHi: 'श्रम, कीटनाशक छिड़काव व कटाई के लिए सबसे उत्तम व सुरक्षित समय।',
-    },
-    {
-      hour: '08:00',
-      safetyStatus: 'safe',
-      safetyLabelEn: 'Safe for Field Work',
-      safetyLabelHi: 'खेत कार्य हेतु सुरक्षित',
-      temperature: 25,
-      wbgt: 22.8,
-      heatIndex: 26,
-      uvIndex: 2.1,
-      rainChance: 5,
-      advisoryNoteEn: 'Calm morning winds, pleasant temperature. High worker stamina.',
-      advisoryNoteHi: 'शांत हवा व सुखद तापमान। श्रमिकों की कार्यक्षमता अधिकतम रहेगी।',
-    },
-    {
-      hour: '10:00',
-      safetyStatus: 'safe',
-      safetyLabelEn: 'Safe: Hydration Required',
-      safetyLabelHi: 'सुरक्षित: पर्याप्त जलपान रखें',
-      temperature: 28,
-      wbgt: 25.1,
-      heatIndex: 30,
-      uvIndex: 4.5,
-      rainChance: 10,
-      advisoryNoteEn: 'Thermal load rising. Ensure potable drinking water at field edges.',
-      advisoryNoteHi: 'धूप बढ़ रही है। खेत की मेड़ों पर पीने का पानी व ओआरएस उपलब्ध रखें।',
-    },
-    {
-      hour: '12:00',
-      safetyStatus: 'caution',
-      safetyLabelEn: 'Caution: High Solar & Thermal Load',
-      safetyLabelHi: 'सावधानी: तेज धूप व गर्मी का दबाव',
-      temperature: 31,
-      wbgt: 28.5,
-      heatIndex: 34,
-      uvIndex: 7.0,
-      rainChance: 25,
-      advisoryNoteEn: 'Peak UV index. Mandatory 15-minute shaded rest breaks every 45 minutes.',
-      advisoryNoteHi: 'उच्चतम UV विकिरण। प्रत्येक 45 मिनट के कार्य पर 15 मिनट छाया में विश्राम अनिवार्य।',
-    },
-    {
-      hour: '14:00',
-      safetyStatus: 'hazardous',
-      safetyLabelEn: 'Hazardous: Squall Line & Severe Heat',
-      safetyLabelHi: 'खतरनाक: आंधी व लू का गंभीर खतरा',
-      temperature: 33,
-      wbgt: 31.4,
-      heatIndex: 37,
-      uvIndex: 6.2,
-      rainChance: 75,
-      advisoryNoteEn: 'Severe convective storm and lightning threat. Cease open field labor immediately.',
-      advisoryNoteHi: 'आकाशीय बिजली व तेज आंधी का गंभीर खतरा। खुले खेतों से तत्काल सुरक्षित स्थान जाएं।',
-    },
-    {
-      hour: '16:00',
-      safetyStatus: 'hazardous',
-      safetyLabelEn: 'Hazardous: Lightning & Heavy Rain',
-      safetyLabelHi: 'खतरनाक: आकाशीय बिजली व मूसलाधार वर्षा',
-      temperature: 27,
-      wbgt: 29.8,
-      heatIndex: 32,
-      uvIndex: 2.5,
-      rainChance: 70,
-      advisoryNoteEn: 'Keep workers away from electric poles, tall isolated trees & metallic implements.',
-      advisoryNoteHi: 'बिजली के खंभों, अकेले ऊंचे पेड़ों व लोहे के कृषि यंत्रों से दूर पक्के शेड में रहें।',
-    },
-    {
-      hour: '18:00',
-      safetyStatus: 'caution',
-      safetyLabelEn: 'Caution: Wet Soil & Reduced Grip',
-      safetyLabelHi: 'सावधानी: फिसलन व गीली मिट्टी',
-      temperature: 25,
-      wbgt: 24.2,
-      heatIndex: 27,
-      uvIndex: 0.2,
-      rainChance: 35,
-      advisoryNoteEn: 'Soil furrows slippery. Avoid tractor operations on steep bunds or wet slopes.',
-      advisoryNoteHi: 'खेतों में फिसलन अधिक है। गीली मेड़ों या ढलानों पर ट्रैक्टर चलाने से बचें।',
-    },
-    {
-      hour: '20:00',
-      safetyStatus: 'safe',
-      safetyLabelEn: 'Safe: Calm Evening Shift',
-      safetyLabelHi: 'सुरक्षित: शांत शाम, सुरक्षित समय',
-      temperature: 24,
-      wbgt: 21.0,
-      heatIndex: 25,
-      uvIndex: 0,
-      rainChance: 10,
-      advisoryNoteEn: 'Cool ambient conditions. Safe for indoor sorting, grain bag sealing & yard work.',
-      advisoryNoteHi: 'मौसम शांत व ठंडा। अनाज छंटाई, बोरी भराई व खलिहान कार्य हेतु सुरक्षित।',
-    },
-  ];
+  // Dynamic Biomechanical and Atmospheric Telemetry
+  const currentTemp = weather?.current?.temperature ?? 28;
+  const currentHumidity = weather?.current?.relativeHumidity ?? 65;
+
+  const currentWBGT = useMemo(() => {
+    const e = (currentHumidity / 100) * 6.105 * Math.exp((17.27 * currentTemp) / (237.7 + currentTemp));
+    return Number((0.567 * currentTemp + 0.393 * e + 3.94).toFixed(1));
+  }, [currentTemp, currentHumidity]);
+
+  const workRestRatio = useMemo(() => {
+    if (currentWBGT >= 31.5) return { ratio: '20m / 40m', labelEn: '40m Shaded Break', labelHi: '40 मिनट विश्राम' };
+    if (currentWBGT >= 28.5) return { ratio: '30m / 30m', labelEn: '30m Shaded Break', labelHi: '30 मिनट विश्राम' };
+    if (currentWBGT >= 26.0) return { ratio: '45m / 15m', labelEn: '15m Shaded Break', labelHi: '15 मिनट विश्राम' };
+    return { ratio: '50m / 10m', labelEn: '10m Break', labelHi: '10 मिनट विश्राम' };
+  }, [currentWBGT]);
+
+  const hydrationRate = useMemo(() => {
+    if (currentTemp >= 36 || currentWBGT >= 31) return '1.2 L / hr';
+    if (currentTemp >= 30 || currentWBGT >= 27) return '1.0 L / hr';
+    return '0.75 L / hr';
+  }, [currentTemp, currentWBGT]);
+
+  const lightningRiskWindow = useMemo(() => {
+    if (!weather?.hourly || weather.hourly.length === 0) {
+      return {
+        window: '14:00 – 17:00',
+        hasRisk: true,
+      };
+    }
+    const riskySlots = weather.hourly.filter(
+      h => h.precipitationProbability >= 45 || [95, 96, 99].includes(h.weatherCode)
+    );
+    if (riskySlots.length === 0) {
+      return {
+        window: language === 'hi' ? 'कोई खतरा नहीं' : 'None Detected',
+        hasRisk: false,
+      };
+    }
+    const startH = riskySlots[0].hour;
+    const endH = riskySlots[Math.min(riskySlots.length - 1, 3)].hour;
+    return {
+      window: `${startH} – ${endH}`,
+      hasRisk: true,
+    };
+  }, [weather?.hourly, language]);
+
+  // Dynamic hourly schedule generated from live Open-Meteo telemetry
+  const workSafetySchedule = useMemo<WorkSafetyHour[]>(() => {
+    const shiftHours = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+    const result: WorkSafetyHour[] = [];
+
+    for (let i = 0; i < shiftHours.length; i++) {
+      const targetHourStr = shiftHours[i];
+      const targetHourNum = parseInt(targetHourStr.split(':')[0], 10);
+
+      // Match corresponding hour from weather.hourly if available
+      const matched = weather?.hourly?.find(h => {
+        const hNum = parseInt(h.hour.split(':')[0], 10);
+        return hNum === targetHourNum;
+      });
+
+      // Ambient temperature calculation from live sensor/satellite forecast
+      const temp = matched
+        ? matched.temperature
+        : Math.round(currentTemp + (targetHourNum >= 12 && targetHourNum <= 15 ? 4 : targetHourNum < 9 ? -4 : 0));
+      const rainProb = matched
+        ? matched.precipitationProbability
+        : (targetHourNum >= 14 && targetHourNum <= 17 ? 65 : 10);
+      const uv = matched
+        ? matched.uvIndex
+        : (targetHourNum >= 11 && targetHourNum <= 14 ? 7.2 : targetHourNum < 8 || targetHourNum >= 18 ? 0.2 : 4.0);
+      const wCode = matched ? matched.weatherCode : 0;
+      const windSpd = matched ? matched.windSpeed : (weather?.current?.windSpeed ?? 14);
+
+      // Humidity variations across day (cooler hours higher RH, midday solar lower RH)
+      const slotHumidity = Math.max(
+        35,
+        Math.min(95, Math.round(currentHumidity + (temp < 25 ? 15 : temp > 32 ? -15 : 0)))
+      );
+
+      // Dynamic WBGT (Wet Bulb Globe Temperature)
+      const e = (slotHumidity / 100) * 6.105 * Math.exp((17.27 * temp) / (237.7 + temp));
+      const wbgt = Number((0.567 * temp + 0.393 * e + 3.94).toFixed(1));
+      const heatIndex = Math.round(temp >= 26 ? temp + (slotHumidity > 60 ? (slotHumidity - 60) * 0.25 : 0) : temp);
+
+      // Safety status classification
+      const isThunderstorm = [95, 96, 99].includes(wCode);
+      const isHazardous = isThunderstorm || rainProb >= 65 || wbgt >= 31.5 || temp >= 39;
+      const isCaution = !isHazardous && (rainProb >= 30 || wbgt >= 27.5 || uv >= 6.5 || temp >= 33 || windSpd >= 25);
+      const safetyStatus: 'safe' | 'caution' | 'hazardous' = isHazardous ? 'hazardous' : isCaution ? 'caution' : 'safe';
+
+      let safetyLabelEn = 'Safe for Field Work';
+      let safetyLabelHi = 'खेत कार्य हेतु सुरक्षित';
+      let advisoryNoteEn = 'Optimal condition for manual labor, pesticide spraying & harvesting.';
+      let advisoryNoteHi = 'श्रम, कीटनाशक छिड़काव व कटाई के लिए सबसे उत्तम व सुरक्षित समय।';
+
+      if (safetyStatus === 'hazardous') {
+        if (isThunderstorm || rainProb >= 65) {
+          safetyLabelEn = 'Hazardous: Squall Line & Severe Rain';
+          safetyLabelHi = 'खतरनाक: आंधी व मूसलाधार वर्षा';
+          advisoryNoteEn = `Convective rain threat (${rainProb}%). Lightning active in ${location.district || location.name}. Cease open labor immediately.`;
+          advisoryNoteHi = `${location.district || location.name} क्षेत्र में आकाशीय बिजली व आंधी (${rainProb}%) का खतरा। खुले खेतों से तत्काल पक्के शेड में जाएं।`;
+        } else {
+          safetyLabelEn = 'Hazardous: Extreme Heat Stress';
+          safetyLabelHi = 'खतरनाक: अत्यधिक लू व ताप दबाव';
+          advisoryNoteEn = `WBGT at ${wbgt}°C exceeds biometric limit. Mandatory shutdown of heavy manual agricultural labor.`;
+          advisoryNoteHi = `वेट-बल्ब तापमान ${wbgt}°C खतरनाक स्तर पर। भारी शारीरिक श्रम पर तत्काल रोक लगाएं।`;
+        }
+      } else if (safetyStatus === 'caution') {
+        if (uv >= 6.5 || wbgt >= 27.5) {
+          safetyLabelEn = 'Caution: High Solar & Thermal Load';
+          safetyLabelHi = 'सावधानी: तेज धूप व गर्मी का दबाव';
+          advisoryNoteEn = `UV index ${uv} & thermal load ${wbgt}°C. Mandatory 15-minute shaded rest every 45 minutes.`;
+          advisoryNoteHi = `उच्चतम UV विकिरण (${uv}) व ताप दबाव। प्रत्येक 45 मिनट के कार्य पर 15 मिनट छाया में विश्राम अनिवार्य।`;
+        } else {
+          safetyLabelEn = 'Caution: Wet Soil & Reduced Grip';
+          safetyLabelHi = 'सावधानी: फिसलन व गीली मिट्टी';
+          advisoryNoteEn = `Rain probability ${rainProb}%. Soil furrows slippery. Avoid tractor operations on steep bunds.`;
+          advisoryNoteHi = `मिट्टी में फिसलन व नमी (${rainProb}% वर्षा)। गीली मेड़ों पर ट्रैक्टर चलाने से बचें।`;
+        }
+      } else {
+        if (wbgt >= 24) {
+          safetyLabelEn = 'Safe: Hydration Required';
+          safetyLabelHi = 'सुरक्षित: पर्याप्त जलपान रखें';
+          advisoryNoteEn = `Thermal load rising. Ensure potable water with electrolytes at ${location.district || location.name} field edges.`;
+          advisoryNoteHi = `धूप बढ़ रही है। खेत की मेड़ों पर पीने का पानी व ओआरएस उपलब्ध रखें।`;
+        } else {
+          safetyLabelEn = 'Safe for Field Work';
+          safetyLabelHi = 'खेत कार्य हेतु सुरक्षित';
+          advisoryNoteEn = 'Calm morning winds, pleasant temperature. Optimal conditions for spraying & labor.';
+          advisoryNoteHi = 'शांत हवा व सुखद तापमान। श्रमिकों की कार्यक्षमता अधिकतम रहेगी।';
+        }
+      }
+
+      result.push({
+        hour: targetHourStr,
+        safetyStatus,
+        safetyLabelEn,
+        safetyLabelHi,
+        temperature: temp,
+        wbgt,
+        heatIndex,
+        uvIndex: uv,
+        rainChance: rainProb,
+        advisoryNoteEn,
+        advisoryNoteHi,
+      });
+    }
+
+    return result;
+  }, [weather?.hourly, weather?.current, currentTemp, currentHumidity, location.district, location.name]);
 
   const filteredSlots = workSafetySchedule.filter(slot => {
     if (activeShiftFilter === 'all') return true;
@@ -229,7 +274,7 @@ export default function ExplorerWorkSafety() {
         <div className="flex flex-col">
           <div className="flex items-center gap-space-xs text-primary text-xs font-bold uppercase tracking-wider">
             <span className="material-symbols-outlined text-[1.25rem]">health_and_safety</span>
-            <span>FR-7.2 Field Work Windows & Outdoor Labor Safety • {location.district}</span>
+            <span>FR-7.2 Field Work Windows & Outdoor Labor Safety • {location.district || location.name || 'Agro Sector'}</span>
           </div>
           <h1 className="font-headline-lg text-xl sm:text-2xl font-extrabold text-on-surface tracking-tight mt-1">
             {language === 'hi'
@@ -295,15 +340,43 @@ export default function ExplorerWorkSafety() {
           </div>
           <div className="my-2">
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-extrabold text-on-surface">28.5</span>
+              <span className="text-2xl font-extrabold text-on-surface">{currentWBGT}</span>
               <span className="text-xs text-on-surface-variant font-bold">°C</span>
             </div>
-            <span className="text-[0.7rem] font-bold text-tertiary bg-tertiary-fixed/30 px-2 py-0.5 rounded-full inline-block mt-1">
-              {language === 'hi' ? 'सावधानी स्तर (Caution)' : 'Moderate Heat Stress'}
+            <span
+              className={`text-[0.7rem] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                currentWBGT >= 31.5
+                  ? 'text-secondary bg-secondary-fixed/40'
+                  : currentWBGT >= 27.5
+                  ? 'text-tertiary bg-tertiary-fixed/30'
+                  : 'text-primary bg-primary-container/40'
+              }`}
+            >
+              {currentWBGT >= 31.5
+                ? language === 'hi'
+                  ? 'अत्यधिक ताप दबाव (Severe)'
+                  : 'Severe Heat Stress'
+                : currentWBGT >= 27.5
+                ? language === 'hi'
+                  ? 'सावधानी स्तर (Caution)'
+                  : 'Moderate Heat Stress'
+                : language === 'hi'
+                ? 'सुरक्षित स्तर (Safe)'
+                : 'Safe Thermal Load'}
             </span>
           </div>
           <span className="text-[0.7rem] text-on-surface-variant">
-            {language === 'hi' ? '29°C से ऊपर खुले खेत का भारी श्रम रोकें' : 'Cease strenuous labor if >29.5°C'}
+            {currentWBGT >= 31.5
+              ? language === 'hi'
+                ? 'खुले खेत का भारी श्रम रोकें'
+                : 'Cease strenuous labor if >31.5°C'
+              : currentWBGT >= 27.5
+              ? language === 'hi'
+                ? 'छायादार विश्राम व जलपान अनिवार्य'
+                : 'Mandatory shaded break & hydration'
+              : language === 'hi'
+              ? 'शारीरिक श्रम हेतु अनुकूल'
+              : 'Optimal outdoor thermal load'}
           </span>
         </div>
 
@@ -313,13 +386,13 @@ export default function ExplorerWorkSafety() {
             <span className="material-symbols-outlined text-[1.25rem] text-tertiary">timer</span>
           </div>
           <div className="my-2">
-            <div className="text-xl font-extrabold text-on-surface">45m / 15m</div>
+            <div className="text-xl font-extrabold text-on-surface">{workRestRatio.ratio}</div>
             <span className="text-[0.7rem] font-bold text-primary bg-primary-container/40 px-2 py-0.5 rounded-full inline-block mt-1">
-              {language === 'hi' ? '15 मिनट छायादार विश्राम' : '15m Shaded Break'}
+              {language === 'hi' ? workRestRatio.labelHi : workRestRatio.labelEn}
             </span>
           </div>
           <span className="text-[0.7rem] text-on-surface-variant">
-            {language === 'hi' ? 'पेड़ या छप्पर की छांव में बैठें' : 'Mandatory shade rest every 45 min'}
+            {language === 'hi' ? 'पेड़ या छप्पर की छांव में बैठें' : 'Mandatory shade rest per work shift'}
           </span>
         </div>
 
@@ -329,7 +402,7 @@ export default function ExplorerWorkSafety() {
             <span className="material-symbols-outlined text-[1.25rem] text-primary">water_drop</span>
           </div>
           <div className="my-2">
-            <div className="text-xl font-extrabold text-on-surface">1.0 L / hr</div>
+            <div className="text-xl font-extrabold text-on-surface">{hydrationRate}</div>
             <span className="text-[0.7rem] font-bold text-primary bg-primary-container/40 px-2 py-0.5 rounded-full inline-block mt-1">
               {language === 'hi' ? 'पानी + नीम्बू/ओआरएस' : 'Water + Electrolytes'}
             </span>
@@ -342,16 +415,46 @@ export default function ExplorerWorkSafety() {
         <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-on-surface-variant text-xs">
             <span className="font-bold">{language === 'hi' ? 'वज्रपात चेतावनी' : 'Lightning Alert'}</span>
-            <span className="material-symbols-outlined text-[1.25rem] text-secondary">flash_on</span>
+            <span
+              className={`material-symbols-outlined text-[1.25rem] ${
+                lightningRiskWindow.hasRisk ? 'text-secondary' : 'text-primary'
+              }`}
+            >
+              {lightningRiskWindow.hasRisk ? 'flash_on' : 'verified'}
+            </span>
           </div>
           <div className="my-2">
-            <div className="text-xl font-extrabold text-secondary">14:00 – 17:00</div>
-            <span className="text-[0.7rem] font-bold text-secondary bg-secondary-fixed/40 px-2 py-0.5 rounded-full inline-block mt-1">
-              {language === 'hi' ? 'उच्च जोखिम (High Risk)' : 'Convective Squall Line'}
+            <div
+              className={`text-xl font-extrabold ${
+                lightningRiskWindow.hasRisk ? 'text-secondary' : 'text-on-surface'
+              }`}
+            >
+              {lightningRiskWindow.window}
+            </div>
+            <span
+              className={`text-[0.7rem] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                lightningRiskWindow.hasRisk
+                  ? 'text-secondary bg-secondary-fixed/40'
+                  : 'text-primary bg-primary-container/40'
+              }`}
+            >
+              {lightningRiskWindow.hasRisk
+                ? language === 'hi'
+                  ? 'उच्च जोखिम (High Risk)'
+                  : 'Convective Squall Line'
+                : language === 'hi'
+                ? 'रडार साफ़ है'
+                : 'Clear Radar'}
             </span>
           </div>
           <span className="text-[0.7rem] text-on-surface-variant">
-            {language === 'hi' ? 'बिजली कड़कते ही खुले खेत खाली करें' : 'Evacuate open fields at first thunder'}
+            {lightningRiskWindow.hasRisk
+              ? language === 'hi'
+                ? 'बिजली कड़कते ही खुले खेत खाली करें'
+                : 'Evacuate open fields at first thunder'
+              : language === 'hi'
+              ? 'आकाशीय बिजली का कोई खतरा नहीं'
+              : 'No convective squalls projected'}
           </span>
         </div>
       </section>

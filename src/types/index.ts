@@ -54,6 +54,7 @@ export interface WeatherDaily {
   tempMax: number;
   tempMin: number;
   precipitationProbability: number;
+  precipitationSum?: number;
   weatherCode: number;
   conditionEn: string;
   conditionHi: string;

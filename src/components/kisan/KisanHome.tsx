@@ -33,7 +33,7 @@ export default function KisanHome() {
     if (isPlayingAudio) {
       stopSpeech();
     } else {
-      playSpeech(fullWeatherSpokenScript);
+      playSpeech(fullWeatherSpokenScript, language === 'hi' ? 'hi-IN' : 'en-IN');
     }
   };
 
@@ -85,11 +85,8 @@ export default function KisanHome() {
               (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)) ||
               (voiceResult.message.text && /[\u0900-\u097F]/.test(voiceResult.message.text));
 
-            const isHi =
-              voiceResult.message.detectedLanguage === 'hi' ||
-              detectQueryLanguage(voiceResult.transcription || '') === 'hi' ||
-              language === 'hi' ||
-              replyHasHindi;
+            const isDevanagari = /[\u0900-\u097F]/.test(voiceResult.transcription || '');
+            const isHi = language === 'en' ? isDevanagari : true;
 
             if (voiceResult.transcription) {
               setVoiceQueryText(voiceResult.transcription);
@@ -110,7 +107,7 @@ export default function KisanHome() {
               ? (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)
                   ? voiceResult.message.spokenResponse
                   : displayReply)
-              : (voiceResult.message.spokenResponse || displayReply);
+              : (englishSpoken || voiceResult.message.spokenResponse || displayReply);
 
             setQuickResponse(displayReply);
             playSpeech(spokenReply, isHi ? 'hi-IN' : 'en-IN');
@@ -182,13 +179,8 @@ export default function KisanHome() {
         queryLang
       );
 
-      const replyHasHindi =
-        (resp.textHi && /[\u0900-\u097F]/.test(resp.textHi)) ||
-        (resp.reply && /[\u0900-\u097F]/.test(resp.reply)) ||
-        (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse)) ||
-        (resp.text && /[\u0900-\u097F]/.test(resp.text));
-
-      const isHi = queryLang === 'hi' || resp.detectedLanguage === 'hi' || language === 'hi' || replyHasHindi;
+      const isDevanagari = /[\u0900-\u097F]/.test(query);
+      const isHi = language === 'en' ? isDevanagari : true;
 
       const hindiSpoken =
         resp.textHi ||
@@ -205,13 +197,13 @@ export default function KisanHome() {
       const reply = isHi ? (hindiSpoken || resp.text) : (englishSpoken || resp.text);
       const spoken = isHi
         ? (resp.spokenResponse && /[\u0900-\u097F]/.test(resp.spokenResponse) ? resp.spokenResponse : reply)
-        : (resp.spokenResponse || reply);
+        : (englishSpoken || resp.spokenResponse || reply);
 
       setQuickResponse(reply);
       playSpeech(spoken, isHi ? 'hi-IN' : 'en-IN');
     } catch (err) {
       console.warn('AI copilot error:', err);
-      const isEn = queryLang === 'en' && language === 'en';
+      const isEn = language === 'en';
       const fallback = isEn
         ? `Today temperature is ${weather?.current?.temperature || 31}°C, winds are normal, and soil moisture is ideal.`
         : `आज का तापमान ${weather?.current?.temperature || 31} डिग्री है, हवा सामान्य है और खेत में नमी बुवाई के लिए पर्याप्त है।`;

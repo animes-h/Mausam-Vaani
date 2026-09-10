@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppMode, ConsensusInfo, CropRecommendation, GovernmentAlert, Language, LocationInfo, NetworkMode, SoilConfig, WeatherCurrent, WeatherDaily, WeatherHourly } from '@/types';
 import { DEFAULT_LOCATION, fetchWeatherData, getFallbackWeatherData } from '@/lib/weatherService';
-import { ACTIVE_GOVERNMENT_ALERTS } from '@/lib/alertService';
+import { ACTIVE_GOVERNMENT_ALERTS, getAlertsForLocation } from '@/lib/alertService';
 import { getCropRecommendations, STANDARD_SOIL_TYPES } from '@/lib/cropAdvisorService';
 import { SpeechHandler } from '@/lib/speechService';
 
@@ -70,7 +70,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [weather, setWeather] = useState(getFallbackWeatherData());
-  const [alerts] = useState<GovernmentAlert[]>(ACTIVE_GOVERNMENT_ALERTS);
+  const [alerts, setAlerts] = useState<GovernmentAlert[]>(() => getAlertsForLocation(DEFAULT_LOCATION));
   const [cropRecommendations, setCropRecommendations] = useState<CropRecommendation[]>([]);
 
   // Detect Network Speed (FR-8.1 Network detection)
@@ -99,6 +99,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshWeather();
   }, [location.lat, location.lng]);
+
+  // Update Alerts dynamically when location changes
+  useEffect(() => {
+    setAlerts(getAlertsForLocation(location));
+  }, [location.name, location.district, location.state]);
 
   // Update Crop Recommendations when soilConfig changes
   useEffect(() => {

@@ -152,17 +152,13 @@ export default function ExplorerClimateAI() {
             if (voiceResult.transcription) {
               setInputQuery(voiceResult.transcription);
             }
-            const isHi =
-              (voiceResult.message.detectedLanguage || detectQueryLanguage(voiceResult.transcription || '')) === 'hi' ||
-              language === 'hi' ||
-              /[\u0900-\u097F]/.test(voiceResult.message.textHi || '') ||
-              /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse || '') ||
-              /[\u0900-\u097F]/.test(voiceResult.message.text || '');
+            const hasDevanagari = /[\u0900-\u097F]/.test(voiceResult.transcription || '');
+            const isHi = language === 'en' ? hasDevanagari : true;
             const speechText = (isHi
               ? (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)
                   ? voiceResult.message.spokenResponse
                   : (voiceResult.message.textHi || voiceResult.message.text))
-              : (voiceResult.message.spokenResponse || voiceResult.message.text)) || '';
+              : (voiceResult.message.text || voiceResult.message.spokenResponse || '')) || '';
             if (speechText) {
               playSpeech(speechText, isHi ? 'hi-IN' : 'en-IN');
             }
@@ -216,7 +212,7 @@ export default function ExplorerClimateAI() {
             <span>Inference Latency: <strong className="text-on-surface font-bold">41.8 ms (Semantic Cache Active)</strong></span>
             <span className="text-outline mx-1">|</span>
             <span className="material-symbols-outlined text-[1rem] text-primary">pin_drop</span>
-            <span>Grid Resolution: <strong className="text-on-surface font-bold">0.05° (~5.5km) • Malwa Plateau</strong></span>
+            <span>Grid Resolution: <strong className="text-on-surface font-bold">0.05° (~5.5km) • {location.district || location.name} Grid</strong></span>
           </p>
         </div>
 
@@ -243,7 +239,7 @@ export default function ExplorerClimateAI() {
                 <div className="flex flex-col">
                   <span className="text-[0.65rem] uppercase text-outline font-bold tracking-wider">Active Session Topic</span>
                   <span className="font-bold text-xs text-on-surface">
-                    Malwa Agronomic Boundary Conditions & Spraying Windows
+                    {location.district || location.name} Agronomic Boundary Conditions & Spraying Windows
                   </span>
                 </div>
               </div>
@@ -323,17 +319,15 @@ export default function ExplorerClimateAI() {
                             <button
                               onClick={() => {
                                 SpeechHandler.prewarmAudio();
-                                const isHi =
-                                  language === 'hi' ||
-                                  /[\u0900-\u097F]/.test(m.textHi || '') ||
-                                  /[\u0900-\u097F]/.test(m.spokenResponse || '') ||
-                                  /[\u0900-\u097F]/.test(m.text || '');
+                                const isHi = language === 'hi';
                                 const textToSpeak = isHi
                                   ? (m.spokenResponse && /[\u0900-\u097F]/.test(m.spokenResponse)
                                       ? m.spokenResponse
-                                      : (m.textHi || m.text))
-                                  : (m.spokenResponse || m.text);
-                                playSpeech(textToSpeak, isHi ? 'hi-IN' : 'en-IN');
+                                      : (m.textHi || m.text || ''))
+                                  : (m.text || m.spokenResponse || '');
+                                if (textToSpeak) {
+                                  playSpeech(textToSpeak, isHi ? 'hi-IN' : 'en-IN');
+                                }
                               }}
                               className="text-outline hover:text-on-surface p-1 active:scale-95 transition-transform cursor-pointer"
                               title="Speak response"

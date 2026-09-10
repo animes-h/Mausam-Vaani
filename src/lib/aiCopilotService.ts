@@ -12,8 +12,10 @@ export async function askClimateCopilot(
   language: 'en' | 'hi' = 'hi'
 ): Promise<ChatMessage> {
   const isDevanagari = /[\u0900-\u097F]/.test(userQuery);
-  const detectedByKeywords = detectQueryLanguage(userQuery) === 'hi';
-  const queryLang: 'hi' | 'en' = (isDevanagari || detectedByKeywords || language === 'hi') ? 'hi' : 'en';
+  // When website language is English, honor English unless user explicitly typed in Devanagari script
+  const queryLang: 'hi' | 'en' = language === 'en'
+    ? (isDevanagari ? 'hi' : 'en')
+    : 'hi';
 
   // Check instant semantic cache (FR-8.3 & NFR-1 target <300ms)
   const cached = getCachedResponse(userQuery);
@@ -23,10 +25,10 @@ export async function askClimateCopilot(
       id: `cached-${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      text: isHi ? cached.text : cached.textEn,
+      text: isHi ? cached.text : (cached.textEn || cached.text),
       textHi: cached.text,
       detectedLanguage: queryLang,
-      spokenResponse: isHi ? cached.text : cached.textEn,
+      spokenResponse: isHi ? cached.text : (cached.textEn || cached.text),
       consensusScore: 98.4,
       modelBadge: 'Cached Instant Inference (<50ms)',
       sources: ['Semantic Knowledge Cache (Pre-verified IMD/ECMWF)'],
@@ -46,8 +48,7 @@ export async function askClimateCopilot(
       if (apiRes.ok) {
         const parsed = await apiRes.json();
         if (parsed && (parsed.text || parsed.textHi || parsed.reply)) {
-          const effectiveLang: 'hi' | 'en' =
-            isDevanagari || parsed.detectedLanguage === 'hi' || queryLang === 'hi' ? 'hi' : 'en';
+          const effectiveLang: 'hi' | 'en' = queryLang;
           const isHi = effectiveLang === 'hi';
 
           const hindiText =
@@ -290,12 +291,9 @@ export async function askClimateCopilotWithAudio(
     if (apiRes.ok) {
       const parsed = await apiRes.json();
       const detectedLang: 'hi' | 'en' =
-        parsed.detectedLanguage === 'hi' ||
-        /[\u0900-\u097F]/.test(parsed.transcription || '') ||
-        /[\u0900-\u097F]/.test(parsed.spokenResponse || '') ||
-        language === 'hi'
-          ? 'hi'
-          : 'en';
+        language === 'en'
+          ? (/[\u0900-\u097F]/.test(parsed.transcription || '') ? 'hi' : 'en')
+          : 'hi';
       const isHi = detectedLang === 'hi';
       const transcription = parsed.transcription || (isHi ? 'मौसम व फसल प्रश्न' : 'Weather & Crop Query');
 

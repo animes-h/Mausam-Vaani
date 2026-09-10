@@ -6,12 +6,19 @@ import { translations } from '@/lib/translations';
 import MobileNavDrawer from './MobileNavDrawer';
 
 const PRESET_LOCATIONS = [
-  { name: 'Indore, Madhya Pradesh', nameHi: 'इंदौर, मध्य प्रदेश', district: 'Indore', state: 'MP', lat: 22.7196, lng: 75.8577, elevation: 553 },
-  { name: 'Ujjain, Madhya Pradesh', nameHi: 'उज्जैन, मध्य प्रदेश', district: 'Ujjain', state: 'MP', lat: 23.1765, lng: 75.7885, elevation: 494 },
-  { name: 'Bhopal, Madhya Pradesh', nameHi: 'भोपाल, मध्य प्रदेश', district: 'Bhopal', state: 'MP', lat: 23.2599, lng: 77.4126, elevation: 527 },
-  { name: 'Dewas, Madhya Pradesh', nameHi: 'देवास, मध्य प्रदेश', district: 'Dewas', state: 'MP', lat: 22.9676, lng: 76.0534, elevation: 535 },
-  { name: 'Dhar, Madhya Pradesh', nameHi: 'धार, मध्य प्रदेश', district: 'Dhar', state: 'MP', lat: 22.5978, lng: 75.2974, elevation: 559 },
-  { name: 'Jaipur, Rajasthan', nameHi: 'जयपुर, राजस्थान', district: 'Jaipur', state: 'RJ', lat: 26.9124, lng: 75.7873, elevation: 431 },
+  { name: 'Lucknow, Uttar Pradesh', nameHi: 'लखनऊ, उत्तर प्रदेश', district: 'Lucknow', state: 'Uttar Pradesh', lat: 26.8467, lng: 80.9462, elevation: 123 },
+  { name: 'Vrindavan Yojna, Lucknow', nameHi: 'वृंदावन योजना, लखनऊ', district: 'Lucknow', state: 'Uttar Pradesh', lat: 26.7676, lng: 80.9462, elevation: 120 },
+  { name: 'New Delhi', nameHi: 'नई दिल्ली', district: 'New Delhi', state: 'Delhi', lat: 28.6139, lng: 77.2090, elevation: 216 },
+  { name: 'Kanpur, Uttar Pradesh', nameHi: 'कानपुर, उत्तर प्रदेश', district: 'Kanpur', state: 'Uttar Pradesh', lat: 26.4499, lng: 80.3319, elevation: 126 },
+  { name: 'Varanasi, Uttar Pradesh', nameHi: 'वाराणसी, उत्तर प्रदेश', district: 'Varanasi', state: 'Uttar Pradesh', lat: 25.3176, lng: 82.9739, elevation: 81 },
+  { name: 'Agra, Uttar Pradesh', nameHi: 'आगरा, उत्तर प्रदेश', district: 'Agra', state: 'Uttar Pradesh', lat: 27.1767, lng: 78.0081, elevation: 171 },
+  { name: 'Indore, Madhya Pradesh', nameHi: 'इंदौर, मध्य प्रदेश', district: 'Indore', state: 'Madhya Pradesh', lat: 22.7196, lng: 75.8577, elevation: 553 },
+  { name: 'Bhopal, Madhya Pradesh', nameHi: 'भोपाल, मध्य प्रदेश', district: 'Bhopal', state: 'Madhya Pradesh', lat: 23.2599, lng: 77.4126, elevation: 527 },
+  { name: 'Ujjain, Madhya Pradesh', nameHi: 'उज्जैन, मध्य प्रदेश', district: 'Ujjain', state: 'Madhya Pradesh', lat: 23.1765, lng: 75.7885, elevation: 494 },
+  { name: 'Dewas, Madhya Pradesh', nameHi: 'देवास, मध्य प्रदेश', district: 'Dewas', state: 'Madhya Pradesh', lat: 22.9676, lng: 76.0534, elevation: 535 },
+  { name: 'Jaipur, Rajasthan', nameHi: 'जयपुर, राजस्थान', district: 'Jaipur', state: 'Rajasthan', lat: 26.9124, lng: 75.7873, elevation: 431 },
+  { name: 'Patna, Bihar', nameHi: 'पटना, बिहार', district: 'Patna', state: 'Bihar', lat: 25.5941, lng: 85.1376, elevation: 53 },
+  { name: 'Pune, Maharashtra', nameHi: 'पुणे, महाराष्ट्र', district: 'Pune', state: 'Maharashtra', lat: 18.5204, lng: 73.8567, elevation: 560 },
 ];
 
 export default function Header() {
@@ -42,15 +49,39 @@ export default function Header() {
     }
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
+        const lat = Number(pos.coords.latitude.toFixed(4));
+        const lng = Number(pos.coords.longitude.toFixed(4));
+        try {
+          const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
+          if (res.ok) {
+            const data = await res.json();
+            setLocation({
+              name: data.name || `Location (${lat}, ${lng})`,
+              nameHi: data.nameHi || data.name || `स्थान (${lat}, ${lng})`,
+              district: data.district || data.city || 'Local District',
+              state: data.state || 'India',
+              lat: data.lat || lat,
+              lng: data.lng || lng,
+              elevation: data.elevation || 120,
+            });
+            setIsLocating(false);
+            setShowLocationModal(false);
+            return;
+          }
+        } catch (e) {
+          console.warn('Reverse geocoding error:', e);
+        }
+
+        // Resilient fallback
         setLocation({
-          name: 'Current Location',
-          nameHi: 'वर्तमान स्थान',
+          name: 'Current GPS Location',
+          nameHi: 'वर्तमान GPS स्थान',
           district: 'Local Region',
           state: 'India',
-          lat: Number(pos.coords.latitude.toFixed(4)),
-          lng: Number(pos.coords.longitude.toFixed(4)),
-          elevation: 550,
+          lat,
+          lng,
+          elevation: 150,
         });
         setIsLocating(false);
         setShowLocationModal(false);
@@ -150,18 +181,18 @@ export default function Header() {
           <div className="flex items-center gap-1 sm:gap-space-sm md:gap-space-md shrink-0">
             {/* Location Selector Pill - Now VISIBLE ON ALL SCREENS INCLUDING MOBILE */}
             <button
-              className="flex items-center gap-1 bg-surface-container-low hover:bg-surface-container px-2 sm:px-space-sm py-1 sm:py-space-xs rounded-full text-on-surface transition-all cursor-pointer active:scale-95"
+              className="flex items-center gap-1.5 bg-surface-container-low hover:bg-surface-container px-2 sm:px-space-sm py-1 sm:py-space-xs rounded-full text-on-surface transition-all cursor-pointer active:scale-95"
               onClick={() => setShowLocationModal(true)}
               type="button"
               title="Click to change location"
             >
               <span className="material-symbols-outlined text-primary text-[1.1rem] sm:text-[1.25rem]">location_on</span>
-              <span className="font-label-sm text-[0.7rem] sm:text-label-sm font-semibold max-w-[64px] sm:max-w-[120px] truncate">
+              <span className="font-label-sm text-[0.7rem] sm:text-label-sm font-semibold max-w-[80px] sm:max-w-[150px] truncate">
                 {language === 'hi' ? location.nameHi || location.name : location.name}
               </span>
               <span className="text-outline text-label-sm hidden md:inline">•</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant hidden md:inline">
-                {location.lat}° N
+              <span className="font-label-sm text-label-sm text-on-surface-variant hidden md:inline truncate max-w-[110px]">
+                {location.district || location.state || 'India'}
               </span>
             </button>
 
@@ -328,7 +359,9 @@ export default function Header() {
                       {loc.state} • {loc.elevation}m MSL
                     </span>
                   </div>
-                  <span className="text-xs">{loc.lat}° N</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
+                    {loc.district}
+                  </span>
                 </button>
               ))}
             </div>

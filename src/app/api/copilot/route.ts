@@ -6,8 +6,7 @@ import { detectQueryLanguage } from '@/lib/speechService';
 function getDomainFallback(userQuery: string, location: any, weather: any, requestedLang?: string) {
   const lower = (userQuery || '').toLowerCase();
   const isDevanagari = /[\u0900-\u097F]/.test(userQuery);
-  const detectedByKeywords = detectQueryLanguage(userQuery) === 'hi';
-  const isHi = isDevanagari || detectedByKeywords || requestedLang === 'hi';
+  const isHi = requestedLang === 'en' ? (isDevanagari ? true : false) : true;
   const isEn = !isHi;
 
   const locName = location?.name || 'Indore, MP';
@@ -101,9 +100,10 @@ export async function POST(req: NextRequest) {
   const { userQuery = '', history, location, weather, language } = body;
 
   const isDevanagari = /[\u0900-\u097F]/.test(userQuery);
-  const detectedByKeywords = detectQueryLanguage(userQuery) === 'hi';
-  const queryIsHindi = isDevanagari || detectedByKeywords || language === 'hi';
-  const targetLanguage: 'hi' | 'en' = queryIsHindi ? 'hi' : 'en';
+  // If user requested English (language === 'en'), strictly keep 'en' unless the query contains actual Devanagari script
+  const targetLanguage: 'hi' | 'en' = language === 'en'
+    ? (isDevanagari ? 'hi' : 'en')
+    : 'hi';
 
   const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -118,8 +118,8 @@ export async function POST(req: NextRequest) {
       ? history.slice(-4).map((m: any) => `${m.sender}: ${m.text}`).join('\n')
       : '';
 
-    const systemGrounding = `You are Mausam Vaani (मौसम-वाणी) Climate Copilot & Senior Agronomist AI for Central India.
-Current Location: ${location?.name || 'Indore, MP'} (${location?.lat || 22.7196}°N, ${location?.lng || 75.8577}°E).
+    const systemGrounding = `You are Mausam Vaani (मौसम-वाणी) Climate Copilot & Senior Agronomist AI.
+Current Location: ${location?.name || 'Local Region'} (${location?.lat || 26.8467}°N, ${location?.lng || 80.9462}°E).
 Current Telemetry:
 - Temperature: ${weather?.temperature ?? 31}°C (Apparent: ${weather?.apparentTemperature ?? 34}°C)
 - Condition: ${weather?.conditionEn || 'Partly Cloudy'} (${weather?.conditionHi || 'आंशिक बादल'})
@@ -133,10 +133,10 @@ ${historyContext}
 User Query: "${userQuery}"
 
 CRITICAL LANGUAGE REQUIREMENT:
-The user asked in: ${targetLanguage === 'hi' ? 'HINDI (हिन्दी)' : 'ENGLISH'}.
+The user selected language: ${targetLanguage === 'hi' ? 'HINDI (हिन्दी)' : 'ENGLISH'}.
 1. "detectedLanguage": "${targetLanguage}"
-2. "reply": MUST be completely in ${targetLanguage === 'hi' ? 'clear natural Hindi (Devanagari script, like किसान भाइयों...)' : 'English'}!
-3. "spokenResponse": Direct, friendly spoken answer for the farmer voice assistant. MUST be completely in ${targetLanguage === 'hi' ? 'fluent Hindi (Devanagari script)' : 'English'}!
+2. "reply": MUST be completely in ${targetLanguage === 'hi' ? 'clear natural Hindi (Devanagari script, like किसान भाइयों...)' : 'clear, fluent English'}!
+3. "spokenResponse": Direct, friendly spoken answer for the voice assistant. MUST be completely in ${targetLanguage === 'hi' ? 'fluent Hindi (Devanagari script)' : 'fluent spoken English'}!
 4. "text": English scientific explanation.
 5. "textHi": Hindi explanation in Devanagari.
 6. "verdictTitle": Directive title in ${targetLanguage === 'hi' ? 'Hindi' : 'English'}.
@@ -168,7 +168,7 @@ Respond with ONLY a valid JSON object matching this structure:
 
     try {
       const parsed = JSON.parse(clean);
-      const isHi = targetLanguage === 'hi' || parsed.detectedLanguage === 'hi' || /[\u0900-\u097F]/.test(userQuery);
+      const isHi = targetLanguage === 'hi';
       const detectedLang = isHi ? 'hi' : 'en';
 
       const hindiReply =
@@ -181,7 +181,7 @@ Respond with ONLY a valid JSON object matching this structure:
       const finalSpoken =
         detectedLang === 'hi'
           ? (parsed.spokenResponse && /[\u0900-\u097F]/.test(parsed.spokenResponse) ? parsed.spokenResponse : finalReply)
-          : (parsed.spokenResponse || finalReply);
+          : (englishReply || parsed.spokenResponse || finalReply);
 
       return NextResponse.json({
         ...parsed,
@@ -193,7 +193,7 @@ Respond with ONLY a valid JSON object matching this structure:
         modelBadge: `${modelName} • Multi-Model Grounded`,
       });
     } catch {
-      const isHi = targetLanguage === 'hi' || /[\u0900-\u097F]/.test(userQuery);
+      const isHi = targetLanguage === 'hi';
       return NextResponse.json({
         detectedLanguage: isHi ? 'hi' : 'en',
         reply: raw,

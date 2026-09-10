@@ -94,7 +94,7 @@ export default function MobileNavDrawer({
                 {language === 'hi' ? 'सक्रिय स्थान' : 'Active Location'}
               </span>
               <span className="text-[0.65rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
-                {location.lat}° N, {location.lng}° E
+                {location.district || location.state || 'India'}
               </span>
             </div>
             <div className="flex items-center justify-between gap-2">

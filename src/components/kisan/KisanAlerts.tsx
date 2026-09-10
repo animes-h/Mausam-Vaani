@@ -26,8 +26,8 @@ export default function KisanAlerts() {
     } else {
       setIsPlayingAlertAudio(true);
       playSpeech(
-        primaryAlert.audioScriptHi,
-        'hi-IN'
+        language === 'hi' ? primaryAlert.audioScriptHi : primaryAlert.audioScriptEn,
+        language === 'hi' ? 'hi-IN' : 'en-IN'
       );
     }
   };

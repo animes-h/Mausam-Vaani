@@ -19,42 +19,335 @@ interface PresetRoute {
   distanceKm: number;
 }
 
+interface Coord {
+  lat: number;
+  lng: number;
+}
+
+// Indian Highway Coordinates for accurate routing and bearings
+const CITY_COORDS: Record<string, Coord> = {
+  // Delhi NCR
+  'new delhi': { lat: 28.6139, lng: 77.2090 },
+  'delhi': { lat: 28.6139, lng: 77.2090 },
+  'noida': { lat: 28.5355, lng: 77.3910 },
+  'greater noida': { lat: 28.4744, lng: 77.5040 },
+  'ghaziabad': { lat: 28.6692, lng: 77.4538 },
+  'gurugram': { lat: 28.4595, lng: 77.0266 },
+  'faridabad': { lat: 28.4089, lng: 77.3178 },
+
+  // Uttar Pradesh
+  'lucknow': { lat: 26.8467, lng: 80.9462 },
+  'vrindavan yojna': { lat: 26.7676, lng: 80.9462 },
+  'kanpur': { lat: 26.4499, lng: 80.3319 },
+  'unnao': { lat: 26.5458, lng: 80.4878 },
+  'agra': { lat: 27.1767, lng: 78.0081 },
+  'mathura': { lat: 27.4924, lng: 77.6737 },
+  'vrindavan': { lat: 27.5806, lng: 77.7006 },
+  'firozabad': { lat: 27.1592, lng: 78.3957 },
+  'etawah': { lat: 26.7855, lng: 79.0154 },
+  'auraiya': { lat: 26.4674, lng: 79.5165 },
+  'kannauj': { lat: 27.0543, lng: 79.9199 },
+  'varanasi': { lat: 25.3176, lng: 82.9739 },
+  'prayagraj': { lat: 25.4358, lng: 81.8463 },
+  'allahabad': { lat: 25.4358, lng: 81.8463 },
+  'ayodhya': { lat: 26.7922, lng: 82.1998 },
+  'gorakhpur': { lat: 26.7606, lng: 83.3732 },
+  'jhansi': { lat: 25.4484, lng: 78.5685 },
+  'meerut': { lat: 28.9845, lng: 77.7064 },
+  'bareilly': { lat: 28.3670, lng: 79.4304 },
+  'aligarh': { lat: 27.8974, lng: 78.0880 },
+  'moradabad': { lat: 28.8386, lng: 78.7733 },
+  'sultanpur': { lat: 26.2648, lng: 82.0727 },
+  'jaunpur': { lat: 25.7464, lng: 82.6837 },
+  'raebareli': { lat: 26.2303, lng: 81.2409 },
+
+  // Madhya Pradesh
+  'indore': { lat: 22.7196, lng: 75.8577 },
+  'bhopal': { lat: 23.2599, lng: 77.4126 },
+  'ujjain': { lat: 23.1765, lng: 75.7885 },
+  'dewas': { lat: 22.9676, lng: 76.0534 },
+  'ashta': { lat: 23.0189, lng: 76.7214 },
+  'sehore': { lat: 23.2033, lng: 77.0844 },
+  'ratlam': { lat: 23.3315, lng: 75.0367 },
+  'shajapur': { lat: 23.4285, lng: 76.2755 },
+  'sanwer': { lat: 22.9774, lng: 75.8286 },
+  'sonkatch': { lat: 22.9818, lng: 76.3687 },
+  'maksi': { lat: 23.2625, lng: 76.1475 },
+  'dhar': { lat: 22.5975, lng: 75.2974 },
+  'khargone': { lat: 21.8228, lng: 75.6111 },
+  'khandwa': { lat: 21.8314, lng: 76.3498 },
+  'gwalior': { lat: 26.2183, lng: 78.1828 },
+  'jabalpur': { lat: 23.1815, lng: 79.9864 },
+  'sagar': { lat: 23.8388, lng: 78.7378 },
+  'rewa': { lat: 24.5362, lng: 81.3037 },
+  'satna': { lat: 24.6005, lng: 80.8322 },
+  'narmadapuram': { lat: 22.7519, lng: 77.7289 },
+  'pipariya': { lat: 22.7619, lng: 78.3553 },
+  'narsinghpur': { lat: 22.9469, lng: 79.1952 },
+
+  // Rajasthan
+  'jaipur': { lat: 26.9124, lng: 75.7873 },
+  'jodhpur': { lat: 26.2389, lng: 73.0243 },
+  'kota': { lat: 25.2138, lng: 75.8648 },
+  'udaipur': { lat: 24.5854, lng: 73.7125 },
+  'ajmer': { lat: 26.4499, lng: 74.6399 },
+  'dausa': { lat: 26.8932, lng: 76.3377 },
+
+  // Punjab, Haryana, Chandigarh, HP, UK
+  'chandigarh': { lat: 30.7333, lng: 76.7794 },
+  'ludhiana': { lat: 30.9010, lng: 75.8573 },
+  'amritsar': { lat: 31.6340, lng: 74.8723 },
+  'jalandhar': { lat: 31.3260, lng: 75.5762 },
+  'ambala': { lat: 30.3782, lng: 76.7767 },
+  'karnal': { lat: 29.6857, lng: 76.9905 },
+  'panipat': { lat: 29.3909, lng: 76.9635 },
+  'dehradun': { lat: 30.3165, lng: 78.0322 },
+  'haridwar': { lat: 29.9457, lng: 78.1642 },
+  'shimla': { lat: 31.1048, lng: 77.1734 },
+
+  // Maharashtra, Gujarat, Goa
+  'mumbai': { lat: 19.0760, lng: 72.8777 },
+  'navi mumbai': { lat: 19.0330, lng: 73.0297 },
+  'lonavala': { lat: 18.7557, lng: 73.4091 },
+  'pune': { lat: 18.5204, lng: 73.8567 },
+  'nagpur': { lat: 21.1458, lng: 79.0882 },
+  'nashik': { lat: 19.9975, lng: 73.7898 },
+  'thane': { lat: 19.2183, lng: 72.9781 },
+  'dhule': { lat: 20.9042, lng: 74.7749 },
+  'ahmedabad': { lat: 23.0225, lng: 72.5714 },
+  'surat': { lat: 21.1702, lng: 72.8311 },
+  'vadodara': { lat: 22.3072, lng: 73.1812 },
+
+  // South
+  'bengaluru': { lat: 12.9716, lng: 77.5946 },
+  'hyderabad': { lat: 17.3850, lng: 78.4867 },
+  'chennai': { lat: 13.0827, lng: 80.2707 },
+  'hosur': { lat: 12.7409, lng: 77.8253 },
+  'krishnagiri': { lat: 12.5186, lng: 78.2137 },
+  'vellore': { lat: 12.9165, lng: 79.1325 },
+  'kochi': { lat: 9.9312, lng: 76.2673 },
+  'visakhapatnam': { lat: 17.6868, lng: 83.2185 },
+  'vijayawada': { lat: 16.5062, lng: 80.6480 },
+
+  // East
+  'patna': { lat: 25.5941, lng: 85.1376 },
+  'buxar': { lat: 25.5647, lng: 83.9777 },
+  'ghazipur': { lat: 25.5840, lng: 83.5770 },
+  'gaya': { lat: 24.7914, lng: 85.0002 },
+  'ranchi': { lat: 23.3441, lng: 85.3096 },
+  'jamshedpur': { lat: 22.8046, lng: 86.2029 },
+  'kolkata': { lat: 22.5726, lng: 88.3639 },
+  'raipur': { lat: 21.2514, lng: 81.6296 },
+  'guwahati': { lat: 26.1445, lng: 91.7362 },
+};
+
+function findCityCoords(cityName: string): Coord {
+  if (!cityName) return { lat: 28.6139, lng: 77.2090 };
+  const clean = cityName.toLowerCase().trim();
+  if (CITY_COORDS[clean]) return CITY_COORDS[clean];
+
+  for (const [key, coord] of Object.entries(CITY_COORDS)) {
+    if (clean.includes(key) || key.includes(clean)) {
+      return coord;
+    }
+  }
+
+  const found = INDIA_LOCATIONS.find(
+    c => c.name.toLowerCase() === clean || c.nameHi === clean || clean.includes(c.name.toLowerCase())
+  );
+  if (found) {
+    if (found.region === 'north') return { lat: 28.5, lng: 77.8 };
+    if (found.region === 'mp') return { lat: 23.2, lng: 77.4 };
+    if (found.region === 'west') return { lat: 19.5, lng: 73.5 };
+    if (found.region === 'south') return { lat: 13.0, lng: 79.5 };
+    if (found.region === 'east') return { lat: 23.5, lng: 85.5 };
+  }
+
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) % 10000;
+  return {
+    lat: 22.0 + (hash % 100) * 0.07,
+    lng: 76.0 + ((hash * 7) % 100) * 0.08,
+  };
+}
+
+function getGreatCircleDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+const EXACT_HIGHWAY_DISTANCES: Record<string, number> = {
+  'delhi-lucknow': 535,
+  'lucknow-delhi': 535,
+  'new delhi-lucknow': 535,
+  'lucknow-new delhi': 535,
+  'delhi-mathura': 145,
+  'mathura-delhi': 145,
+  'new delhi-mathura': 145,
+  'mathura-new delhi': 145,
+  'mathura-agra': 55,
+  'agra-mathura': 55,
+  'agra-kannauj': 165,
+  'kannauj-agra': 165,
+  'kannauj-lucknow': 170,
+  'lucknow-kannauj': 170,
+  'lucknow-varanasi': 315,
+  'varanasi-lucknow': 315,
+  'lucknow-sultanpur': 135,
+  'sultanpur-lucknow': 135,
+  'sultanpur-jaunpur': 95,
+  'jaunpur-sultanpur': 95,
+  'jaunpur-varanasi': 85,
+  'varanasi-jaunpur': 85,
+  'delhi-jaipur': 280,
+  'jaipur-delhi': 280,
+  'new delhi-jaipur': 280,
+  'jaipur-new delhi': 280,
+  'indore-bhopal': 192,
+  'bhopal-indore': 192,
+  'indore-dewas': 36,
+  'dewas-indore': 36,
+  'dewas-ashta': 72,
+  'ashta-dewas': 72,
+  'ashta-sehore': 46,
+  'sehore-ashta': 46,
+  'sehore-bhopal': 38,
+  'bhopal-sehore': 38,
+  'indore-ujjain': 55,
+  'ujjain-indore': 55,
+  'mumbai-pune': 150,
+  'pune-mumbai': 150,
+  'mumbai-navi mumbai': 35,
+  'navi mumbai-lonavala': 65,
+  'lonavala-pune': 50,
+  'delhi-chandigarh': 245,
+  'chandigarh-delhi': 245,
+  'new delhi-chandigarh': 245,
+  'chandigarh-new delhi': 245,
+  'lucknow-kanpur': 82,
+  'kanpur-lucknow': 82,
+  'lucknow-unnao': 64,
+  'unnao-kanpur': 18,
+  'agra-lucknow': 335,
+  'lucknow-agra': 335,
+  'delhi-agra': 210,
+  'agra-delhi': 210,
+  'bhopal-delhi': 780,
+  'delhi-bhopal': 780,
+  'indore-mumbai': 585,
+  'mumbai-indore': 585,
+  'bhopal-jabalpur': 308,
+  'jabalpur-bhopal': 308,
+  'bengaluru-chennai': 345,
+  'chennai-bengaluru': 345,
+  'patna-varanasi': 255,
+  'varanasi-patna': 255,
+};
+
+function calculateSegmentDistance(fromName: string, toName: string): number {
+  const k1 = `${fromName.toLowerCase().trim()}-${toName.toLowerCase().trim()}`;
+  if (EXACT_HIGHWAY_DISTANCES[k1]) return EXACT_HIGHWAY_DISTANCES[k1];
+
+  const c1 = findCityCoords(fromName);
+  const c2 = findCityCoords(toName);
+
+  const straight = getGreatCircleDistance(c1.lat, c1.lng, c2.lat, c2.lng);
+  const roadDistance = Math.round(straight * 1.25);
+  return Math.max(22, roadDistance);
+}
+
+function calculateBearing(c1: Coord, c2: Coord): number {
+  const dLon = ((c2.lng - c1.lng) * Math.PI) / 180;
+  const lat1 = (c1.lat * Math.PI) / 180;
+  const lat2 = (c2.lat * Math.PI) / 180;
+
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  const brng = (Math.atan2(y, x) * 180) / Math.PI;
+  return (brng + 360) % 360;
+}
+
+function calculateCrosswind(
+  fromCoord: Coord,
+  toCoord: Coord,
+  baseWindSpeed: number,
+  baseWindDir: number
+): { crosswind: number; bearing: number } {
+  const bearing = calculateBearing(fromCoord, toCoord);
+  const angleDiffRad = ((bearing - baseWindDir) * Math.PI) / 180;
+  const crosswind = Math.round(Math.abs(baseWindSpeed * Math.sin(angleDiffRad)));
+  return { crosswind, bearing: Math.round(bearing) };
+}
+
 const PRESET_ROUTES: PresetRoute[] = [
   {
+    id: 'delhi-lucknow',
+    nameEn: 'New Delhi ⇄ Lucknow (Yamuna / Agra-Lucknow Exp.)',
+    nameHi: 'नई दिल्ली ⇄ लखनऊ (यमुना / आगरा-लखनऊ एक्सप्रेसवे)',
+    origin: 'New Delhi',
+    destination: 'Lucknow',
+    waypoints: ['Mathura', 'Agra', 'Kannauj'],
+    distanceKm: 535,
+  },
+  {
+    id: 'lucknow-varanasi',
+    nameEn: 'Lucknow ⇄ Varanasi (Purvanchal Exp.)',
+    nameHi: 'लखनऊ ⇄ वाराणसी (पूर्वांचल एक्सप्रेसवे)',
+    origin: 'Lucknow',
+    destination: 'Varanasi',
+    waypoints: ['Sultanpur', 'Jaunpur'],
+    distanceKm: 315,
+  },
+  {
+    id: 'delhi-jaipur',
+    nameEn: 'New Delhi ⇄ Jaipur (Delhi-Mumbai Exp.)',
+    nameHi: 'नई दिल्ली ⇄ जयपुर (दिल्ली-मुंबई एक्सप्रेसवे)',
+    origin: 'New Delhi',
+    destination: 'Jaipur',
+    waypoints: ['Gurugram', 'Dausa'],
+    distanceKm: 280,
+  },
+  {
     id: 'indore-bhopal',
-    nameEn: 'Indore ⇄ Bhopal (NH-46)',
-    nameHi: 'इंदौर ⇄ भोपाल (NH-46)',
+    nameEn: 'Indore ⇄ Bhopal (NH-46 / SH-18)',
+    nameHi: 'इंदौर ⇄ भोपाल (NH-46 / SH-18)',
     origin: 'Indore',
     destination: 'Bhopal',
-    waypoints: ['Sanwer', 'Dewas', 'Ashta', 'Sehore'],
+    waypoints: ['Dewas', 'Ashta', 'Sehore'],
     distanceKm: 192,
   },
   {
-    id: 'indore-ujjain',
-    nameEn: 'Indore ⇄ Ujjain (SH-27)',
-    nameHi: 'इंदौर ⇄ उज्जैन (SH-27)',
-    origin: 'Indore',
-    destination: 'Ujjain',
-    waypoints: ['Sanwer', 'Dharampuri'],
-    distanceKm: 55,
+    id: 'mumbai-pune',
+    nameEn: 'Mumbai ⇄ Pune (Mumbai-Pune Exp.)',
+    nameHi: 'मुंबई ⇄ पुणे (मुंबई-पुणे एक्सप्रेसवे)',
+    origin: 'Mumbai',
+    destination: 'Pune',
+    waypoints: ['Navi Mumbai', 'Lonavala'],
+    distanceKm: 150,
   },
   {
-    id: 'dewas-shajapur',
-    nameEn: 'Dewas ⇄ Shajapur ⇄ Ratlam',
-    nameHi: 'देवास ⇄ शाजापुर ⇄ रतलाम',
-    origin: 'Dewas',
-    destination: 'Ratlam',
-    waypoints: ['Maksi', 'Shajapur', 'Ujjain'],
-    distanceKm: 165,
+    id: 'delhi-chandigarh',
+    nameEn: 'New Delhi ⇄ Chandigarh (NH-44)',
+    nameHi: 'नई दिल्ली ⇄ चंडीगढ़ (NH-44)',
+    origin: 'New Delhi',
+    destination: 'Chandigarh',
+    waypoints: ['Panipat', 'Karnal', 'Ambala'],
+    distanceKm: 245,
   },
   {
-    id: 'indore-mumbai',
-    nameEn: 'Indore ⇄ Mumbai (NH-52/NH-48)',
-    nameHi: 'इंदौर ⇄ मुंबई (NH-52/NH-48)',
-    origin: 'Indore',
-    destination: 'Mumbai',
-    waypoints: ['Dhule', 'Nashik', 'Thane'],
-    distanceKm: 585,
+    id: 'lucknow-kanpur',
+    nameEn: 'Lucknow ⇄ Kanpur (NH-27 / Exp.)',
+    nameHi: 'लखनऊ ⇄ कानपुर (NH-27)',
+    origin: 'Lucknow',
+    destination: 'Kanpur',
+    waypoints: ['Unnao'],
+    distanceKm: 82,
   },
   {
     id: 'bhopal-delhi',
@@ -74,36 +367,49 @@ const PRESET_ROUTES: PresetRoute[] = [
     waypoints: ['Narmadapuram', 'Pipariya', 'Narsinghpur'],
     distanceKm: 308,
   },
+  {
+    id: 'patna-varanasi',
+    nameEn: 'Patna ⇄ Varanasi (NH-19)',
+    nameHi: 'पटना ⇄ वाराणसी (NH-19)',
+    origin: 'Patna',
+    destination: 'Varanasi',
+    waypoints: ['Buxar', 'Ghazipur'],
+    distanceKm: 255,
+  },
 ];
 
-// Highlighted requested quick cities
-const REQUESTED_LOCAL_CITIES = [
+// Highlighted requested key national highway hubs
+const KEY_CORRIDOR_CITIES = [
+  'New Delhi',
+  'Lucknow',
+  'Kanpur',
+  'Agra',
+  'Varanasi',
+  'Prayagraj',
+  'Jaipur',
+  'Bhopal',
   'Indore',
   'Ujjain',
   'Dewas',
-  'Bhopal',
-  'Ashta',
-  'Sehore',
-  'Ratlam',
-  'Shajapur',
-  'Sanwer',
-  'Sonkatch',
-  'Dhar',
-  'Khargone',
-  'Khandwa',
+  'Chandigarh',
   'Gwalior',
   'Jabalpur',
-  'Narmadapuram',
+  'Patna',
+  'Mumbai',
+  'Pune',
+  'Ahmedabad',
+  'Ayodhya',
+  'Bengaluru',
 ];
 
 export default function ExplorerJourneyPlanner() {
-  const { language, location } = useApp();
+  const { language, location, weather } = useApp();
   const t = translations[language];
 
-  // Route Input State
-  const [origin, setOrigin] = useState<string>('Indore');
-  const [destination, setDestination] = useState<string>('Bhopal');
-  const [waypoints, setWaypoints] = useState<string[]>(['Sanwer', 'Dewas', 'Ashta', 'Sehore']);
+  // Route Input State - Defaulting to New Delhi -> Lucknow with real corridor stops
+  const [origin, setOrigin] = useState<string>('New Delhi');
+  const [destination, setDestination] = useState<string>('Lucknow');
+  const [waypoints, setWaypoints] = useState<string[]>(['Mathura', 'Agra', 'Kannauj']);
   const [vehicle, setVehicle] = useState<VehicleType>('car');
   const [departureOffset, setDepartureOffset] = useState<number>(0); // hours from now
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
@@ -266,6 +572,9 @@ export default function ExplorerJourneyPlanner() {
     const segments: RouteWaypoint[] = [];
 
     let cumulativeMins = 0;
+    const baseWind = weather?.current?.windSpeed ?? 18;
+    const baseWindDir = weather?.current?.windDirection ?? 240;
+    const baseTemp = weather?.current?.temperature ?? 29;
     const isStormHour = departureOffset >= 0 && departureOffset <= 1.5; // Afternoon squall window simulation
     const isEveningClear = departureOffset >= 2;
 
@@ -273,79 +582,65 @@ export default function ExplorerJourneyPlanner() {
       const fromName = allStops[i];
       const toName = allStops[i + 1];
 
-      // Segment distance estimate
-      const segDistance = Math.max(25, Math.floor(190 / (allStops.length - 1) + ((i * 19) % 23)));
+      // Segment distance calculated dynamically from coordinates & highway curves
+      const segDistance = calculateSegmentDistance(fromName, toName);
       const segDurationMins = Math.round((segDistance / vehicleSpeed) * 60);
 
       const startTimeStr = formatETA(departureOffset, cumulativeMins);
       cumulativeMins += segDurationMins;
       const endTimeStr = formatETA(departureOffset, cumulativeMins);
 
-      // Determine segment-specific weather behavior
-      const isGhatOrVulnerable =
-        toName.toLowerCase().includes('ghat') ||
-        toName.toLowerCase().includes('dewas') ||
-        toName.toLowerCase().includes('ashta') ||
-        i === 1;
+      const c1 = findCityCoords(fromName);
+      const c2 = findCityCoords(toName);
 
+      // Dynamic crosswind based on highway bearing relative to wind direction
+      const { crosswind, bearing } = calculateCrosswind(c1, c2, baseWind, baseWindDir);
+
+      // Dynamic squall gust factor
+      const windGust = Math.max(14, Math.round(crosswind + (isStormHour ? 22 : 8) + ((i * 3) % 7)));
+
+      // Dynamic temperature based on terrain & time of transit
+      const temp = Math.round(baseTemp - (i * 0.7) + (isStormHour ? -3 : isEveningClear ? -2 : 1));
+
+      // Dynamic visibility & surface wetness
       let riskLevel: 'low' | 'moderate' | 'severe' = 'low';
-      let condition = 'Mainly Clear';
+      let condition = 'Clear & Dry';
       let icon = 'wb_sunny';
-      let temp = 30 - i;
-      let windGust = 14 + i * 3;
-      let visibility = 10 - i;
+      let visibility = 10;
       let surfaceStatus: 'Dry' | 'Damp' | 'Waterlogged' = 'Dry';
 
       if (isStormHour) {
-        if (isGhatOrVulnerable) {
+        if (windGust >= 38 || i % 2 === 1) {
           riskLevel = 'severe';
-          condition = 'Severe Squall / Heavy Downpour';
+          condition = language === 'hi' ? 'तीव्र आंधी व भारी वर्षा' : 'Severe Convective Squall / Heavy Downpour';
           icon = 'thunderstorm';
-          temp = 25;
-          windGust = 52;
-          visibility = 2;
+          visibility = Math.max(1.8, Number((2.4 - (i * 0.2)).toFixed(1)));
           surfaceStatus = 'Waterlogged';
-        } else if (i === allStops.length - 2) {
-          riskLevel = 'moderate';
-          condition = 'Overcast & Strong Gusts';
-          icon = 'cloudy_snowing';
-          temp = 27;
-          windGust = 34;
-          visibility = 5;
-          surfaceStatus = 'Damp';
         } else {
-          riskLevel = 'low';
-          condition = 'Partly Cloudy';
-          icon = 'partly_cloudy_day';
-          temp = 31;
-          windGust = 22;
-          visibility = 8;
-          surfaceStatus = 'Dry';
+          riskLevel = 'moderate';
+          condition = language === 'hi' ? 'घने बादल व तेज हवाएं' : 'Overcast & Strong Cross-Drafts';
+          icon = 'cloudy_snowing';
+          visibility = 5.2;
+          surfaceStatus = 'Damp';
         }
       } else if (isEveningClear) {
         riskLevel = 'low';
-        condition = 'Calm Evening Skies';
+        condition = language === 'hi' ? 'शांत शाम, सुगम दृश्यता' : 'Calm Transit Skies';
         icon = 'nights_stay';
-        temp = 26 - i;
-        windGust = 15;
-        visibility = 9;
-        surfaceStatus = 'Damp';
+        visibility = 9.5;
+        surfaceStatus = 'Dry';
       } else {
-        if (isGhatOrVulnerable) {
+        if (windGust >= 30) {
           riskLevel = 'moderate';
-          condition = 'Approaching Storm Front';
-          icon = 'cloud';
-          temp = 28;
-          windGust = 28;
-          visibility = 6;
-          surfaceStatus = 'Damp';
+          condition = language === 'hi' ? 'तेज क्रॉसविंड्स व आंशिक बादल' : 'Moderate Crosswinds & Gusts';
+          icon = 'air';
+          visibility = 7.0;
+          surfaceStatus = 'Dry';
         } else {
           riskLevel = 'low';
-          condition = 'Clear & Dry';
+          condition = language === 'hi' ? 'साफ़ व शुष्क राजमार्ग' : 'Favorable Transit Conditions';
           icon = 'wb_sunny';
-          temp = 29;
-          windGust = 16;
-          visibility = 10;
+          visibility = 10.0;
           surfaceStatus = 'Dry';
         }
       }
@@ -365,7 +660,7 @@ export default function ExplorerJourneyPlanner() {
     }
 
     return segments;
-  }, [origin, destination, waypoints, vehicleSpeed, departureOffset]);
+  }, [origin, destination, waypoints, vehicleSpeed, departureOffset, weather, language]);
 
   // Overall route summary metrics
   const totalDistance = dynamicSegments.reduce((acc, s) => acc + s.distanceKm, 0);
@@ -562,7 +857,7 @@ export default function ExplorerJourneyPlanner() {
               <button
                 type="button"
                 onClick={() => {
-                  setOrigin(location.district ? location.district.split(' ')[0] : 'Indore');
+                  setOrigin(location.district || location.name || 'Lucknow');
                   triggerRecalculate();
                 }}
                 className="text-[0.7rem] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
@@ -583,7 +878,7 @@ export default function ExplorerJourneyPlanner() {
                   setOrigin(e.target.value);
                   setOriginSuggestionsOpen(true);
                 }}
-                placeholder="Type Origin (e.g. Indore, Bhopal, Delhi)..."
+                placeholder="Type Origin (e.g. New Delhi, Lucknow, Bhopal)..."
                 className="w-full bg-surface-container-lowest text-on-surface font-semibold text-xs sm:text-sm px-3 py-2.5 rounded-xl border border-outline-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all pr-8"
               />
               {origin && (
@@ -634,7 +929,7 @@ export default function ExplorerJourneyPlanner() {
             {/* Quick local mini-chips for Origin */}
             <div className="flex flex-wrap items-center gap-1 pt-0.5">
               <span className="text-[0.65rem] text-on-surface-variant font-medium">Quick A:</span>
-              {['Indore', 'Ujjain', 'Dewas', 'Bhopal', 'Sanwer'].map(c => (
+              {['New Delhi', 'Lucknow', 'Indore', 'Bhopal', 'Jaipur', 'Agra'].map(c => (
                 <button
                   key={c}
                   type="button"
@@ -737,7 +1032,7 @@ export default function ExplorerJourneyPlanner() {
             {/* Quick local mini-chips for Destination */}
             <div className="flex flex-wrap items-center gap-1 pt-0.5">
               <span className="text-[0.65rem] text-secondary font-bold">Quick B:</span>
-              {['Bhopal', 'Ashta', 'Sehore', 'Dewas', 'Ratlam', 'Shajapur'].map(c => (
+              {['Lucknow', 'Varanasi', 'Kanpur', 'Bhopal', 'Jaipur', 'Pune', 'Agra'].map(c => (
                 <button
                   key={c}
                   type="button"
@@ -981,15 +1276,15 @@ export default function ExplorerJourneyPlanner() {
           </div>
         </div>
 
-        {/* Priority Requested Cities Bar (Indore, Ujjain, Dewas, Bhopal, Ashta, Sehore, Ratlam, Shajapur, Sanwer) */}
+        {/* Priority Requested Cities Bar (National & State Highway Corridors) */}
         <div className="bg-surface-container-low p-space-md rounded-2xl border border-primary/20 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-primary text-[1.125rem]">star</span>
               <span className="text-xs font-extrabold text-on-surface">
                 {language === 'hi'
-                  ? 'विशेष मालवा-म.प्र. हाइवे हब्स (त्वरित चयन):'
-                  : 'Key Malwa Agro-Highway Corridors (Fast 1-Tap):'}
+                  ? 'प्रमुख राष्ट्रीय एवं प्रांतीय हाइवे हब्स (त्वरित 1-टैप):'
+                  : 'Key National & State Highway Corridors (Fast 1-Tap):'}
               </span>
             </div>
             <span className="text-[0.65rem] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
@@ -998,7 +1293,7 @@ export default function ExplorerJourneyPlanner() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            {REQUESTED_LOCAL_CITIES.map(city => {
+            {KEY_CORRIDOR_CITIES.map(city => {
               const isDest = destination.toLowerCase() === city.toLowerCase();
               const isOrig = origin.toLowerCase() === city.toLowerCase();
               return (

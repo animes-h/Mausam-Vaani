@@ -5,7 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 
 export default function ExplorerAlertsCenter() {
-  const { alerts, language } = useApp();
+  const { alerts, language, location } = useApp();
   const t = translations[language];
 
   const [activeFilter, setActiveFilter] = useState('all');
@@ -56,7 +56,7 @@ export default function ExplorerAlertsCenter() {
   const simulateBroadcast = () => {
     setSimulatedBroadcastNotice('Transmitting CAP 1.2 emergency dispatch payload to state telecom gateway & rural cell towers...');
     setTimeout(() => {
-      setSimulatedBroadcastNotice('Broadcast successfully confirmed across 34 BTS cell sectors (Indore/Ujjain/Dewas).');
+      setSimulatedBroadcastNotice(`Broadcast successfully confirmed across local BTS cell sectors (${location.district || location.name}).`);
       setTimeout(() => setSimulatedBroadcastNotice(null), 4000);
     }, 1500);
   };
@@ -91,7 +91,7 @@ export default function ExplorerAlertsCenter() {
               </span>
               <span className="text-outline">•</span>
               <span className="text-on-surface-variant font-semibold tracking-wide">
-                STATION ID: IND-DWR-77A (CENTRAL RADIAL)
+                STATION ID: RADAR-${(location.district || 'REG').slice(0, 3).toUpperCase()}-01 (ACTIVE RADIAL)
               </span>
             </div>
             <div className="flex items-center gap-space-sm text-on-surface-variant">
@@ -107,7 +107,7 @@ export default function ExplorerAlertsCenter() {
                 Regional Meteorological Advisory & Threat Matrix
               </h1>
               <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1">
-                Indore / Ujjain Agro-Climatic Sub-Division • Mesoscale Convective System (MCS) Nowcasting & Multi-hazard Diagnostics
+                {location.district || location.name} Agro-Climatic Sub-Division ({location.state}) • Mesoscale Convective System (MCS) Nowcasting & Multi-hazard Diagnostics
               </p>
             </div>
 
