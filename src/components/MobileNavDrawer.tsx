@@ -401,7 +401,7 @@ export default function MobileNavDrawer({
                 {t.consensusEngine}
               </span>
               <span className="text-[0.65rem] text-on-surface-variant">
-                {weather.consensus.confidenceScore}% Consensus • IMD & ECMWF
+                {weather.consensus.confidenceScore}% Consensus • ECMWF & GFS
               </span>
             </div>
           </div>

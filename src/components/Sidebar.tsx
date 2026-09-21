@@ -267,7 +267,7 @@ export default function Sidebar() {
               {t.consensusEngine}
             </span>
             <span className="font-body-sm text-[0.72rem] text-on-surface-variant leading-tight">
-              {weather.consensus.confidenceScore}% • IMD & ECMWF Verified
+              {weather.consensus.confidenceScore}% • Multi-Model Verified
             </span>
           </div>
         </div>
