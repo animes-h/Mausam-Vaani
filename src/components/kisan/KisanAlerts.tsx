@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
+import { calculateHeatStressAndLivestockIndices } from '@/lib/alertService';
 
 export default function KisanAlerts() {
   const {
@@ -11,13 +12,41 @@ export default function KisanAlerts() {
     playSpeech,
     stopSpeech,
     isPlayingAudio,
+    weather,
+    location,
   } = useApp();
 
   const t = translations[language];
   const primaryAlert = alerts[0];
   const [isPlayingAlertAudio, setIsPlayingAlertAudio] = useState(false);
+  const [isPlayingLivestockAudio, setIsPlayingLivestockAudio] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [livestockDoneSteps, setLivestockDoneSteps] = useState<number[]>([]);
   const [isSirenActive, setIsSirenActive] = useState(false);
+
+  // Dynamic Livestock THI & Outdoor WBGT from live telemetry
+  const currentTemp = weather?.current?.temperature ?? 32;
+  const currentHumidity = weather?.current?.relativeHumidity ?? 62;
+  const livestockIndices = calculateHeatStressAndLivestockIndices(currentTemp, currentHumidity);
+
+  const toggleLivestockStep = (step: number) => {
+    setLivestockDoneSteps(prev =>
+      prev.includes(step) ? prev.filter(s => s !== step) : [...prev, step]
+    );
+  };
+
+  const toggleLivestockAudio = () => {
+    if (isPlayingLivestockAudio || isPlayingAudio) {
+      stopSpeech();
+      setIsPlayingLivestockAudio(false);
+    } else {
+      setIsPlayingLivestockAudio(true);
+      const text = language === 'hi'
+        ? `किसान भाइयों, वर्तमान में ${location.district || location.name} में तापमान ${currentTemp} डिग्री और आर्द्रता ${currentHumidity} प्रतिशत है। पशुओं का ताप सूचकांक यानी टीएचआई ${livestockIndices.thi} और वेट-बल्ब तापमान ${livestockIndices.wbgt} डिग्री है। यह ${livestockIndices.livestockStatusHi} की स्थिति है। दुधारू गायों व भैंसों को दिन में तीन बार ठंडा पानी पिलाएं, शेड पर गीली बोरियां डालें और चारे में 50 ग्राम मीठा सोडा मिलाएं। दोपहर 12 से 4 बजे के बीच खुले खेत में भारी शारीरिक श्रम न करें।`
+        : `Farmer advisory for ${location.district || location.name}: Current temperature is ${currentTemp}°C with ${currentHumidity}% humidity. The Livestock THI is ${livestockIndices.thi} and Wet-Bulb Globe Temperature is ${livestockIndices.wbgt}°C, indicating ${livestockIndices.livestockStatus}. Provide cold water thrice daily, wet shed curtains, and add mineral buffers. Refrain from heavy outdoor labor during peak midday heat.`;
+      playSpeech(text, language === 'hi' ? 'hi-IN' : 'en-IN');
+    }
+  };
 
   const toggleEmergencyAudio = () => {
     if (isPlayingAlertAudio || isPlayingAudio) {
@@ -229,7 +258,232 @@ export default function KisanAlerts() {
         </div>
       </div>
 
-      {/* 2. "अब किसान भाई क्या करें?" Checklist (Bold Tactile Action Cards) */}
+      {/* 2. Heat Stress & Livestock Safety Index Card (पशुधन एवं श्रमिक गर्मी/लू सुरक्षा) */}
+      <section className="bg-surface-container-lowest rounded-3xl p-space-md md:p-space-lg shadow-sm border border-secondary/20 flex flex-col gap-space-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs border-b border-surface-container-high pb-3">
+          <div className="flex items-center gap-space-xs">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[1.5rem]">pets</span>
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <h2 className="font-headline-md text-base sm:text-lg font-extrabold text-on-surface">
+                  {language === 'hi' ? 'पशुधन एवं श्रमिक ताप तनाव सुरक्षा (THI & WBGT)' : 'Livestock & Field Labor Heat Stress Index'}
+                </h2>
+                <span className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[0.65rem] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Live Index
+                </span>
+              </div>
+              <span className="text-xs text-on-surface-variant font-medium">
+                {language === 'hi'
+                  ? `वर्तमान तापमान ${currentTemp}°C व आर्द्रता ${currentHumidity}% पर आधारित वैज्ञानिक सुरक्षा सूचकांक`
+                  : `Real-time physiological strain calculated at ${currentTemp}°C & ${currentHumidity}% RH`}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={toggleLivestockAudio}
+            type="button"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold text-xs transition-all active:scale-95 cursor-pointer self-start sm:self-auto border border-amber-500/30 shadow-xs"
+          >
+            <span className="material-symbols-outlined text-[1.25rem]">
+              {isPlayingLivestockAudio ? 'pause' : 'volume_up'}
+            </span>
+            <span>
+              {isPlayingLivestockAudio
+                ? (language === 'hi' ? 'रोकें' : 'Pause')
+                : (language === 'hi' ? 'पशु सुरक्षा संदेश सुनें' : 'Listen Livestock Advisory')}
+            </span>
+          </button>
+        </div>
+
+        {/* Index Metrics Gauges Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Livestock THI */}
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between text-xs text-on-surface-variant font-bold">
+              <span>{language === 'hi' ? 'पशुधन THI सूचकांक' : 'Livestock THI Score'}</span>
+              <span className="material-symbols-outlined text-amber-600 text-[1.125rem]">pets</span>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-on-surface">{livestockIndices.thi}</span>
+                <span className="text-xs font-bold text-on-surface-variant">THI</span>
+              </div>
+              <span className={`text-[0.7rem] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                livestockIndices.thi >= 89
+                  ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
+                  : livestockIndices.thi >= 78
+                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                  : livestockIndices.thi >= 72
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300'
+                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+              }`}>
+                {language === 'hi' ? livestockIndices.livestockStatusHi : livestockIndices.livestockStatus}
+              </span>
+            </div>
+            <span className="text-[0.68rem] text-on-surface-variant leading-tight">
+              {livestockIndices.thi >= 78
+                ? (language === 'hi' ? 'दूध उत्पादन में 15-25% तक कमी संभव' : 'Expected 15-25% milk depression')
+                : (language === 'hi' ? 'सामान्य शारीरिक अवस्था' : 'Optimum thermal comfort')}
+            </span>
+          </div>
+
+          {/* Farm Labor WBGT */}
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between text-xs text-on-surface-variant font-bold">
+              <span>{language === 'hi' ? 'श्रमिक वेट-बल्ब (WBGT)' : 'Worker WBGT Metric'}</span>
+              <span className="material-symbols-outlined text-rose-600 text-[1.125rem]">engineering</span>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-on-surface">{livestockIndices.wbgt}</span>
+                <span className="text-xs font-bold text-on-surface-variant">°C</span>
+              </div>
+              <span className={`text-[0.7rem] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                livestockIndices.wbgt >= 31.5
+                  ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
+                  : livestockIndices.wbgt >= 28.5
+                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300'
+                  : livestockIndices.wbgt >= 26.0
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300'
+                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+              }`}>
+                {language === 'hi' ? livestockIndices.laborStatusHi : livestockIndices.laborStatus}
+              </span>
+            </div>
+            <span className="text-[0.68rem] text-on-surface-variant leading-tight">
+              {livestockIndices.wbgt >= 28.5
+                ? (language === 'hi' ? 'प्रत्येक घंटे में 30 मिनट छाया में आराम' : 'Mandatory 30m shaded rest / hour')
+                : (language === 'hi' ? 'सामान्य खेत कार्य सुरक्षित' : 'Safe for field operations')}
+            </span>
+          </div>
+
+          {/* Daily Water Demand */}
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between text-xs text-on-surface-variant font-bold">
+              <span>{language === 'hi' ? 'पशु जल मांग दर' : 'Livestock Water Intake'}</span>
+              <span className="material-symbols-outlined text-blue-600 text-[1.125rem]">water_drop</span>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-on-surface">
+                  {livestockIndices.thi >= 78 ? '+65%' : '+20%'}
+                </span>
+                <span className="text-xs font-bold text-on-surface-variant">
+                  {language === 'hi' ? 'वृद्धि' : 'Surge'}
+                </span>
+              </div>
+              <span className="text-[0.7rem] font-bold px-2 py-0.5 rounded-full inline-block mt-1 bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                {language === 'hi' ? '80-110 लीटर/गाय/दिन' : '80-110 L / Cow / Day'}
+              </span>
+            </div>
+            <span className="text-[0.68rem] text-on-surface-variant leading-tight">
+              {language === 'hi' ? 'खुरली में ताजा ठंडा पानी 3-4 बार बदलें' : 'Refill shaded troughs 3-4 times'}
+            </span>
+          </div>
+
+          {/* Buffalo Melanin / Misting Status */}
+          <div className="p-3.5 rounded-2xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between text-xs text-on-surface-variant font-bold">
+              <span>{language === 'hi' ? 'मुर्राह भैंस विशेष देखभाल' : 'Buffalo Solar Load'}</span>
+              <span className="material-symbols-outlined text-slate-700 dark:text-slate-300 text-[1.125rem]">shower</span>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black text-on-surface">
+                  {livestockIndices.thi >= 75
+                    ? (language === 'hi' ? 'फव्वारा आवश्यक' : 'Misting Urgent')
+                    : (language === 'hi' ? 'सामान्य' : 'Normal')}
+                </span>
+              </div>
+              <span className="text-[0.7rem] font-bold px-2 py-0.5 rounded-full inline-block mt-1 bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                {language === 'hi' ? 'काली त्वचा 90% धूप सोखती है' : 'Dark skin absorbs 90% solar heat'}
+              </span>
+            </div>
+            <span className="text-[0.68rem] text-on-surface-variant leading-tight">
+              {language === 'hi' ? 'दिन में 2 बार नहलाएं या कीचड़/तालाब में ले जाएं' : 'Water bath or wallowing required'}
+            </span>
+          </div>
+        </div>
+
+        {/* 4 Heat Mitigation Steps for Farmers */}
+        <div className="flex flex-col gap-2 pt-1">
+          <span className="text-xs font-bold text-on-surface uppercase tracking-wider">
+            {language === 'hi' ? 'लू व गर्मी से बचाव के 4 तत्काल उपाय (चेकलिस्ट):' : '4 Heat & Loo Stress Mitigation Directives:'}
+          </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {[
+              {
+                id: 1,
+                titleHi: 'ताजा व ठंडा पानी 3-4 बार पिलाएं',
+                titleEn: 'Provide Cold Water 3-4 Times Daily',
+                descHi: 'गर्मी में पशुओं की पानी की आवश्यकता 60% बढ़ जाती है। खुरली में हमेशा स्वच्छ छायादार ठंडा पानी रखें।',
+                descEn: 'Water intake rises by 60% during heat strain. Maintain continuous fresh potable water in deep shade.',
+                icon: 'water_drop',
+              },
+              {
+                id: 2,
+                titleHi: 'शेड पर पानी का छिड़काव / गीली बोरियां',
+                titleEn: 'Roof Sprinklers & Damp Gunny Bags',
+                descHi: 'टीन की छत पर फव्वारे लगाएं या टाट की बोरियां गीली करके लटकाएं। शेड का तापमान 4-6°C कम होता है।',
+                descEn: 'Hang wet burlap curtains and sprinkle roof sheets to decrease internal shed ambient temperature by 4-6°C.',
+                icon: 'roofing',
+              },
+              {
+                id: 3,
+                titleHi: 'मीठा सोडा व इलेक्ट्रोलाइट्स की खुराक',
+                titleEn: 'Baking Soda & Mineral Buffers',
+                descHi: 'प्रति पशु 50-70 ग्राम मीठा सोडा (Sodium Bicarbonate) व नमक चारे में मिलाएं ताकि हांफने से एसिडोसिस न हो।',
+                descEn: 'Supplement 50-70g sodium bicarbonate in daily concentrate to stabilize rumen pH during rapid panting.',
+                icon: 'medication',
+              },
+              {
+                id: 4,
+                titleHi: 'सुबह 8 बजे से पहले या रात में चारा दें',
+                titleEn: 'Feed Heavy Roughage During Cool Hours',
+                descHi: 'दोपहर में भारी चारा खाने से पाचन गर्मी (Metabolic Heat) बढ़ती है। हरा चारा सुबह भोर में या शाम 7 बजे बाद दें।',
+                descEn: 'Digestive heat peaks after digestion. Feed nutrient-dense green fodder before 08:00 or after 19:00 IST.',
+                icon: 'grass',
+              },
+            ].map(step => {
+              const isChecked = livestockDoneSteps.includes(step.id);
+              return (
+                <div
+                  key={step.id}
+                  onClick={() => toggleLivestockStep(step.id)}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 ${
+                    isChecked
+                      ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-500/40 text-on-surface'
+                      : 'bg-surface-container-low border-surface-container-high hover:bg-surface-container text-on-surface'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                    isChecked
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                  }`}>
+                    <span className="material-symbols-outlined text-[1.125rem]">
+                      {isChecked ? 'check' : step.icon}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className={`text-xs font-bold leading-tight ${isChecked ? 'line-through text-emerald-800 dark:text-emerald-300' : 'text-on-surface'}`}>
+                      {language === 'hi' ? step.titleHi : step.titleEn}
+                    </span>
+                    <span className="text-[0.7rem] text-on-surface-variant leading-relaxed">
+                      {language === 'hi' ? step.descHi : step.descEn}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. "अब किसान भाई क्या करें?" Checklist (Bold Tactile Action Cards) */}
       <section className="flex flex-col gap-space-md">
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-space-xs">
           <div className="flex items-center gap-space-xs">

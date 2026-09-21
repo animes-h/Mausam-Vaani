@@ -1,8 +1,19 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
+
+const InteractiveRadarMap = dynamic(() => import('./InteractiveRadarMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[520px] rounded-3xl bg-surface-container-low flex flex-col items-center justify-center gap-3 border border-surface-container-high">
+      <span className="material-symbols-outlined text-primary text-4xl animate-spin">radar</span>
+      <span className="text-sm font-semibold text-on-surface-variant">Initializing Doppler Radar Telemetry Engine...</span>
+    </div>
+  ),
+});
 
 export default function ExplorerWeatherDashboard() {
   const {
@@ -327,6 +338,22 @@ export default function ExplorerWeatherDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Live Interactive Doppler Radar & Wind Streamlines Map */}
+      <section className="flex flex-col gap-space-sm">
+        <div className="flex flex-wrap items-center justify-between gap-space-xs">
+          <div className="flex items-center gap-space-xs">
+            <span className="material-symbols-outlined text-primary text-[1.375rem]">radar</span>
+            <h2 className="font-headline-sm text-base sm:text-lg font-bold text-on-surface">
+              Live Doppler Weather Radar & Wind Streamline Telemetry
+            </h2>
+          </div>
+          <span className="text-xs text-on-surface-variant font-medium">
+            Real-Time DWR Reflectivity & RainViewer Mesh
+          </span>
+        </div>
+        <InteractiveRadarMap />
+      </section>
 
       {/* 24-Hour Synoptic Hourly Strip */}
       <section className="bg-surface-container-lowest rounded-3xl p-space-md md:p-space-lg shadow-sm border border-surface-container-high flex flex-col gap-space-sm">

@@ -103,15 +103,134 @@ export const ACTIVE_GOVERNMENT_ALERTS: GovernmentAlert[] = [
   },
 ];
 
+export function calculateHeatStressAndLivestockIndices(temp: number = 31, humidity: number = 60) {
+  // THI formula for dairy cattle & buffaloes (NRC / Thom formulation)
+  const thi = (1.8 * temp + 32) - (0.55 - 0.0055 * humidity) * (1.8 * temp - 26);
+  // Outdoor simplified Wet-Bulb Globe Temperature (WBGT) estimate
+  const e = (humidity / 100) * 6.105 * Math.exp((17.27 * temp) / (237.7 + temp));
+  const wbgt = Number((0.567 * temp + 0.393 * e + 3.94).toFixed(1));
+
+  let livestockStatus: 'Comfort' | 'Mild Stress' | 'Moderate Stress' | 'Severe Stress' = 'Comfort';
+  let livestockStatusHi: string = 'आरामदायक (सामान्य)';
+  let laborStatus: 'Low Risk' | 'Caution' | 'High Risk' | 'Extreme Hazard' = 'Low Risk';
+  let laborStatusHi: string = 'कम जोखिम';
+
+  if (thi >= 89) {
+    livestockStatus = 'Severe Stress';
+    livestockStatusHi = 'अति-गंभीर तनाव (मृत्यु जोखिम)';
+  } else if (thi >= 78) {
+    livestockStatus = 'Moderate Stress';
+    livestockStatusHi = 'मध्यम तनाव (दूध में 15-25% गिरावट)';
+  } else if (thi >= 72) {
+    livestockStatus = 'Mild Stress';
+    livestockStatusHi = 'हल्का तनाव (हांफना व बेचैनी)';
+  }
+
+  if (wbgt >= 31.5) {
+    laborStatus = 'Extreme Hazard';
+    laborStatusHi = 'अत्यधिक खतरा (खुला कार्य निषिद्ध)';
+  } else if (wbgt >= 28.5) {
+    laborStatus = 'High Risk';
+    laborStatusHi = 'उच्च जोखिम (30 मिनट विश्राम)';
+  } else if (wbgt >= 26.0) {
+    laborStatus = 'Caution';
+    laborStatusHi = 'सावधानी (15 मिनट विश्राम)';
+  }
+
+  return {
+    thi: Number(thi.toFixed(1)),
+    wbgt,
+    livestockStatus,
+    livestockStatusHi,
+    laborStatus,
+    laborStatusHi,
+  };
+}
+
+export function generateLivestockHeatAlert(
+  district: string,
+  state: string,
+  temp: number = 32,
+  humidity: number = 65
+): GovernmentAlert {
+  const { thi, wbgt, livestockStatus, livestockStatusHi, laborStatus, laborStatusHi } =
+    calculateHeatStressAndLivestockIndices(temp, humidity);
+
+  const isSevere = thi >= 80 || wbgt >= 29.5;
+
+  return {
+    id: `HEAT-LIVESTOCK-${Date.now()}-${district.slice(0, 3).toUpperCase()}`,
+    severity: isSevere ? 'orange' : 'yellow',
+    severityLabelEn: isSevere ? 'Orange Alert (Livestock & Labor Heat Strain)' : 'Yellow Alert (Heat Stress Caution)',
+    severityLabelHi: isSevere ? 'नारंगी स्तर (पशुधन एवं श्रमिक ताप तनाव)' : 'पीला स्तर (गर्मी व लू सावधानी)',
+    source: `Animal Husbandry & Agro-Meteorological Division (${state})`,
+    titleEn: `Heat Stress & Livestock Safety Warning: THI ${thi} (WBGT ${wbgt}°C) in ${district}`,
+    titleHi: `${district} में पशुधन एवं श्रमिक हेतु ताप तनाव चेतावनी: THI ${thi} (WBGT ${wbgt}°C)`,
+    englishSummary: `Elevated Temperature-Humidity Index (${thi}) and thermal WBGT (${wbgt}°C) induce physiological heat strain in dairy cattle, buffaloes, and open-field farm workers.`,
+    hindiSummary: `तापमान व आर्द्रता सूचकांक (THI: ${thi}, WBGT: ${wbgt}°C) बढ़ने से दुधारू पशुओं में दूध घटने, हांफने और खेत मजदूरों में हीट स्ट्रोक का खतरा है।`,
+    affectedTehsils: [`${district} Dairy Belts`, `${district} Rural Agriculture Hubs`],
+    validFrom: '11:00 IST',
+    validTo: '17:00 IST',
+    expiresInText: 'Active Peak Solar Hours (11:00 - 17:00 IST)',
+    radarTracked: true,
+    audioScriptHi: `किसान और पशुपालक भाइयों ध्यान दें! ${district} में उमस और गर्मी से पशुओं का टीएचआई इंडेक्स ${thi} तक पहुंच गया है। गाय-भैंसों को दिन में तीन बार ठंडे पानी से नहलाएं, बाड़े में पंखा चलाएं और पीने के पानी में नमक व ओआरएस मिलाएं। दोपहर 12 से 3 बजे के बीच खुले खेत में मजदूरी न करें।`,
+    audioScriptEn: `Alert for livestock owners and farmers in ${district}. Temperature-Humidity Index has reached ${thi}. Shower dairy cows and buffaloes with cool water, run shed fans, and provide mineral electrolytes. Farm labor must take shaded rest during midday.`,
+    farmerDirectives: [
+      {
+        step: 1,
+        titleEn: 'Dairy Cattle & Buffalo Water Sprinkling',
+        titleHi: 'दुधारू गाय व भैंसों पर ठंडे पानी का छिड़काव',
+        descriptionEn: 'Spray water or mist buffaloes and crossbred cows 3-4 times daily between 11 AM and 3 PM to avoid 15-25% drop in milk yield.',
+        descriptionHi: 'दोपहर 11 से 3 बजे के बीच पशुओं को 3-4 बार नहलाएं या फव्वारे चलाएं। इससे दूध उत्पादन में गिरावट और पशुओं का हांफना रुकता है।',
+        icon: 'water_drop',
+        urgency: 'immediate',
+        audioSnippetHi: 'पशुओं को दोपहर में 3 बार ठंडे पानी से नहलाएं।',
+      },
+      {
+        step: 2,
+        titleEn: 'Field Labor Shaded Work-Rest Protocol',
+        titleHi: 'खेत मजदूरों हेतु छायादार विश्राम व ओआरएस',
+        descriptionEn: `WBGT is ${wbgt}°C (${laborStatus}). Cease strenuous labor between 12:00 and 15:30 IST. Enforce 15-30 min shaded rest and drink ≥1.0 L/hr electrolyte water.`,
+        descriptionHi: `डब्लूबीजीटी ${wbgt}°C है (${laborStatusHi})। दोपहर 12 से 3:30 के बीच भारी कार्य न करें। हर घंटे 15 से 30 मिनट छांव में आराम करें और ओआरएस पिएं।`,
+        icon: 'health_and_safety',
+        urgency: 'high',
+        audioSnippetHi: 'दोपहर में धूप में लगातार काम न करें, हर घंटे छांव में विश्राम करें।',
+      },
+      {
+        step: 3,
+        titleEn: 'Electrolyte & Green Fodder Rationing',
+        titleHi: 'पानी की चरनी में इलेक्ट्रोलाइट व हरा चारा',
+        descriptionEn: 'Add baking soda (sodium bicarbonate 50g) and mineral mixture to clean drinking troughs. Provide green fodder during early morning and late evening.',
+        descriptionHi: 'पानी की टंकी में 50 ग्राम मीठा सोडा (सोडियम बाइकार्बोनेट) और खनिज मिश्रण मिलाएं। हरा चारा सुबह-शाम ठंडक में ही खिलाएं।',
+        icon: 'medication',
+        urgency: 'high',
+        audioSnippetHi: 'पशुओं के पानी में मीठा सोडा और खनिज मिश्रण मिलाएं।',
+      },
+      {
+        step: 4,
+        titleEn: 'Shed Ventilation & Thatch Whitewashing',
+        titleHi: 'पशु शेड में वेंटिलेशन व छत पर सफेदी/पुआल',
+        descriptionEn: 'Cover tin sheds with paddy straw or whitewash roofs with lime to reduce radiant heat absorption by 4-6°C.',
+        descriptionHi: 'टीन शेड की छत पर पुआल डालें या चूने की सफेदी करें, जिससे बाड़े का तापमान 4 से 6 डिग्री तक कम रहता है।',
+        icon: 'roofing',
+        urgency: 'precautionary',
+        audioSnippetHi: 'टीन शेड की छत पर चूने का लेप करें ताकि गर्मी कम रहे।',
+      },
+    ],
+  };
+}
+
 export function getAlertsForLocation(locInput?: any): GovernmentAlert[] {
   const locName = typeof locInput === 'string' ? locInput : (locInput?.name || 'Indore');
   const district = typeof locInput === 'string' ? locInput : (locInput?.district || locInput?.city || 'Local District');
   const state = typeof locInput === 'string' ? 'India' : (locInput?.state || 'India');
   const lower = (locName + ' ' + district + ' ' + state).toLowerCase();
+  const heatAlert = generateLivestockHeatAlert(district, state);
 
   // 1. LUCKNOW & CENTRAL UTTAR PRADESH CORRIDOR
   if (lower.includes('lucknow') || lower.includes('vrindavan') || lower.includes('uttar pradesh') || lower.includes('up')) {
     return [
+      heatAlert,
       {
         id: 'ADV-2024-10-UP-LKO',
         severity: 'red',
@@ -218,6 +337,7 @@ export function getAlertsForLocation(locInput?: any): GovernmentAlert[] {
   // 2. DELHI NCR & NORTHERN PLAINS
   if (lower.includes('delhi') || lower.includes('noida') || lower.includes('gurugram') || lower.includes('ghaziabad')) {
     return [
+      heatAlert,
       {
         id: 'ADV-2024-10-NCR-01',
         severity: 'red',
@@ -263,6 +383,7 @@ export function getAlertsForLocation(locInput?: any): GovernmentAlert[] {
 
   // 3. DEFAULT REGIONAL ALERT ADAPTED TO ACTIVE LOCATION
   return [
+    heatAlert,
     {
       id: `ADV-${Date.now()}-${district.slice(0, 3).toUpperCase()}`,
       severity: 'red',

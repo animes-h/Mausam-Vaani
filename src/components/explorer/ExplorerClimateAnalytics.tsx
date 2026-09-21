@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
+import MonsoonDeficitTracker from './MonsoonDeficitTracker';
 
 export default function ExplorerClimateAnalytics() {
   const { weather, location, language } = useApp();
@@ -467,6 +468,9 @@ Synoptic Assessment: Atmospheric corridor actively tracked across ${location.dis
           </div>
         </div>
       </div>
+
+      {/* Historical Climate Comparison & 30-Year IMD Monsoon Deficit Tracker */}
+      <MonsoonDeficitTracker />
     </div>
   );
 }
