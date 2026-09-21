@@ -18,27 +18,118 @@ export default function ExplorerWeatherDashboard() {
 
   const [hourlyRange, setHourlyRange] = React.useState<12 | 24>(12);
 
-  const STATIONS = [
-    { name: 'Indore (Depalpur / Sanwer)', nameHi: 'इंदौर (देपालपुर / सांवेर)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 22.7196, lng: 75.8577, elevation: 553, district: 'Indore' },
-    { name: 'Ujjain (Tarana / Mahidpur)', nameHi: 'उज्जैन (तराना / महिदपुर)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 23.1765, lng: 75.7885, elevation: 494, district: 'Ujjain' },
-    { name: 'Dewas (Sonkatch / Tonk Khurd)', nameHi: 'देवास (सोनकच्छ / टोंक खुर्द)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 22.9676, lng: 76.0534, elevation: 535, district: 'Dewas' },
-    { name: 'Bhopal (Berasia / Huzur)', nameHi: 'भोपाल (बैरसिया / हुजूर)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 23.2599, lng: 77.4126, elevation: 527, district: 'Bhopal' },
-    { name: 'Dhar (Badnawar / Sardarpur)', nameHi: 'धार (बदनावर / सरदारपुर)', state: 'मध्य प्रदेश (Madhya Pradesh)', lat: 22.5978, lng: 75.2979, elevation: 559, district: 'Dhar' },
-  ];
+  const REGIONAL_RADAR_STATIONS: Record<string, { name: string; nameHi: string; state: string; lat: number; lng: number; elevation: number; district: string }[]> = {
+    'Madhya Pradesh': [
+      { name: 'Indore (Depalpur / Sanwer)', nameHi: 'इंदौर (देपालपुर / सांवेर)', state: 'Madhya Pradesh', lat: 22.7196, lng: 75.8577, elevation: 553, district: 'Indore' },
+      { name: 'Bhopal (Berasia / Huzur)', nameHi: 'भोपाल (बैरसिया / हुजूर)', state: 'Madhya Pradesh', lat: 23.2599, lng: 77.4126, elevation: 527, district: 'Bhopal' },
+      { name: 'Ujjain (Tarana / Mahidpur)', nameHi: 'उज्जैन (तराना / महिदपुर)', state: 'Madhya Pradesh', lat: 23.1765, lng: 75.7885, elevation: 494, district: 'Ujjain' },
+      { name: 'Dewas (Sonkatch / Tonk Khurd)', nameHi: 'देवास (सोनकच्छ / टोंक खुर्द)', state: 'Madhya Pradesh', lat: 22.9676, lng: 76.0534, elevation: 535, district: 'Dewas' },
+      { name: 'Dhar (Badnawar / Sardarpur)', nameHi: 'धार (बदनावर / सरदारपुर)', state: 'Madhya Pradesh', lat: 22.5978, lng: 75.2979, elevation: 559, district: 'Dhar' },
+      { name: 'Gwalior', nameHi: 'ग्वालियर', state: 'Madhya Pradesh', lat: 26.2183, lng: 78.1828, elevation: 211, district: 'Gwalior' },
+      { name: 'Jabalpur', nameHi: 'जबलपुर', state: 'Madhya Pradesh', lat: 23.1815, lng: 79.9864, elevation: 411, district: 'Jabalpur' },
+    ],
+    'Uttar Pradesh': [
+      { name: 'Lucknow (Amausi Hub)', nameHi: 'लखनऊ (अमौसी हब)', state: 'Uttar Pradesh', lat: 26.8467, lng: 80.9462, elevation: 123, district: 'Lucknow' },
+      { name: 'Kanpur (Chakeri)', nameHi: 'कानपुर (चकेरी)', state: 'Uttar Pradesh', lat: 26.4499, lng: 80.3319, elevation: 126, district: 'Kanpur' },
+      { name: 'Varanasi (Babatpur)', nameHi: 'वाराणसी (बाबतपुर)', state: 'Uttar Pradesh', lat: 25.3176, lng: 82.9739, elevation: 81, district: 'Varanasi' },
+      { name: 'Agra (Kheria)', nameHi: 'आगरा (खेरिया)', state: 'Uttar Pradesh', lat: 27.1767, lng: 78.0081, elevation: 171, district: 'Agra' },
+      { name: 'Prayagraj (Bamrauli)', nameHi: 'प्रयागराज (बमरौली)', state: 'Uttar Pradesh', lat: 25.4358, lng: 81.8463, elevation: 98, district: 'Prayagraj' },
+      { name: 'Gorakhpur', nameHi: 'गोरखपुर', state: 'Uttar Pradesh', lat: 26.7606, lng: 83.3732, elevation: 84, district: 'Gorakhpur' },
+    ],
+    'Delhi NCR': [
+      { name: 'New Delhi (Palam Radar)', nameHi: 'नई दिल्ली (पालम रडार)', state: 'Delhi', lat: 28.6139, lng: 77.2090, elevation: 216, district: 'New Delhi' },
+      { name: 'Noida (Sector 62)', nameHi: 'नोएडा', state: 'Delhi NCR', lat: 28.5355, lng: 77.3910, elevation: 200, district: 'Noida' },
+      { name: 'Gurugram', nameHi: 'गुरुग्राम', state: 'Delhi NCR', lat: 28.4595, lng: 77.0266, elevation: 217, district: 'Gurugram' },
+      { name: 'Ghaziabad', nameHi: 'गाजियाबाद', state: 'Delhi NCR', lat: 28.6692, lng: 77.4538, elevation: 214, district: 'Ghaziabad' },
+      { name: 'Faridabad', nameHi: 'फरीदाबाद', state: 'Delhi NCR', lat: 28.4089, lng: 77.3178, elevation: 205, district: 'Faridabad' },
+    ],
+    'Maharashtra': [
+      { name: 'Pune (Pashan Radar)', nameHi: 'पुणे (पाषाण रडार)', state: 'Maharashtra', lat: 18.5204, lng: 73.8567, elevation: 560, district: 'Pune' },
+      { name: 'Mumbai (Colaba DWR)', nameHi: 'मुंबई (कुलाबा)', state: 'Maharashtra', lat: 18.9220, lng: 72.8347, elevation: 14, district: 'Mumbai' },
+      { name: 'Nagpur (Sonegaon)', nameHi: 'नागपुर', state: 'Maharashtra', lat: 21.1458, lng: 79.0882, elevation: 310, district: 'Nagpur' },
+      { name: 'Nashik', nameHi: 'नाशिक', state: 'Maharashtra', lat: 19.9975, lng: 73.7898, elevation: 600, district: 'Nashik' },
+      { name: 'Aurangabad (Chh. Sambhajinagar)', nameHi: 'औरंगाबाद', state: 'Maharashtra', lat: 19.8762, lng: 75.3433, elevation: 568, district: 'Aurangabad' },
+    ],
+    'Rajasthan': [
+      { name: 'Jaipur (Sanganer Radar)', nameHi: 'जयपुर (सांगानेर)', state: 'Rajasthan', lat: 26.9124, lng: 75.7873, elevation: 431, district: 'Jaipur' },
+      { name: 'Jodhpur', nameHi: 'जोधपुर', state: 'Rajasthan', lat: 26.2389, lng: 73.0243, elevation: 231, district: 'Jodhpur' },
+      { name: 'Kota', nameHi: 'कोटा', state: 'Rajasthan', lat: 25.2138, lng: 75.8648, elevation: 271, district: 'Kota' },
+      { name: 'Udaipur', nameHi: 'उदयपुर', state: 'Rajasthan', lat: 24.5854, lng: 73.7125, elevation: 598, district: 'Udaipur' },
+    ],
+    'Bihar': [
+      { name: 'Patna (IMD Hub)', nameHi: 'पटना (मौसम केंद्र)', state: 'Bihar', lat: 25.5941, lng: 85.1376, elevation: 53, district: 'Patna' },
+      { name: 'Gaya', nameHi: 'गया', state: 'Bihar', lat: 24.7914, lng: 85.0002, elevation: 111, district: 'Gaya' },
+      { name: 'Bhagalpur', nameHi: 'भागलपुर', state: 'Bihar', lat: 25.2425, lng: 86.9842, elevation: 52, district: 'Bhagalpur' },
+      { name: 'Muzaffarpur', nameHi: 'मुजफ्फरपुर', state: 'Bihar', lat: 26.1209, lng: 85.3647, elevation: 60, district: 'Muzaffarpur' },
+    ],
+  };
+
+  // Auto-detect matching region from current location
+  const detectedRegion = React.useMemo(() => {
+    const s = `${location.state || ''} ${location.name || ''}`.toLowerCase();
+    if (s.includes('uttar pradesh') || s.includes('lucknow') || s.includes('up') || s.includes('kanpur') || s.includes('varanasi')) return 'Uttar Pradesh';
+    if (s.includes('delhi') || s.includes('noida') || s.includes('gurugram') || s.includes('ghaziabad') || s.includes('ncr')) return 'Delhi NCR';
+    if (s.includes('maharashtra') || s.includes('pune') || s.includes('mumbai') || s.includes('nagpur')) return 'Maharashtra';
+    if (s.includes('rajasthan') || s.includes('jaipur') || s.includes('jodhpur')) return 'Rajasthan';
+    if (s.includes('bihar') || s.includes('patna')) return 'Bihar';
+    return 'Madhya Pradesh';
+  }, [location.state, location.name]);
+
+  const [selectedRegion, setSelectedRegion] = React.useState<string>(detectedRegion);
+
+  React.useEffect(() => {
+    setSelectedRegion(detectedRegion);
+  }, [detectedRegion]);
+
+  const activeStations = REGIONAL_RADAR_STATIONS[selectedRegion] || REGIONAL_RADAR_STATIONS['Madhya Pradesh'];
+
+  const agroZoneName = React.useMemo(() => {
+    const s = `${location.state || ''} ${location.name || ''}`.toLowerCase();
+    if (s.includes('uttar pradesh') || s.includes('lucknow')) return 'Gangetic Alluvial Plains Zone (Agro-Met IV)';
+    if (s.includes('delhi') || s.includes('ncr')) return 'Upper Indo-Gangetic Basin • Northern Plains';
+    if (s.includes('madhya pradesh') || s.includes('indore') || s.includes('bhopal')) return 'Malwa & Central Narmada Plateau Zone';
+    if (s.includes('maharashtra') || s.includes('pune') || s.includes('mumbai')) return 'Western Deccan Agro-Climatic Zone';
+    if (s.includes('rajasthan')) return 'Semi-Arid Western Basin Zone';
+    if (s.includes('bihar')) return 'Middle Gangetic Agro-Climatic Zone';
+    return `${location.state || 'Regional'} Agro-Met Observation Zone`;
+  }, [location.state, location.name]);
+
+  const stationId = React.useMemo(() => {
+    const raw = (location.district || location.name || 'RAD').slice(0, 3).toUpperCase().replace(/[^A-Z]/g, '') || 'RAD';
+    const num = Math.abs(Math.round((location.lat || 22) * 10)) % 1000;
+    return `DWR-${raw}-${num.toString().padStart(3, '0')}`;
+  }, [location.district, location.name, location.lat]);
+
+  const corridorDesc = React.useMemo(() => {
+    const stateOrRegion = location.state || 'Regional';
+    return `${stateOrRegion} Meteorological Corridor • Lat ${location.lat.toFixed(2)}°N, Long ${location.lng.toFixed(2)}°E`;
+  }, [location.state, location.lat, location.lng]);
 
   const t = translations[language];
 
   return (
     <div className="flex flex-col gap-space-lg w-full max-w-7xl mx-auto">
-      {/* Station Selector Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-space-sm bg-surface-container-lowest p-space-sm rounded-2xl border border-surface-container-high shadow-xs">
+      {/* Station Selector Bar with Region Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm bg-surface-container-lowest p-space-sm rounded-2xl border border-surface-container-high shadow-xs">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-[1.25rem]">cell_tower</span>
-          <span className="font-label-md text-xs font-bold text-on-surface">Select Doppler Radar Station:</span>
+          <span className="font-label-md text-xs font-bold text-on-surface whitespace-nowrap">
+            Doppler Radar Station:
+          </span>
+          <select
+            value={selectedRegion}
+            onChange={(e) => setSelectedRegion(e.target.value)}
+            className="px-2 py-1 bg-surface-container text-primary font-bold text-xs rounded-lg border border-outline-variant/30 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+          >
+            {Object.keys(REGIONAL_RADAR_STATIONS).map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {STATIONS.map(stn => {
-            const isSelected = location.name.includes(stn.district);
+
+        <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto">
+          {activeStations.map(stn => {
+            const isSelected = (location.district && stn.district.toLowerCase() === location.district.toLowerCase()) || location.name.includes(stn.district);
             return (
               <button
                 key={stn.name}
@@ -47,7 +138,7 @@ export default function ExplorerWeatherDashboard() {
                   setLocation(stn);
                   refreshWeather();
                 }}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all active:scale-95 cursor-pointer whitespace-nowrap ${
                   isSelected
                     ? 'bg-primary text-on-primary shadow-xs'
                     : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
@@ -64,10 +155,10 @@ export default function ExplorerWeatherDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-space-sm">
         <div className="flex items-center gap-space-xs text-on-surface-variant text-xs">
           <span className="font-label-sm uppercase tracking-wider text-outline font-semibold">
-            Central Plateau Zone
+            {agroZoneName}
           </span>
           <span className="text-outline">•</span>
-          <span className="font-label-sm font-semibold text-primary">Station ID: IND-042</span>
+          <span className="font-label-sm font-semibold text-primary">Station ID: {stationId}</span>
           <span className="text-outline">•</span>
           <span className="font-label-sm text-on-surface-variant">
             {weather.current.updatedAt}
@@ -121,7 +212,7 @@ export default function ExplorerWeatherDashboard() {
                 </span>
               </div>
               <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1">
-                Malwa Meteorological Corridor • Lat {location.lat}°N, Long {location.lng}°E
+                {corridorDesc}
               </p>
             </div>
 

@@ -11,6 +11,7 @@ export default function KisanHome() {
     language,
     weather,
     location,
+    soilConfig,
     setActiveKisanTab,
     playSpeech,
     stopSpeech,
@@ -24,9 +25,28 @@ export default function KisanHome() {
   const [quickResponse, setQuickResponse] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Dynamic Spoken Script generation reflecting live location, temperature, condition, and soil
+  const locDisplayHi = location.district || location.nameHi || location.name || 'आपके क्षेत्र';
+  const locDisplayEn = location.district || location.name || 'your region';
+  const temp = weather?.current?.temperature ?? 30;
+  const conditionHi = weather?.current?.conditionHi || 'आंशिक बादल';
+  const conditionEn = weather?.current?.conditionEn || 'Partly Cloudy';
+  const wind = weather?.current?.windSpeed ?? 14;
+  const soilMoist = weather?.current?.soilMoisture ?? soilConfig.moisturePercentage ?? 60;
+  const precipProb = weather?.hourly?.[0]?.precipitationProbability ?? weather?.daily?.[0]?.precipitationProbability ?? (weather?.current?.precipitation > 0 ? 75 : 25);
+  const hasWashoutRisk = precipProb >= 40 || (weather?.current?.precipitation ?? 0) > 0 || wind >= 30;
+
+  const rainAdvisoryHi = hasWashoutRisk
+    ? `आज ${precipProb} प्रतिशत बारिश व हवा का अनुमान है, इसलिए कीटनाशक छिड़काव स्थगित रखें।`
+    : `मौसम सामान्यतः साफ़ रहेगा, कृषि कार्य सुचारू रूप से किए जा सकते हैं।`;
+
+  const rainAdvisoryEn = hasWashoutRisk
+    ? `There is a ${precipProb} percent chance of rain and wind, so please withhold pesticide spraying today.`
+    : `Weather will remain mostly clear, suitable for normal field operations.`;
+
   const fullWeatherSpokenScript = language === 'hi'
-    ? `नमस्ते रमेश जी। आज इंदौर में तापमान 31 डिग्री सेल्सियस है और आंशिक बादल छाए हुए हैं। दोपहर बाद 40 प्रतिशत हल्की बारिश की संभावना है। हवा 14 किलोमीटर प्रति घंटा की रफ्तार से चल रही है। आपकी काली मिट्टी में 64 प्रतिशत नमी है जो बुवाई के अनुकूल है। आज कीटनाशक का छिड़काव न करें।`
-    : `Namaste Ramesh ji. Today in Indore the temperature is 31 degrees Celsius with partly cloudy skies. There is a 40 percent chance of rain in the afternoon. Soil moisture is optimal at 64 percent. Please withhold pesticide spraying today.`;
+    ? `नमस्ते किसान साथी! आज ${locDisplayHi} में तापमान ${temp} डिग्री सेल्सियस है और ${conditionHi} का मौसम है। हवा ${wind} किलोमीटर प्रति घंटा की रफ्तार से चल रही है। खेत में मिट्टी की नमी ${soilMoist} प्रतिशत है। ${rainAdvisoryHi}`
+    : `Namaste! Today in ${locDisplayEn}, the temperature is ${temp} degrees Celsius with ${conditionEn} conditions. Surface wind speed is ${wind} kilometers per hour, and soil moisture is at ${soilMoist} percent. ${rainAdvisoryEn}`;
 
   const toggleAudioReadout = () => {
     SpeechHandler.prewarmAudio();
@@ -242,7 +262,9 @@ export default function KisanHome() {
           <div className="flex flex-col">
             <div className="flex flex-wrap items-center gap-space-xs">
               <span className="px-space-xs py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-bold tracking-wide">
-                {language === 'hi' ? 'ग्राम: हातोद • इंदौर (MP)' : 'Hatod Village • Indore (MP)'}
+                {language === 'hi'
+                  ? `स्थान: ${locDisplayHi} (${location.state || 'भारत'})`
+                  : `Location: ${locDisplayEn} (${location.state || 'India'})`}
               </span>
               <span className="font-label-sm text-label-sm text-outline">•</span>
               <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
@@ -251,9 +273,9 @@ export default function KisanHome() {
             </div>
             <h1 className="font-headline-md text-headline-md text-primary font-extrabold tracking-tight mt-1">
               {language === 'hi' ? (
-                <>नमस्ते रमेश जी! <span className="text-on-surface font-semibold">आज मौसम कैसा है, पूछिए।</span></>
+                <>नमस्ते किसान साथी! <span className="text-on-surface font-semibold">आज मौसम कैसा है, पूछिए।</span></>
               ) : (
-                <>Namaste Ramesh ji! <span className="text-on-surface font-semibold">Ask your weather question.</span></>
+                <>Namaste Farmer Friend! <span className="text-on-surface font-semibold">Ask your weather question.</span></>
               )}
             </h1>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -305,13 +327,21 @@ export default function KisanHome() {
             </div>
             <p className="font-headline-sm text-headline-sm text-on-tertiary-fixed font-bold mt-1">
               {language === 'hi'
-                ? 'फसल सूचना: सोयाबीन और कपास के लिए आज कीटनाशक छिड़काव रोकें।'
-                : 'Crop Directive: Postpone pesticide spray for Soybean & Cotton today.'}
+                ? (hasWashoutRisk
+                    ? `फसल सूचना: ${locDisplayHi} में आज कीटनाशक छिड़काव स्थगित रखें।`
+                    : `फसल सूचना: ${locDisplayHi} में आज मौसम अनुकूल है, कृषि कार्य व छिड़काव सुरक्षित है।`)
+                : (hasWashoutRisk
+                    ? `Crop Directive: Postpone pesticide spraying in ${locDisplayEn} today.`
+                    : `Crop Directive: Weather in ${locDisplayEn} is favorable for field operations.`)}
             </p>
             <p className="font-body-sm text-body-sm text-on-tertiary-fixed-variant mt-0.5">
               {language === 'hi'
-                ? 'दोपहर बाद बादलों की गति तेज़ होने एवं 40% बारिश की संभावना से दवा बहने का जोखिम है।'
-                : 'Afternoon rain probability (40%) and squall winds will wash off chemical sprays.'}
+                ? (hasWashoutRisk
+                    ? `दोपहर बाद ${precipProb}% बारिश एवं ${wind} किमी/घंटा हवा चलने से दवा बहने का जोखिम है।`
+                    : `हवा की गति सामान्य (${wind} किमी/घंटा) है और बारिश का कोई गंभीर जोखिम नहीं है।`)
+                : (hasWashoutRisk
+                    ? `Precipitation probability (${precipProb}%) and ${wind} km/h wind squalls risk chemical washout.`
+                    : `Winds are calm (${wind} km/h) with low rainfall probability.`)}
             </p>
           </div>
         </div>

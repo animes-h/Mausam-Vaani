@@ -11,6 +11,7 @@ export default function KisanCropAdvisory() {
     cropRecommendations,
     soilConfig,
     weather,
+    location,
     setActiveKisanTab,
     playSpeech,
     stopSpeech,
@@ -35,9 +36,38 @@ export default function KisanCropAdvisory() {
     }
   };
 
-  const fullAdvisoryAudio = language === 'hi'
-    ? `आपकी ${soilConfig.soilNameHi} और मौजूदा मानसूनी नमी के लिए वैज्ञानिकों ने तीन प्रमुख फसलें चुनी हैं। पहली वरीयता सोयाबीन किस्म जेएस 20-34 है जिसकी बुवाई 15 से 25 जून के बीच करें। दूसरी सुरक्षित फसल मक्का है जिसमें पानी व खाद का खर्च कम आता है। तीसरी नकद मुनाफे वाली फसल बीटी कपास है।`
-    : `Based on your ${soilConfig.soilNameEn} and current monsoon moisture levels, agronomists recommend three primary crops. First choice is Soybean JS 20-34 for the 15-25 June window. Second safe crop is Hybrid Maize with low input cost. Third high-yield cash crop is Bt Cotton.`;
+  const moisturePct = weather?.current?.soilMoisture ?? soilConfig.moisturePercentage ?? 60;
+
+  const topCrops = cropRecommendations.slice(0, 3);
+  const primaryCrop = topCrops[0];
+  const safeCrop = topCrops[1] || topCrops[0];
+  const altCrop = topCrops[2] || topCrops[1];
+
+  const fullAdvisoryAudio = React.useMemo(() => {
+    if (!primaryCrop) {
+      return language === 'hi'
+        ? `आपकी ${soilConfig.soilNameHi || 'मिट्टी'} के लिए फसल परामर्श तैयार किया जा रहा है।`
+        : `Preparing crop advisory for your ${soilConfig.soilNameEn || 'soil'}.`;
+    }
+
+    if (language === 'hi') {
+      const pName = primaryCrop.nameHi || primaryCrop.nameEn;
+      const pVar = primaryCrop.variety ? `(${primaryCrop.variety})` : '';
+      const pWindow = primaryCrop.sowingWindowHi || primaryCrop.sowingWindowEn;
+      const sName = safeCrop && safeCrop.id !== primaryCrop.id ? (safeCrop.nameHi || safeCrop.nameEn) : '';
+      const aName = altCrop && altCrop.id !== safeCrop.id && altCrop.id !== primaryCrop.id ? (altCrop.nameHi || altCrop.nameEn) : '';
+
+      return `आपकी ${soilConfig.soilNameHi} और ${moisturePct} प्रतिशत मृदा नमी के आधार पर वैज्ञानिकों ने फसलें चुनी हैं। पहली वरीयता ${pName} ${pVar} है, जिसकी बुवाई का सही समय ${pWindow} है। ${sName ? `दूसरी सुरक्षित फसल ${sName} है।` : ''} ${aName ? `तीसरी फसल ${aName} है।` : ''}`;
+    } else {
+      const pName = primaryCrop.nameEn;
+      const pVar = primaryCrop.variety ? `(${primaryCrop.variety})` : '';
+      const pWindow = primaryCrop.sowingWindowEn;
+      const sName = safeCrop && safeCrop.id !== primaryCrop.id ? safeCrop.nameEn : '';
+      const aName = altCrop && altCrop.id !== safeCrop.id && altCrop.id !== primaryCrop.id ? altCrop.nameEn : '';
+
+      return `Based on your ${soilConfig.soilNameEn} and ${moisturePct} percent soil moisture, agronomists recommend: Primary choice is ${pName} ${pVar}, with optimal sowing window ${pWindow}. ${sName ? `Second safe crop is ${sName}.` : ''} ${aName ? `Third option is ${aName}.` : ''}`;
+    }
+  }, [language, soilConfig, moisturePct, primaryCrop, safeCrop, altCrop]);
 
   const toggleFullVoice = () => {
     if (isPlayingAudio) {
@@ -61,8 +91,8 @@ export default function KisanCropAdvisory() {
           </h1>
           <p className="font-body-md text-sm text-on-surface-variant">
             {language === 'hi'
-              ? `आपकी ${soilConfig.soilNameHi}, मौजूदा नमी (64%) और मानसून आगमन के आधार पर चुनी गई फसलें।`
-              : `Matched to ${soilConfig.soilNameEn}, current soil wetness, and IMD monsoon onset window.`}
+              ? `आपकी ${soilConfig.soilNameHi}, मौजूदा नमी (${moisturePct}%) और मौसम के आधार पर चुनी गई फसलें।`
+              : `Matched to ${soilConfig.soilNameEn}, current soil wetness (${moisturePct}%), and seasonal weather window.`}
           </p>
         </div>
 
@@ -84,7 +114,7 @@ export default function KisanCropAdvisory() {
                 {isPlayingAudio ? (language === 'hi' ? 'रोकें' : 'Stop') : (language === 'hi' ? 'पूरी सलाह सुनें' : 'Listen Advice')}
               </span>
               <span className="font-label-sm text-[0.7rem] opacity-90">
-                {language === 'hi' ? 'ऑडियो विवरण (0:48)' : 'Audio Brief (0:48)'}
+                {language === 'hi' ? 'ऑडियो विवरण' : 'Audio Brief'}
               </span>
             </div>
           </button>
@@ -105,7 +135,7 @@ export default function KisanCropAdvisory() {
                   {language === 'hi' ? 'मृदा स्वास्थ्य एवं ऋतु' : 'Soil & Season Status'}
                 </span>
                 <span className="font-headline-sm text-base font-bold text-on-surface">
-                  {soilConfig.soilNameHi}
+                  {language === 'hi' ? soilConfig.soilNameHi : soilConfig.soilNameEn}
                 </span>
               </div>
             </div>
@@ -139,23 +169,25 @@ export default function KisanCropAdvisory() {
                 {language === 'hi' ? 'सक्रिय चक्र' : 'Active Cycle'}
               </span>
               <span className="font-headline-sm text-sm font-bold text-on-surface">
-                खरीफ सीज़न 2025
+                {language === 'hi' ? 'खरीफ सीज़न' : 'Kharif Season'}
               </span>
               <span className="text-[0.7rem] text-tertiary font-bold">
-                आर्द्रता: {weather.current.soilMoisture}% (पर्याप्त नमी)
+                {language === 'hi'
+                  ? `मृदा नमी: ${moisturePct}% (${moisturePct >= 50 ? 'पर्याप्त नमी' : 'हल्की नमी'})`
+                  : `Moisture: ${moisturePct}% (${moisturePct >= 50 ? 'Adequate' : 'Low'})`}
               </span>
             </div>
 
             {/* Metric 3: Sowing Window */}
             <div className="bg-surface-container-low rounded-2xl p-space-sm flex flex-col gap-1">
               <span className="font-label-sm text-xs text-outline">
-                {language === 'hi' ? 'मानसून बुवाई खिड़की' : 'Sowing Window'}
+                {language === 'hi' ? 'बुवाई खिड़की' : 'Sowing Window'}
               </span>
-              <span className="font-headline-sm text-sm font-bold text-primary">
-                15 जून - 25 जून
+              <span className="font-headline-sm text-sm font-bold text-primary truncate">
+                {language === 'hi' ? (primaryCrop?.sowingWindowHi || 'अनुकूल समय') : (primaryCrop?.sowingWindowEn || 'Optimal Window')}
               </span>
               <span className="text-[0.7rem] text-secondary font-bold">
-                बुवाई खिड़की अनुकूल है
+                {language === 'hi' ? 'बुवाई खिड़की अनुकूल है' : 'Favorable Window'}
               </span>
             </div>
           </div>
@@ -180,7 +212,7 @@ export default function KisanCropAdvisory() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent"></div>
             <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-inverse-on-surface text-xs font-bold">
-              <span>खेत क्र. ०२ (हातोद रोड)</span>
+              <span>{language === 'hi' ? `खेत: ${location.district || location.name}` : `Field: ${location.district || location.name}`}</span>
               <span>{soilConfig.landArea} {soilConfig.landUnit}</span>
             </div>
           </div>
@@ -193,7 +225,7 @@ export default function KisanCropAdvisory() {
             <div className="h-6 w-px bg-outline-variant/40"></div>
             <div className="flex flex-col text-right">
               <span className="text-[0.7rem] text-on-surface-variant">जल भराव क्षमता</span>
-              <span className="font-bold text-sm text-primary">उत्कृष्ट (85%)</span>
+              <span className="font-bold text-sm text-primary">{soilConfig.moistureCapacity || `${moisturePct}%`}</span>
             </div>
           </div>
         </div>
