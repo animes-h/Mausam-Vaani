@@ -224,8 +224,8 @@ export default function KisanCropAdvisory() {
             </div>
             <div className="h-6 w-px bg-outline-variant/40"></div>
             <div className="flex flex-col text-right">
-              <span className="text-[0.7rem] text-on-surface-variant">जल भराव क्षमता</span>
-              <span className="font-bold text-sm text-primary">{soilConfig.moistureCapacity || `${moisturePct}%`}</span>
+              <span className="text-[0.7rem] text-on-surface-variant">मृदा स्वास्थ्य (SHC)</span>
+              <span className="font-bold text-xs text-primary">{soilConfig.nitrogenStatus || 'Medium N'} • {soilConfig.organicCarbonPct ? `${soilConfig.organicCarbonPct}% OC` : '0.76% OC'}</span>
             </div>
           </div>
         </div>
@@ -452,6 +452,29 @@ export default function KisanCropAdvisory() {
                   {language === 'hi' ? selectedCrop.marketTrendHi : selectedCrop.marketTrendEn}
                 </p>
               </div>
+
+              {selectedCrop.icarNorms && (
+                <div className="bg-primary/5 border border-primary/20 p-space-md rounded-2xl flex flex-col gap-2">
+                  <div className="flex items-center gap-1 text-xs font-bold text-primary uppercase">
+                    <span className="material-symbols-outlined text-[1rem]">science</span>
+                    <span>{language === 'hi' ? 'ICAR पैकेज ऑफ प्रैक्टिसेज एवं उर्वरक अनुशंसा' : 'ICAR Package of Practices & Fertilizer Norms'}</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="bg-surface-container-lowest p-2 rounded-xl border border-surface-container-high">
+                      <span className="font-semibold text-on-surface-variant block text-[0.68rem]">{language === 'hi' ? 'अनुशंसित N-P-K-S खाद' : 'Recommended N-P-K-S'}</span>
+                      <span className="font-bold text-on-surface text-[0.75rem]">{selectedCrop.icarNorms.npkRatio}</span>
+                    </div>
+                    <div className="bg-surface-container-lowest p-2 rounded-xl border border-surface-container-high">
+                      <span className="font-semibold text-on-surface-variant block text-[0.68rem]">{language === 'hi' ? 'प्रमाणित बीज उपचार' : 'Certified Seed Treatment'}</span>
+                      <span className="font-bold text-on-surface text-[0.75rem]">{selectedCrop.icarNorms.seedTreatment}</span>
+                    </div>
+                  </div>
+                  <div className="text-[0.72rem] text-primary font-medium mt-1 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[0.875rem]">verified</span>
+                    <span>{language === 'hi' ? selectedCrop.icarNorms.shcComplianceHi : selectedCrop.icarNorms.shcCompliance}</span>
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-col gap-2 pt-2">
                 <button

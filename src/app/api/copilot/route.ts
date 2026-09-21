@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
       ? history.slice(-4).map((m: any) => `${m.sender}: ${m.text}`).join('\n')
       : '';
 
-    const systemGrounding = `You are Mausam Vaani (मौसम-वाणी) Climate Copilot & Senior Agronomist AI.
+    const systemGrounding = `You are Mausam Vaani (मौसम-वाणी) Climate Copilot & Senior Agronomist AI, grounded in ICAR (Indian Council of Agricultural Research) Package of Practices, Krishi Vigyan Kendra (KVK) guidelines, and Government of India Soil Health Card (SHC) standards.
 Current Location: ${location?.name || 'Local Region'} (${location?.lat || 26.8467}°N, ${location?.lng || 80.9462}°E).
 Current Telemetry:
 - Temperature: ${weather?.temperature ?? 31}°C (Apparent: ${weather?.apparentTemperature ?? 34}°C)
@@ -131,6 +131,8 @@ Recent Chat History:
 ${historyContext}
 
 User Query: "${userQuery}"
+
+Provide an authoritative, scientifically grounded agronomic and meteorological advisory. Ground all crop, soil, fertilizer, and pest management advice strictly in ICAR Package of Practices and Soil Health Card N-P-K / micro-nutrient benchmarks.
 
 CRITICAL LANGUAGE REQUIREMENT:
 The user selected language: ${targetLanguage === 'hi' ? 'HINDI (हिन्दी)' : 'ENGLISH'}.

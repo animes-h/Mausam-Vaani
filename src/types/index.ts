@@ -86,6 +86,13 @@ export interface SoilConfig {
   landArea: number;
   landUnit: 'acres' | 'bigha';
   photoUrl?: string;
+  // Soil Health Card (soilhealth.dac.gov.in) & ICAR Benchmark Parameters
+  nitrogenStatus?: string;
+  phosphorusStatus?: string;
+  potassiumStatus?: string;
+  organicCarbonPct?: number;
+  electricalConductivity?: number;
+  micronutrientSummary?: string;
   aiDiagnosis?: {
     identifiedType: string;
     textureDescription: string;
@@ -119,6 +126,13 @@ export interface CropRecommendation {
   marketTrendEn: string;
   marketTrendHi: string;
   imageUrl: string;
+  // ICAR Package of Practices & Soil Health Card (SHC) Guidelines
+  icarNorms?: {
+    npkRatio: string;
+    seedTreatment: string;
+    shcCompliance: string;
+    shcComplianceHi: string;
+  };
 }
 
 export interface GovernmentAlert {
