@@ -43,7 +43,7 @@ export default function InteractiveRadarMap() {
   const [showRadar, setShowRadar] = useState<boolean>(true);
   const [showWind, setShowWind] = useState<boolean>(true);
   const [showRadarRings, setShowRadarRings] = useState<boolean>(true);
-  const [mapTheme, setMapTheme] = useState<'dark' | 'voyager' | 'osm'>('dark');
+  const [mapTheme, setMapTheme] = useState<'dark' | 'satellite' | 'terrain' | 'osm'>('dark');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [selectedStation, setSelectedStation] = useState<typeof IMD_RADAR_STATIONS[0] | null>(null);
 
@@ -121,18 +121,38 @@ export default function InteractiveRadarMap() {
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // Base tile layer
-      let baseTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-      if (mapTheme === 'voyager') {
-        baseTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      // Base tile layer (100% Free & Open - Zero API Key Required, No Watermarks)
+      let baseTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      let tileOptions: any = {
+        maxZoom: 19,
+        subdomains: ['a', 'b', 'c'],
+        className: 'radar-dark-tiles',
+      };
+
+      if (mapTheme === 'satellite') {
+        baseTileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        tileOptions = {
+          maxZoom: 18,
+          subdomains: [],
+          className: '',
+        };
+      } else if (mapTheme === 'terrain') {
+        baseTileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+        tileOptions = {
+          maxZoom: 18,
+          subdomains: [],
+          className: '',
+        };
       } else if (mapTheme === 'osm') {
         baseTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        tileOptions = {
+          maxZoom: 19,
+          subdomains: ['a', 'b', 'c'],
+          className: '',
+        };
       }
 
-      const baseLayer = L.tileLayer(baseTileUrl, {
-        maxZoom: 19,
-        subdomains: 'abcd',
-      }).addTo(map);
+      const baseLayer = L.tileLayer(baseTileUrl, tileOptions).addTo(map);
 
       // Layer groups
       const ringsGroup = L.layerGroup().addTo(map);
@@ -467,15 +487,16 @@ export default function InteractiveRadarMap() {
             <span className="hidden sm:inline">Stations</span>
           </button>
 
-          {/* Map Theme Toggle */}
+          {/* Map Theme Toggle (100% Keyless, Zero Watermark) */}
           <select
             value={mapTheme}
             onChange={(e) => setMapTheme(e.target.value as any)}
             className="px-2 py-1 bg-surface-container text-xs font-semibold rounded-xl text-on-surface border-none focus:ring-1 focus:ring-primary cursor-pointer"
           >
-            <option value="dark">Dark</option>
-            <option value="voyager">Terrain</option>
-            <option value="osm">Street</option>
+            <option value="dark">Dark Radar</option>
+            <option value="satellite">Satellite (HD)</option>
+            <option value="terrain">Topographic</option>
+            <option value="osm">Street Map</option>
           </select>
 
           {/* Fullscreen Expand */}

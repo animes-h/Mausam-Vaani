@@ -76,3 +76,9 @@
 .animate-wave-5 {
   animation: wave-bounce 1s ease-in-out infinite 0.6s;
 }
+
+/* Keyless Leaflet Dark Theme Filter (Zero API Key, High Contrast) */
+.radar-dark-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(92%) saturate(80%);
+}
+
