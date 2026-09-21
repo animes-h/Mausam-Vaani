@@ -4,7 +4,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 import { RouteWaypoint } from '@/types';
-import { INDIA_LOCATIONS, IndiaLocation, REGION_CATEGORIES } from '@/lib/indiaLocations';
+import { INDIA_LOCATIONS } from '@/lib/indiaLocations';
 
 type VehicleType = 'car' | 'truck' | 'bike';
 type ChipTarget = 'destination' | 'origin' | 'waypoint';
@@ -24,7 +24,10 @@ interface Coord {
   lng: number;
 }
 
-// Indian Highway Coordinates for accurate routing and bearings
+// In-memory dynamic geocoding cache for any custom town/city typed by the user
+const DYNAMIC_GEOCODE_CACHE: Record<string, Coord> = {};
+
+// Comprehensive Indian Highway Coordinates for accurate routing and bearings
 const CITY_COORDS: Record<string, Coord> = {
   // Delhi NCR
   'new delhi': { lat: 28.6139, lng: 77.2090 },
@@ -76,6 +79,7 @@ const CITY_COORDS: Record<string, Coord> = {
   'dhar': { lat: 22.5975, lng: 75.2974 },
   'khargone': { lat: 21.8228, lng: 75.6111 },
   'khandwa': { lat: 21.8314, lng: 76.3498 },
+  'mhow': { lat: 22.5539, lng: 75.7548 },
   'gwalior': { lat: 26.2183, lng: 78.1828 },
   'jabalpur': { lat: 23.1815, lng: 79.9864 },
   'sagar': { lat: 23.8388, lng: 78.7378 },
@@ -84,16 +88,31 @@ const CITY_COORDS: Record<string, Coord> = {
   'narmadapuram': { lat: 22.7519, lng: 77.7289 },
   'pipariya': { lat: 22.7619, lng: 78.3553 },
   'narsinghpur': { lat: 22.9469, lng: 79.1952 },
+  'vidisha': { lat: 23.5251, lng: 77.8081 },
+  'neemuch': { lat: 24.4754, lng: 74.8693 },
+  'mandsaur': { lat: 24.0722, lng: 75.0684 },
+  'barwani': { lat: 22.0368, lng: 74.9030 },
+  'harda': { lat: 22.3444, lng: 77.0945 },
+  'betul': { lat: 21.9014, lng: 77.9022 },
+  'chhindwara': { lat: 22.0574, lng: 78.9382 },
+  'shivpuri': { lat: 25.4326, lng: 77.6583 },
+  'guna': { lat: 24.6324, lng: 77.3006 },
+  'katni': { lat: 23.8343, lng: 80.3957 },
+  'burhanpur': { lat: 21.3145, lng: 76.2299 },
+  'singrauli': { lat: 24.1992, lng: 82.6645 },
+  'damoh': { lat: 23.8382, lng: 79.4422 },
+  'chhatarpur': { lat: 24.9164, lng: 79.5811 },
 
   // Rajasthan
   'jaipur': { lat: 26.9124, lng: 75.7873 },
   'jodhpur': { lat: 26.2389, lng: 73.0243 },
   'kota': { lat: 25.2138, lng: 75.8648 },
   'udaipur': { lat: 24.5854, lng: 73.7125 },
+  'bikaner': { lat: 28.0229, lng: 73.3119 },
   'ajmer': { lat: 26.4499, lng: 74.6399 },
   'dausa': { lat: 26.8932, lng: 76.3377 },
 
-  // Punjab, Haryana, Chandigarh, HP, UK
+  // Punjab, Haryana, Chandigarh, HP, UK, J&K
   'chandigarh': { lat: 30.7333, lng: 76.7794 },
   'ludhiana': { lat: 30.9010, lng: 75.8573 },
   'amritsar': { lat: 31.6340, lng: 74.8723 },
@@ -104,6 +123,8 @@ const CITY_COORDS: Record<string, Coord> = {
   'dehradun': { lat: 30.3165, lng: 78.0322 },
   'haridwar': { lat: 29.9457, lng: 78.1642 },
   'shimla': { lat: 31.1048, lng: 77.1734 },
+  'jammu': { lat: 32.7266, lng: 74.8570 },
+  'srinagar': { lat: 34.0837, lng: 74.7973 },
 
   // Maharashtra, Gujarat, Goa
   'mumbai': { lat: 19.0760, lng: 72.8777 },
@@ -112,38 +133,86 @@ const CITY_COORDS: Record<string, Coord> = {
   'pune': { lat: 18.5204, lng: 73.8567 },
   'nagpur': { lat: 21.1458, lng: 79.0882 },
   'nashik': { lat: 19.9975, lng: 73.7898 },
+  'chhatrapati sambhajinagar': { lat: 19.8762, lng: 75.3433 },
+  'aurangabad': { lat: 19.8762, lng: 75.3433 },
   'thane': { lat: 19.2183, lng: 72.9781 },
+  'solapur': { lat: 17.6599, lng: 75.9064 },
+  'kolhapur': { lat: 16.7050, lng: 74.2433 },
+  'amravati': { lat: 20.9374, lng: 77.7796 },
+  'jalgaon': { lat: 21.0077, lng: 75.5626 },
   'dhule': { lat: 20.9042, lng: 74.7749 },
   'ahmedabad': { lat: 23.0225, lng: 72.5714 },
   'surat': { lat: 21.1702, lng: 72.8311 },
   'vadodara': { lat: 22.3072, lng: 73.1812 },
+  'rajkot': { lat: 22.3039, lng: 70.8022 },
+  'bhavnagar': { lat: 21.7645, lng: 72.1519 },
+  'jamnagar': { lat: 22.4707, lng: 70.0577 },
+  'gandhinagar': { lat: 23.2156, lng: 72.6369 },
+  'panaji': { lat: 15.4909, lng: 73.8278 },
 
   // South
   'bengaluru': { lat: 12.9716, lng: 77.5946 },
+  'mysuru': { lat: 12.2958, lng: 76.6394 },
+  'hubballi': { lat: 15.3647, lng: 75.1240 },
+  'mangaluru': { lat: 12.9141, lng: 74.8560 },
+  'belagavi': { lat: 15.8497, lng: 74.4977 },
   'hyderabad': { lat: 17.3850, lng: 78.4867 },
+  'warangal': { lat: 17.9689, lng: 79.5941 },
+  'nizamabad': { lat: 18.6725, lng: 78.0941 },
+  'visakhapatnam': { lat: 17.6868, lng: 83.2185 },
+  'vijayawada': { lat: 16.5062, lng: 80.6480 },
+  'tirupati': { lat: 13.6288, lng: 79.4192 },
+  'guntur': { lat: 16.3067, lng: 80.4365 },
   'chennai': { lat: 13.0827, lng: 80.2707 },
+  'coimbatore': { lat: 11.0168, lng: 76.9558 },
+  'madurai': { lat: 9.9252, lng: 78.1198 },
+  'tiruchirappalli': { lat: 10.7905, lng: 78.7047 },
+  'salem': { lat: 11.6643, lng: 78.1460 },
+  'kochi': { lat: 9.9312, lng: 76.2673 },
+  'thiruvananthapuram': { lat: 8.5241, lng: 76.9366 },
+  'kozhikode': { lat: 11.2588, lng: 75.7804 },
   'hosur': { lat: 12.7409, lng: 77.8253 },
   'krishnagiri': { lat: 12.5186, lng: 78.2137 },
   'vellore': { lat: 12.9165, lng: 79.1325 },
-  'kochi': { lat: 9.9312, lng: 76.2673 },
-  'visakhapatnam': { lat: 17.6868, lng: 83.2185 },
-  'vijayawada': { lat: 16.5062, lng: 80.6480 },
 
-  // East
+  // East & Central / North-East
+  'kolkata': { lat: 22.5726, lng: 88.3639 },
+  'howrah': { lat: 22.5958, lng: 88.2636 },
+  'siliguri': { lat: 26.7271, lng: 88.3953 },
+  'durgapur': { lat: 23.5204, lng: 87.3119 },
   'patna': { lat: 25.5941, lng: 85.1376 },
+  'gaya': { lat: 24.7914, lng: 85.0002 },
+  'bhagalpur': { lat: 25.2425, lng: 86.9842 },
+  'muzaffarpur': { lat: 26.1209, lng: 85.3647 },
   'buxar': { lat: 25.5647, lng: 83.9777 },
   'ghazipur': { lat: 25.5840, lng: 83.5770 },
-  'gaya': { lat: 24.7914, lng: 85.0002 },
   'ranchi': { lat: 23.3441, lng: 85.3096 },
   'jamshedpur': { lat: 22.8046, lng: 86.2029 },
-  'kolkata': { lat: 22.5726, lng: 88.3639 },
+  'dhanbad': { lat: 23.7957, lng: 86.4304 },
+  'bhubaneswar': { lat: 20.2961, lng: 85.8245 },
+  'cuttack': { lat: 20.4625, lng: 85.8828 },
+  'rourkela': { lat: 22.2604, lng: 84.8536 },
+  'puri': { lat: 19.8135, lng: 85.8312 },
   'raipur': { lat: 21.2514, lng: 81.6296 },
+  'bilaspur': { lat: 22.0797, lng: 82.1409 },
+  'durg-bhilai': { lat: 21.1938, lng: 81.2849 },
   'guwahati': { lat: 26.1445, lng: 91.7362 },
+  'silchar': { lat: 24.8333, lng: 92.7789 },
+  'dibrugarh': { lat: 27.4728, lng: 94.9120 },
+  'agartala': { lat: 23.8315, lng: 91.2868 },
+  'shillong': { lat: 25.5788, lng: 91.8933 },
+  'imphal': { lat: 24.8170, lng: 93.9368 },
+  'aizawl': { lat: 23.7271, lng: 92.7176 },
+  'kohima': { lat: 25.6751, lng: 94.1086 },
+  'gangtok': { lat: 27.3389, lng: 88.6065 },
+  'itanagar': { lat: 27.0844, lng: 93.6053 },
 };
 
-function findCityCoords(cityName: string): Coord {
+function findCityCoords(cityName: string, customCoords?: Record<string, Coord>): Coord {
   if (!cityName) return { lat: 28.6139, lng: 77.2090 };
   const clean = cityName.toLowerCase().trim();
+  if (customCoords && customCoords[clean]) return customCoords[clean];
+  if (DYNAMIC_GEOCODE_CACHE[clean]) return DYNAMIC_GEOCODE_CACHE[clean];
   if (CITY_COORDS[clean]) return CITY_COORDS[clean];
 
   for (const [key, coord] of Object.entries(CITY_COORDS)) {
@@ -156,19 +225,16 @@ function findCityCoords(cityName: string): Coord {
     c => c.name.toLowerCase() === clean || c.nameHi === clean || clean.includes(c.name.toLowerCase())
   );
   if (found) {
-    if (found.region === 'north') return { lat: 28.5, lng: 77.8 };
+    const matchedKey = Object.keys(CITY_COORDS).find(k => k === found.name.toLowerCase());
+    if (matchedKey) return CITY_COORDS[matchedKey];
+    if (found.region === 'north') return { lat: 28.6, lng: 77.2 };
     if (found.region === 'mp') return { lat: 23.2, lng: 77.4 };
     if (found.region === 'west') return { lat: 19.5, lng: 73.5 };
     if (found.region === 'south') return { lat: 13.0, lng: 79.5 };
     if (found.region === 'east') return { lat: 23.5, lng: 85.5 };
   }
 
-  let hash = 0;
-  for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) % 10000;
-  return {
-    lat: 22.0 + (hash % 100) * 0.07,
-    lng: 76.0 + ((hash * 7) % 100) * 0.08,
-  };
+  return { lat: 26.8, lng: 80.9 };
 }
 
 function getGreatCircleDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -183,6 +249,25 @@ function getGreatCircleDistance(lat1: number, lon1: number, lat2: number, lon2: 
 }
 
 const EXACT_HIGHWAY_DISTANCES: Record<string, number> = {
+  // Ayodhya corridors (National Highway 27 & Purvanchal)
+  'ayodhya-lucknow': 135,
+  'lucknow-ayodhya': 135,
+  'ayodhya-varanasi': 210,
+  'varanasi-ayodhya': 210,
+  'ayodhya-gorakhpur': 135,
+  'gorakhpur-ayodhya': 135,
+  'ayodhya-prayagraj': 165,
+  'prayagraj-ayodhya': 165,
+  'ayodhya-kanpur': 217,
+  'kanpur-ayodhya': 217,
+  'ayodhya-delhi': 670,
+  'delhi-ayodhya': 670,
+  'new delhi-ayodhya': 670,
+  'ayodhya-new delhi': 670,
+  'ayodhya-agra': 470,
+  'agra-ayodhya': 470,
+
+  // Delhi - UP Corridors
   'delhi-lucknow': 535,
   'lucknow-delhi': 535,
   'new delhi-lucknow': 535,
@@ -205,10 +290,30 @@ const EXACT_HIGHWAY_DISTANCES: Record<string, number> = {
   'jaunpur-sultanpur': 95,
   'jaunpur-varanasi': 85,
   'varanasi-jaunpur': 85,
+  'lucknow-prayagraj': 200,
+  'prayagraj-lucknow': 200,
+  'lucknow-gorakhpur': 270,
+  'gorakhpur-lucknow': 270,
+  'varanasi-prayagraj': 120,
+  'prayagraj-varanasi': 120,
+  'delhi-varanasi': 820,
+  'varanasi-delhi': 820,
+  'lucknow-kanpur': 82,
+  'kanpur-lucknow': 82,
+  'lucknow-unnao': 64,
+  'unnao-kanpur': 18,
+  'agra-lucknow': 335,
+  'lucknow-agra': 335,
+  'delhi-agra': 210,
+  'agra-delhi': 210,
+
+  // Rajasthan Corridors
   'delhi-jaipur': 280,
   'jaipur-delhi': 280,
   'new delhi-jaipur': 280,
   'jaipur-new delhi': 280,
+
+  // Madhya Pradesh Corridors
   'indore-bhopal': 192,
   'bhopal-indore': 192,
   'indore-dewas': 36,
@@ -221,45 +326,60 @@ const EXACT_HIGHWAY_DISTANCES: Record<string, number> = {
   'bhopal-sehore': 38,
   'indore-ujjain': 55,
   'ujjain-indore': 55,
-  'mumbai-pune': 150,
-  'pune-mumbai': 150,
-  'mumbai-navi mumbai': 35,
-  'navi mumbai-lonavala': 65,
-  'lonavala-pune': 50,
-  'delhi-chandigarh': 245,
-  'chandigarh-delhi': 245,
-  'new delhi-chandigarh': 245,
-  'chandigarh-new delhi': 245,
-  'lucknow-kanpur': 82,
-  'kanpur-lucknow': 82,
-  'lucknow-unnao': 64,
-  'unnao-kanpur': 18,
-  'agra-lucknow': 335,
-  'lucknow-agra': 335,
-  'delhi-agra': 210,
-  'agra-delhi': 210,
   'bhopal-delhi': 780,
   'delhi-bhopal': 780,
   'indore-mumbai': 585,
   'mumbai-indore': 585,
   'bhopal-jabalpur': 308,
   'jabalpur-bhopal': 308,
+
+  // Western & Southern Corridors
+  'mumbai-pune': 150,
+  'pune-mumbai': 150,
+  'mumbai-navi mumbai': 35,
+  'navi mumbai-lonavala': 65,
+  'lonavala-pune': 50,
+  'mumbai-ahmedabad': 525,
+  'ahmedabad-mumbai': 525,
+  'delhi-chandigarh': 245,
+  'chandigarh-delhi': 245,
+  'new delhi-chandigarh': 245,
+  'chandigarh-new delhi': 245,
+  'delhi-amritsar': 450,
+  'amritsar-delhi': 450,
   'bengaluru-chennai': 345,
   'chennai-bengaluru': 345,
+  'bengaluru-hyderabad': 570,
+  'hyderabad-bengaluru': 570,
+
+  // Eastern Corridors
   'patna-varanasi': 255,
   'varanasi-patna': 255,
+  'kolkata-patna': 580,
+  'patna-kolkata': 580,
 };
 
-function calculateSegmentDistance(fromName: string, toName: string): number {
-  const k1 = `${fromName.toLowerCase().trim()}-${toName.toLowerCase().trim()}`;
+function calculateSegmentDistance(
+  fromName: string,
+  toName: string,
+  customCoords?: Record<string, Coord>
+): number {
+  const f = fromName.toLowerCase().trim();
+  const t = toName.toLowerCase().trim();
+  if (!f || !t || f === t) return 0;
+
+  const k1 = `${f}-${t}`;
   if (EXACT_HIGHWAY_DISTANCES[k1]) return EXACT_HIGHWAY_DISTANCES[k1];
 
-  const c1 = findCityCoords(fromName);
-  const c2 = findCityCoords(toName);
+  const c1 = findCityCoords(fromName, customCoords);
+  const c2 = findCityCoords(toName, customCoords);
 
   const straight = getGreatCircleDistance(c1.lat, c1.lng, c2.lat, c2.lng);
-  const roadDistance = Math.round(straight * 1.25);
-  return Math.max(22, roadDistance);
+  if (straight < 1) return 0;
+
+  // National highway winding ratio is ~1.15x for modern NH/expressways in India
+  const roadDistance = Math.round(straight * 1.15);
+  return Math.max(15, roadDistance);
 }
 
 function calculateBearing(c1: Coord, c2: Coord): number {
@@ -294,6 +414,15 @@ const PRESET_ROUTES: PresetRoute[] = [
     destination: 'Lucknow',
     waypoints: ['Mathura', 'Agra', 'Kannauj'],
     distanceKm: 535,
+  },
+  {
+    id: 'lucknow-ayodhya',
+    nameEn: 'Lucknow ⇄ Ayodhya (NH-27 / Ram Janmabhoomi Corridor)',
+    nameHi: 'लखनऊ ⇄ अयोध्या (NH-27 फोर-लेन एक्सप्रेस)',
+    origin: 'Lucknow',
+    destination: 'Ayodhya',
+    waypoints: [],
+    distanceKm: 135,
   },
   {
     id: 'lucknow-varanasi',
@@ -378,48 +507,19 @@ const PRESET_ROUTES: PresetRoute[] = [
   },
 ];
 
-// Highlighted requested key national highway hubs
-const KEY_CORRIDOR_CITIES = [
-  'New Delhi',
-  'Lucknow',
-  'Kanpur',
-  'Agra',
-  'Varanasi',
-  'Prayagraj',
-  'Jaipur',
-  'Bhopal',
-  'Indore',
-  'Ujjain',
-  'Dewas',
-  'Chandigarh',
-  'Gwalior',
-  'Jabalpur',
-  'Patna',
-  'Mumbai',
-  'Pune',
-  'Ahmedabad',
-  'Ayodhya',
-  'Bengaluru',
-];
-
 export default function ExplorerJourneyPlanner() {
   const { language, location, weather } = useApp();
   const t = translations[language];
 
-  // Route Input State - Defaulting to New Delhi -> Lucknow with real corridor stops
+  // Route Input State - Defaulting to New Delhi -> Lucknow (direct, no forced intermediate stops)
   const [origin, setOrigin] = useState<string>('New Delhi');
   const [destination, setDestination] = useState<string>('Lucknow');
-  const [waypoints, setWaypoints] = useState<string[]>(['Mathura', 'Agra', 'Kannauj']);
+  const [waypoints, setWaypoints] = useState<string[]>([]);
+  const [resolvedCoords, setResolvedCoords] = useState<Record<string, Coord>>({});
   const [vehicle, setVehicle] = useState<VehicleType>('car');
   const [departureOffset, setDepartureOffset] = useState<number>(0); // hours from now
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
   const [selectedSegmentIdx, setSelectedSegmentIdx] = useState<number | null>(null);
-
-  // Quick Location Chips State
-  const [chipTarget, setChipTarget] = useState<ChipTarget>('destination');
-  const [activeRegionTab, setActiveRegionTab] = useState<string>('featured');
-  const [citySearchQuery, setCitySearchQuery] = useState<string>('');
-  const [lastInsertedFeedback, setLastInsertedFeedback] = useState<string | null>(null);
 
   // Autocomplete dropdown state
   const [originSuggestionsOpen, setOriginSuggestionsOpen] = useState(false);
@@ -442,30 +542,6 @@ export default function ExplorerJourneyPlanner() {
     }
   }, [vehicle]);
 
-  // Filtered cities for the Quick Location Chips section
-  const filteredChips = useMemo(() => {
-    let list = INDIA_LOCATIONS;
-
-    if (activeRegionTab === 'featured') {
-      list = INDIA_LOCATIONS.filter(c => c.isLocalPriority);
-    } else if (activeRegionTab !== 'all') {
-      list = INDIA_LOCATIONS.filter(c => c.region === activeRegionTab);
-    }
-
-    if (citySearchQuery.trim()) {
-      const q = citySearchQuery.toLowerCase().trim();
-      return INDIA_LOCATIONS.filter(
-        c =>
-          c.name.toLowerCase().includes(q) ||
-          c.nameHi.includes(q) ||
-          c.state.toLowerCase().includes(q) ||
-          c.stateHi.includes(q)
-      );
-    }
-
-    return list;
-  }, [activeRegionTab, citySearchQuery]);
-
   // Autocomplete suggestions for origin input
   const originSuggestions = useMemo(() => {
     if (!origin || origin.trim().length === 0) return INDIA_LOCATIONS.slice(0, 8);
@@ -480,37 +556,55 @@ export default function ExplorerJourneyPlanner() {
     return INDIA_LOCATIONS.filter(c => c.name.toLowerCase().includes(q) || c.nameHi.includes(q)).slice(0, 8);
   }, [destination]);
 
-  // Handle clicking a quick location chip
-  const handleChipClick = (cityName: string, targetOverride?: ChipTarget) => {
-    const target = targetOverride || chipTarget;
+  // Dynamic Geocoding: Fetch accurate GPS coordinates for any custom location/town typed by the user
+  useEffect(() => {
+    const candidates = [origin, destination, ...waypoints].filter(
+      loc => loc && loc.trim().length > 0 && !loc.startsWith('Stop ')
+    );
+    const pending = candidates
+      .map(c => c.toLowerCase().trim())
+      .filter(name => !CITY_COORDS[name] && !DYNAMIC_GEOCODE_CACHE[name] && !resolvedCoords[name]);
 
-    if (target === 'destination') {
-      setDestination(cityName);
-      setLastInsertedFeedback(
-        language === 'hi' ? `गंतव्य (स्थान B) में "${cityName}" जोड़ा गया` : `Destination set to "${cityName}"`
+    if (pending.length === 0) return;
+
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const fetchCoords = async () => {
+      const updates: Record<string, Coord> = {};
+      await Promise.all(
+        pending.map(async name => {
+          try {
+            const res = await fetch(
+              `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=en&format=json`,
+              { signal: controller.signal }
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+              const { latitude, longitude } = data.results[0];
+              const coord = { lat: latitude, lng: longitude };
+              DYNAMIC_GEOCODE_CACHE[name] = coord;
+              updates[name] = coord;
+            }
+          } catch {
+            // ignore network / abort exceptions
+          }
+        })
       );
-    } else if (target === 'origin') {
-      setOrigin(cityName);
-      setLastInsertedFeedback(
-        language === 'hi' ? `प्रस्थान (स्थान A) में "${cityName}" जोड़ा गया` : `Origin set to "${cityName}"`
-      );
-    } else {
-      // Add as waypoint
-      if (!waypoints.includes(cityName) && waypoints.length < 5) {
-        setWaypoints([...waypoints, cityName]);
-        setLastInsertedFeedback(
-          language === 'hi' ? `पड़ाव (Waypoint) में "${cityName}" जोड़ा गया` : `Added "${cityName}" as stop`
-        );
+
+      if (isMounted && Object.keys(updates).length > 0) {
+        setResolvedCoords(prev => ({ ...prev, ...updates }));
       }
-    }
+    };
 
-    triggerRecalculate();
+    fetchCoords();
 
-    // Auto-clear feedback after 3 seconds
-    setTimeout(() => {
-      setLastInsertedFeedback(null);
-    }, 3000);
-  };
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [origin, destination, waypoints, resolvedCoords]);
 
   // Handle location swap (A <-> B)
   const handleSwapLocations = () => {
@@ -583,15 +677,15 @@ export default function ExplorerJourneyPlanner() {
       const toName = allStops[i + 1];
 
       // Segment distance calculated dynamically from coordinates & highway curves
-      const segDistance = calculateSegmentDistance(fromName, toName);
+      const segDistance = calculateSegmentDistance(fromName, toName, resolvedCoords);
       const segDurationMins = Math.round((segDistance / vehicleSpeed) * 60);
 
       const startTimeStr = formatETA(departureOffset, cumulativeMins);
       cumulativeMins += segDurationMins;
       const endTimeStr = formatETA(departureOffset, cumulativeMins);
 
-      const c1 = findCityCoords(fromName);
-      const c2 = findCityCoords(toName);
+      const c1 = findCityCoords(fromName, resolvedCoords);
+      const c2 = findCityCoords(toName, resolvedCoords);
 
       // Dynamic crosswind based on highway bearing relative to wind direction
       const { crosswind, bearing } = calculateCrosswind(c1, c2, baseWind, baseWindDir);
@@ -660,7 +754,7 @@ export default function ExplorerJourneyPlanner() {
     }
 
     return segments;
-  }, [origin, destination, waypoints, vehicleSpeed, departureOffset, weather, language]);
+  }, [origin, destination, waypoints, vehicleSpeed, departureOffset, weather, language, resolvedCoords]);
 
   // Overall route summary metrics
   const totalDistance = dynamicSegments.reduce((acc, s) => acc + s.distanceKm, 0);
@@ -686,8 +780,8 @@ export default function ExplorerJourneyPlanner() {
           </h1>
           <p className="font-body-md text-xs sm:text-sm text-on-surface-variant max-w-3xl">
             {language === 'hi'
-              ? 'प्रस्थान (स्थान A) और गंतव्य (स्थान B) दर्ज करें अथवा त्वरित चिप्स से भारत के किसी भी शहर/राज्य को चुनें।'
-              : 'Enter Origin (Point A) and Destination (Point B), or tap quick location chips for Indian cities & states to simulate corridor weather, road conditions, crosswinds, and squall lines.'}
+              ? 'प्रस्थान (स्थान A) और गंतव्य (स्थान B) दर्ज करें एवं कॉरिडोर मौसम, सड़क की स्थिति, क्रॉसविंड्स और आंधी का रीयल-टाइम पूर्वानुमान देखें।'
+              : 'Enter Origin (Point A) and Destination (Point B) to evaluate real-time corridor weather, tarmac conditions, crosswinds, and squall lines.'}
           </p>
         </div>
 
@@ -714,23 +808,6 @@ export default function ExplorerJourneyPlanner() {
           </button>
         </div>
       </section>
-
-      {/* Real-time Feedback Toast if user inserted via chip */}
-      {lastInsertedFeedback && (
-        <div className="bg-primary text-on-primary px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-md animate-fadeIn text-xs font-bold">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[1.125rem]">touch_app</span>
-            <span>{lastInsertedFeedback}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setLastInsertedFeedback(null)}
-            className="text-on-primary/80 hover:text-on-primary ml-2 cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Corridor Alert Banner based on current route risk */}
       <section
@@ -858,6 +935,7 @@ export default function ExplorerJourneyPlanner() {
                 type="button"
                 onClick={() => {
                   setOrigin(location.district || location.name || 'Lucknow');
+                  setWaypoints([]);
                   triggerRecalculate();
                 }}
                 className="text-[0.7rem] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
@@ -878,7 +956,7 @@ export default function ExplorerJourneyPlanner() {
                   setOrigin(e.target.value);
                   setOriginSuggestionsOpen(true);
                 }}
-                placeholder="Type Origin (e.g. New Delhi, Lucknow, Bhopal)..."
+                placeholder="Type Origin (e.g. New Delhi, Lucknow, Ayodhya)..."
                 className="w-full bg-surface-container-lowest text-on-surface font-semibold text-xs sm:text-sm px-3 py-2.5 rounded-xl border border-outline-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all pr-8"
               />
               {origin && (
@@ -902,6 +980,7 @@ export default function ExplorerJourneyPlanner() {
                       type="button"
                       onClick={() => {
                         setOrigin(item.name);
+                        setWaypoints([]);
                         setOriginSuggestionsOpen(false);
                         triggerRecalculate();
                       }}
@@ -929,12 +1008,13 @@ export default function ExplorerJourneyPlanner() {
             {/* Quick local mini-chips for Origin */}
             <div className="flex flex-wrap items-center gap-1 pt-0.5">
               <span className="text-[0.65rem] text-on-surface-variant font-medium">Quick A:</span>
-              {['New Delhi', 'Lucknow', 'Indore', 'Bhopal', 'Jaipur', 'Agra'].map(c => (
+              {['New Delhi', 'Lucknow', 'Ayodhya', 'Indore', 'Bhopal', 'Jaipur', 'Agra'].map(c => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => {
                     setOrigin(c);
+                    setWaypoints([]);
                     triggerRecalculate();
                   }}
                   className={`px-1.5 py-0.5 rounded text-[0.65rem] font-bold transition-all cursor-pointer ${
@@ -981,7 +1061,7 @@ export default function ExplorerJourneyPlanner() {
                   setDestination(e.target.value);
                   setDestSuggestionsOpen(true);
                 }}
-                placeholder="Type Destination (e.g. Bhopal, Ashta, Mumbai)..."
+                placeholder="Type Destination (e.g. Lucknow, Ayodhya, Varanasi)..."
                 className="w-full bg-surface-container-lowest text-on-surface font-semibold text-xs sm:text-sm px-3 py-2.5 rounded-xl border border-outline-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all pr-8"
               />
               {destination && (
@@ -1005,6 +1085,7 @@ export default function ExplorerJourneyPlanner() {
                       type="button"
                       onClick={() => {
                         setDestination(item.name);
+                        setWaypoints([]);
                         setDestSuggestionsOpen(false);
                         triggerRecalculate();
                       }}
@@ -1032,12 +1113,13 @@ export default function ExplorerJourneyPlanner() {
             {/* Quick local mini-chips for Destination */}
             <div className="flex flex-wrap items-center gap-1 pt-0.5">
               <span className="text-[0.65rem] text-secondary font-bold">Quick B:</span>
-              {['Lucknow', 'Varanasi', 'Kanpur', 'Bhopal', 'Jaipur', 'Pune', 'Agra'].map(c => (
+              {['Lucknow', 'Ayodhya', 'Varanasi', 'Kanpur', 'Bhopal', 'Jaipur', 'Agra'].map(c => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => {
                     setDestination(c);
+                    setWaypoints([]);
                     triggerRecalculate();
                   }}
                   className={`px-1.5 py-0.5 rounded text-[0.65rem] font-bold transition-all cursor-pointer ${
@@ -1087,19 +1169,36 @@ export default function ExplorerJourneyPlanner() {
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={handleAddWaypoint}
-              disabled={waypoints.length >= 5}
-              className={`text-xs font-bold flex items-center gap-1 px-3 py-1 rounded-xl transition-all cursor-pointer ${
-                waypoints.length >= 5
-                  ? 'text-outline opacity-50 cursor-not-allowed'
-                  : 'bg-primary/10 text-primary hover:bg-primary hover:text-on-primary'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[1rem]">add</span>
-              <span>{language === 'hi' ? '+ पड़ाव जोड़ें' : '+ Add Stop'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {waypoints.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWaypoints([]);
+                    triggerRecalculate();
+                  }}
+                  className="text-xs font-bold flex items-center gap-1 px-2.5 py-1 rounded-xl bg-error/10 text-error hover:bg-error hover:text-on-error transition-all cursor-pointer"
+                  title="Clear all intermediate stops"
+                >
+                  <span className="material-symbols-outlined text-[1rem]">delete_sweep</span>
+                  <span>{language === 'hi' ? 'पड़ाव हटाएं' : 'Clear Stops'}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAddWaypoint}
+                disabled={waypoints.length >= 5}
+                className={`text-xs font-bold flex items-center gap-1 px-3 py-1 rounded-xl transition-all cursor-pointer ${
+                  waypoints.length >= 5
+                    ? 'text-outline opacity-50 cursor-not-allowed'
+                    : 'bg-primary/10 text-primary hover:bg-primary hover:text-on-primary'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[1rem]">add</span>
+                <span>{language === 'hi' ? '+ पड़ाव जोड़ें' : '+ Add Stop'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Waypoints Input List */}
@@ -1197,213 +1296,6 @@ export default function ExplorerJourneyPlanner() {
                 </button>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* COMPREHENSIVE ALL-INDIA QUICK LOCATION CHIPS SECTION */}
-      <section className="bg-surface-container-lowest rounded-3xl p-space-lg shadow-sm border border-surface-container-high flex flex-col gap-space-md">
-        {/* Header & Target Switcher */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm">
-          <div>
-            <div className="flex items-center gap-1.5 text-primary text-xs font-bold uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[1.125rem]">touch_app</span>
-              <span>{language === 'hi' ? 'त्वरित स्थान चयनकर्ता' : 'Quick Location Chips Explorer'}</span>
-            </div>
-            <h2 className="font-headline-sm text-base sm:text-lg font-bold text-on-surface mt-0.5">
-              {language === 'hi'
-                ? 'चिप्स पर टैप करके गंतव्य (Destination) या प्रस्थान (Origin) चुनें'
-                : 'Tap Any Location Chip to Instantly Insert into Route'}
-            </h2>
-            <p className="text-xs text-on-surface-variant">
-              {chipTarget === 'destination'
-                ? language === 'hi'
-                  ? '🎯 वर्तमान मोड: चिप्स पर क्लिक करने से गंतव्य (स्थान B) सेट होगा।'
-                  : '🎯 Mode: Tapping a chip immediately sets it as Destination (Point B).'
-                : chipTarget === 'origin'
-                ? language === 'hi'
-                  ? '🛫 वर्तमान मोड: चिप्स पर क्लिक करने से प्रस्थान (स्थान A) सेट होगा।'
-                  : '🛫 Mode: Tapping a chip immediately sets it as Origin (Point A).'
-                : language === 'hi'
-                ? '➕ वर्तमान मोड: चिप्स पर क्लिक करने से नया पड़ाव (Stop) जुड़ेगा।'
-                : '➕ Mode: Tapping a chip adds it as an intermediate waypoint.'}
-            </p>
-          </div>
-
-          {/* Insertion Target Switcher Pill */}
-          <div className="flex flex-wrap items-center gap-1 bg-surface-container p-1 rounded-2xl self-start lg:self-auto text-xs font-bold">
-            <span className="text-[0.7rem] text-on-surface-variant px-2 hidden sm:inline">
-              {language === 'hi' ? 'चिप लक्ष्य:' : 'Insert into:'}
-            </span>
-            <button
-              type="button"
-              onClick={() => setChipTarget('destination')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                chipTarget === 'destination'
-                  ? 'bg-secondary text-on-secondary shadow-xs'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[1rem]">location_pin</span>
-              <span>{language === 'hi' ? 'गंतव्य (स्थान B)' : 'Destination (B)'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setChipTarget('origin')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                chipTarget === 'origin'
-                  ? 'bg-primary text-on-primary shadow-xs'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[1rem]">trip_origin</span>
-              <span>{language === 'hi' ? 'प्रस्थान (स्थान A)' : 'Origin (A)'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setChipTarget('waypoint')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                chipTarget === 'waypoint'
-                  ? 'bg-tertiary text-on-tertiary shadow-xs'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[1rem]">add_location</span>
-              <span>{language === 'hi' ? '+ पड़ाव' : '+ Waypoint'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Priority Requested Cities Bar (National & State Highway Corridors) */}
-        <div className="bg-surface-container-low p-space-md rounded-2xl border border-primary/20 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-primary text-[1.125rem]">star</span>
-              <span className="text-xs font-extrabold text-on-surface">
-                {language === 'hi'
-                  ? 'प्रमुख राष्ट्रीय एवं प्रांतीय हाइवे हब्स (त्वरित 1-टैप):'
-                  : 'Key National & State Highway Corridors (Fast 1-Tap):'}
-              </span>
-            </div>
-            <span className="text-[0.65rem] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-              {chipTarget === 'destination' ? 'Inserting into B' : chipTarget === 'origin' ? 'Inserting into A' : 'Adding Stop'}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            {KEY_CORRIDOR_CITIES.map(city => {
-              const isDest = destination.toLowerCase() === city.toLowerCase();
-              const isOrig = origin.toLowerCase() === city.toLowerCase();
-              return (
-                <button
-                  key={city}
-                  type="button"
-                  onClick={() => handleChipClick(city)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-xs border ${
-                    isDest
-                      ? 'bg-secondary text-on-secondary border-secondary ring-2 ring-secondary/30'
-                      : isOrig
-                      ? 'bg-primary text-on-primary border-primary ring-2 ring-primary/30'
-                      : 'bg-surface-container-lowest hover:bg-surface-container-high text-on-surface border-surface-container-high'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[0.875rem]">
-                    {isDest ? 'location_pin' : isOrig ? 'trip_origin' : 'add'}
-                  </span>
-                  <span>{city}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Region Filter Tabs & City Search Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pt-1">
-          {/* Region Tabs */}
-          <div className="flex flex-wrap items-center gap-1 bg-surface-container p-1 rounded-xl text-xs">
-            {REGION_CATEGORIES.map(r => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => {
-                  setActiveRegionTab(r.id);
-                  setCitySearchQuery('');
-                }}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  activeRegionTab === r.id && !citySearchQuery
-                    ? 'bg-surface-container-lowest text-primary shadow-xs'
-                    : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                {language === 'hi' ? r.labelHi : r.labelEn}
-              </button>
-            ))}
-          </div>
-
-          {/* Search Across All India Cities */}
-          <div className="relative min-w-[220px]">
-            <input
-              type="text"
-              value={citySearchQuery}
-              onChange={e => setCitySearchQuery(e.target.value)}
-              placeholder="Filter 100+ cities in India..."
-              className="w-full bg-surface-container text-on-surface text-xs font-semibold px-3 py-1.5 rounded-xl border border-outline-variant/40 focus:outline-none focus:border-primary pl-8"
-            />
-            <span className="material-symbols-outlined text-outline text-[1rem] absolute left-2.5 top-1/2 -translate-y-1/2">
-              search
-            </span>
-            {citySearchQuery && (
-              <button
-                type="button"
-                onClick={() => setCitySearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Dynamic Filtered Cities Grid */}
-        <div className="bg-surface-container-low/60 p-space-sm rounded-2xl border border-outline-variant/30 flex flex-col gap-2 max-h-60 overflow-y-auto">
-          <div className="flex items-center justify-between text-[0.7rem] text-on-surface-variant px-1 font-semibold">
-            <span>
-              {language === 'hi' ? 'उपलब्ध शहर एवं राज्य:' : 'Available Cities & States:'} ({filteredChips.length})
-            </span>
-            <span>
-              {language === 'hi'
-                ? 'टैप करके गंतव्य में जोड़ें'
-                : `Tap chip to insert into ${chipTarget.toUpperCase()}`}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {filteredChips.map(loc => {
-              const isDest = destination.toLowerCase() === loc.name.toLowerCase();
-              const isOrig = origin.toLowerCase() === loc.name.toLowerCase();
-              return (
-                <button
-                  key={`${loc.state}-${loc.name}`}
-                  type="button"
-                  onClick={() => handleChipClick(loc.name)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 cursor-pointer border ${
-                    isDest
-                      ? 'bg-secondary text-on-secondary border-secondary font-bold'
-                      : isOrig
-                      ? 'bg-primary text-on-primary border-primary font-bold'
-                      : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface border-outline-variant/20'
-                  }`}
-                  title={`Insert ${loc.name}, ${loc.state} into ${chipTarget}`}
-                >
-                  <span className="font-bold">+ {loc.name}</span>
-                  <span className="text-[0.65rem] opacity-70">
-                    ({loc.state.split(' ')[0]})
-                  </span>
-                </button>
-              );
-            })}
           </div>
         </div>
       </section>
