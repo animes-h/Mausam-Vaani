@@ -1,107 +1,34 @@
-import { GovernmentAlert } from '@/types';
+import { GovernmentAlert, WeatherCurrent } from '@/types';
 
-export const ACTIVE_GOVERNMENT_ALERTS: GovernmentAlert[] = [
-  {
-    id: 'ADV-2024-10-MP04',
-    severity: 'red',
-    severityLabelEn: 'Red Alert (Take Action)',
-    severityLabelHi: 'लाल स्तर चेतावनी (तत्काल सावधानी)',
-    source: 'India Meteorological Department (IMD Doppler Radar, Bhopal Hub)',
-    titleEn: 'Severe Thunderstorm, Cloud-to-Ground Lightning & Hail Hazard',
-    titleHi: 'अगले 4 घंटों में अति-तीव्र मेघगर्जन, आकाशीय बिजली एवं ओलावृष्टि की चेतावनी!',
-    englishSummary: 'Severe Thunderstorm with 65+ km/h gusty squall lines, active convective hail cells, and heavy downpour expected in rural Indore districts.',
-    hindiSummary: 'दोपहर 2:30 से शाम 6:30 के बीच 65 किमी/घंटा तेज़ आंधी, बादलों की भारी गड़गड़ाहट एवं ओले गिरने का तीव्र जोखिम है। खेतों से तुरंत सुरक्षित स्थानों पर जाएं।',
-    affectedTehsils: ['हातोद (Hatod)', 'देपालपुर (Depalpur)', 'सांवेर (Sanwer)', 'बेटमा (Betma)'],
-    validFrom: '14:30 IST',
-    validTo: '18:30 IST',
-    expiresInText: 'Expires in 3h 45m (18:30 IST)',
-    radarTracked: true,
-    audioScriptHi: 'सावधान किसान भाइयों! मौसम विभाग द्वारा इंदौर जिले की हातोद, देपालपुर और सांवेर तहसीलों में अगले चार घंटों के लिए भारी मेघगर्जन और ओलावृष्टि का रेड अलर्ट जारी किया गया है। तुरंत पक्के मकान में शरण लें और कटी फसल को तिरपाल से सुरक्षित बांधें।',
-    audioScriptEn: 'Attention farmers! India Meteorological Department has issued a Red Alert for Hatod, Depalpur, and Sanwer blocks. Severe thunderstorm, lightning, and hail expected over the next 4 hours. Move indoors immediately and shelter harvested crops.',
-    farmerDirectives: [
-      {
-        step: 1,
-        titleEn: 'Move Indoors Immediately',
-        titleHi: 'तुरंत पक्के सुरक्षित स्थान पर जाएं',
-        descriptionEn: 'Do not stand under isolated trees, metal sheds, or open tractors. Lightning strikes are most lethal in open agricultural fields.',
-        descriptionHi: 'खेत में अकेले पेड़ के नीचे या खुले ट्रैक्टर पर बिल्कुल न खड़े रहें। आकाशीय बिजली चमकने पर तुरंत पक्के कमरे या सुरक्षित ढलान में शरण लें।',
-        icon: 'shelves',
-        urgency: 'immediate',
-        audioSnippetHi: 'खेत में अकेले पेड़ के नीचे या ट्रैक्टर पर न रहें। तुरंत पक्के मकान में जाएं।',
-      },
-      {
-        step: 2,
-        titleEn: 'Cover Harvested Crop with Tarpaulin',
-        titleHi: 'कटी हुई उपज व अनाज को तिरपाल से कसकर बांधें',
-        descriptionEn: 'Cover threshing floors or open bags of soybean, wheat, or chickpea with thick plastic tarpaulins and weigh them down with stones.',
-        descriptionHi: 'खलिहान या मंडी में रखी सोयाबीन, गेहूं या चने की बोरियों को मोटे प्लास्टिक तिरपाल से ढककर पत्थरों से दबाएं ताकि तेज हवा में उड़े नहीं।',
-        icon: 'warehouse',
-        urgency: 'immediate',
-        audioSnippetHi: 'खलिहान में रखी सोयाबीन या फसल को प्लास्टिक तिरपाल से ढककर पत्थरों से बांधें।',
-      },
-      {
-        step: 3,
-        titleEn: 'Disconnect Electric Tubewells & Motors',
-        titleHi: 'सिंचाई मोटर व बिजली स्टार्टर स्विच बंद करें',
-        descriptionEn: 'Switch off submersible pumps and high-tension irrigation lines to prevent transformer burnouts and electrical shocks.',
-        descriptionHi: 'खेत में चल रहे ट्यूबवेल, सबमर्सिबल पंप के स्टार्टर तुरंत बंद करें ताकि बिजली गिरने से मोटर न जले और शॉर्ट सर्किट से बचाव हो।',
-        icon: 'power_off',
-        urgency: 'high',
-        audioSnippetHi: 'खेत की मोटर व ट्यूबवेल के स्टार्टर तुरंत बंद करें ताकि मोटर जलने से बचे।',
-      },
-      {
-        step: 4,
-        titleEn: 'Secure Livestock in Pucca Cattle Shed',
-        titleHi: 'मवेशियों को टीन शेड या पक्के बाड़े में बांधें',
-        descriptionEn: 'Move cattle, goats, and calves away from barbed-wire fencing and metal poles into covered, dry shelters.',
-        descriptionHi: 'गायों, बैलों व बकरियों को खुले तारों की बाड़ और खंभों से दूर हटाकर पक्के पशु शेड में बांधें ताकि ओलों व करंट से चोट न पहुंचे।',
-        icon: 'pets',
-        urgency: 'high',
-        audioSnippetHi: 'पशुओं को लोहे के तारों और पेड़ों से दूर पक्के बाड़े में सुरक्षित बांधें।',
-      },
-    ],
-  },
-  {
-    id: 'ADV-2024-10-MP05',
-    severity: 'orange',
-    severityLabelEn: 'Orange Alert (Be Prepared)',
-    severityLabelHi: 'नारंगी स्तर चेतावनी (सतर्क रहें)',
-    source: 'State Disaster Management Authority (SDMA, Madhya Pradesh)',
-    titleEn: 'Pesticide Washout & Wind Squall Advisory',
-    titleHi: 'कीटनाशक धुलाई एवं तेज़ हवा चेतावनी (छिड़काव स्थगित रखें)',
-    englishSummary: 'Surface winds exceeding 35 km/h with 70% rain probability will wash off chemical sprays across Malwa crops.',
-    hindiSummary: 'दोपहर बाद 35 किमी प्रति घंटे की रफ्तार से चलने वाली हवाओं व बारिश से कीटनाशक का असर समाप्त हो जाएगा। छिड़काव स्थगित रखें।',
-    affectedTehsils: ['महू (Mhow)', 'उज्जैन ग्रामीण (Ujjain Rural)'],
-    validFrom: '12:00 IST',
-    validTo: '21:00 IST',
-    expiresInText: 'Expires at 21:00 IST',
-    radarTracked: true,
-    audioScriptHi: 'किसान भाइयों, आज दोपहर बाद हवा और बारिश से कीटनाशक धुल जाएगा। अपनी दवा और पैसे की बर्बादी रोकें।',
-    audioScriptEn: 'Farmers are advised to postpone pesticide spraying today due to wind squalls and high washout risk.',
-    farmerDirectives: [
-      {
-        step: 1,
-        titleEn: 'Postpone Chemical & Fungicide Spraying',
-        titleHi: 'कीटनाशक व फफूंदनाशक छिड़काव स्थगित करें',
-        descriptionEn: 'Rain within 6 hours of application renders systemic chemicals ineffective.',
-        descriptionHi: 'दवा छिड़कने के 6 घंटे के भीतर बारिश होने से दवा बह जाती है और कीटों पर कोई असर नहीं होता।',
-        icon: 'cancel',
-        urgency: 'high',
-        audioSnippetHi: 'आज छिड़काव न करें, परसों सुबह 6 बजे से मौसम साफ़ रहेगा।',
-      },
-      {
-        step: 2,
-        titleEn: 'Clear Drainage Furrows in Standing Crops',
-        titleHi: 'खेत की जल निकासी नालियां साफ़ रखें',
-        descriptionEn: 'Prevent water stagnation in black soil furrows to protect roots from fungal rotting.',
-        descriptionHi: 'काली मिट्टी में पानी भरने से जड़ सड़न का खतरा होता है। खेत के निचले किनारों से पानी निकलने का रास्ता खोलें।',
-        icon: 'water',
-        urgency: 'precautionary',
-        audioSnippetHi: 'खेत की नालियों से पानी निकलने का रास्ता साफ़ कर दें।',
-      },
-    ],
-  },
-];
+function getFormattedTimeWindow(hoursAhead: number = 4) {
+  const now = new Date();
+  const validFrom = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' IST';
+  const end = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
+  const validTo = end.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' IST';
+  const expiresInText = `Expires in ${hoursAhead}h 00m (${validTo})`;
+  return { validFrom, validTo, expiresInText };
+}
+
+function generateCapId(prefix: string, district: string): string {
+  const year = new Date().getFullYear();
+  const hexTime = Math.floor(Date.now() / 1000).toString(16).toUpperCase();
+  const distCode = (district || 'IND').replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() || 'IND';
+  return `IN-CAP-NDMA-${year}-${hexTime}-${prefix}-${distCode}`;
+}
+
+function getRegionalTehsils(district: string, state: string): string[] {
+  const dLower = (district + ' ' + state).toLowerCase();
+  if (dLower.includes('indore')) {
+    return ['हातोद (Hatod)', 'देपालपुर (Depalpur)', 'सांवेर (Sanwer)', 'बेटमा (Betma)'];
+  }
+  if (dLower.includes('lucknow') || dLower.includes('uttar pradesh') || dLower.includes('up')) {
+    return ['मोहनलालगंज (Mohanlalganj)', 'सरोजिनी नगर (Sarojini Nagar)', 'मलिहाबाद (Malihabad)', 'बक्शी का तालाब (Bakshi Ka Talab)'];
+  }
+  if (dLower.includes('delhi') || dLower.includes('ncr') || dLower.includes('noida') || dLower.includes('gurugram')) {
+    return ['Najafgarh Corridor', 'Yamuna Basin', `${district} North`, `${district} South`];
+  }
+  return [`${district} सदर (Sadar)`, `${district} ग्रामीण (Rural)`, `${district} पूर्वी (East)`, `${district} पश्चिमी (West)`];
+}
 
 export function calculateHeatStressAndLivestockIndices(temp: number = 31, humidity: number = 60) {
   // THI formula for dairy cattle & buffaloes (NRC / Thom formulation)
@@ -156,22 +83,28 @@ export function generateLivestockHeatAlert(
   const { thi, wbgt, livestockStatus, livestockStatusHi, laborStatus, laborStatusHi } =
     calculateHeatStressAndLivestockIndices(temp, humidity);
 
-  const isSevere = thi >= 80 || wbgt >= 29.5;
+  const isSevere = thi >= 78 || wbgt >= 28.5;
+  const isExtreme = thi >= 89 || wbgt >= 31.5;
+  const { validFrom, validTo, expiresInText } = getFormattedTimeWindow(6);
 
   return {
-    id: `HEAT-LIVESTOCK-${Date.now()}-${district.slice(0, 3).toUpperCase()}`,
-    severity: isSevere ? 'orange' : 'yellow',
-    severityLabelEn: isSevere ? 'Orange Alert (Livestock & Labor Heat Strain)' : 'Yellow Alert (Heat Stress Caution)',
-    severityLabelHi: isSevere ? 'नारंगी स्तर (पशुधन एवं श्रमिक ताप तनाव)' : 'पीला स्तर (गर्मी व लू सावधानी)',
-    source: `Animal Husbandry & Agro-Meteorological Division (${state})`,
+    id: generateCapId('HEAT', district),
+    severity: isExtreme ? 'red' : (isSevere ? 'orange' : 'yellow'),
+    severityLabelEn: isExtreme
+      ? 'Red Alert (Extreme Thermal Strain & Heat Stroke Risk)'
+      : (isSevere ? 'Orange Alert (Livestock & Labor Heat Strain)' : 'Yellow Alert (Heat Stress Caution)'),
+    severityLabelHi: isExtreme
+      ? 'लाल स्तर (अत्यधिक ताप तनाव व लू जोखिम)'
+      : (isSevere ? 'नारंगी स्तर (पशुधन एवं श्रमिक ताप तनाव)' : 'पीला स्तर (गर्मी व लू सावधानी)'),
+    source: `Agro-Meteorological Advisory Service (GKMS) & Animal Husbandry Division (${state})`,
     titleEn: `Heat Stress & Livestock Safety Warning: THI ${thi} (WBGT ${wbgt}°C) in ${district}`,
     titleHi: `${district} में पशुधन एवं श्रमिक हेतु ताप तनाव चेतावनी: THI ${thi} (WBGT ${wbgt}°C)`,
     englishSummary: `Elevated Temperature-Humidity Index (${thi}) and thermal WBGT (${wbgt}°C) induce physiological heat strain in dairy cattle, buffaloes, and open-field farm workers.`,
     hindiSummary: `तापमान व आर्द्रता सूचकांक (THI: ${thi}, WBGT: ${wbgt}°C) बढ़ने से दुधारू पशुओं में दूध घटने, हांफने और खेत मजदूरों में हीट स्ट्रोक का खतरा है।`,
-    affectedTehsils: [`${district} Dairy Belts`, `${district} Rural Agriculture Hubs`],
-    validFrom: '11:00 IST',
-    validTo: '17:00 IST',
-    expiresInText: 'Active Peak Solar Hours (11:00 - 17:00 IST)',
+    affectedTehsils: getRegionalTehsils(district, state),
+    validFrom,
+    validTo,
+    expiresInText,
     radarTracked: true,
     audioScriptHi: `किसान और पशुपालक भाइयों ध्यान दें! ${district} में उमस और गर्मी से पशुओं का टीएचआई इंडेक्स ${thi} तक पहुंच गया है। गाय-भैंसों को दिन में तीन बार ठंडे पानी से नहलाएं, बाड़े में पंखा चलाएं और पीने के पानी में नमक व ओआरएस मिलाएं। दोपहर 12 से 3 बजे के बीच खुले खेत में मजदूरी न करें।`,
     audioScriptEn: `Alert for livestock owners and farmers in ${district}. Temperature-Humidity Index has reached ${thi}. Shower dairy cows and buffaloes with cool water, run shed fans, and provide mineral electrolytes. Farm labor must take shaded rest during midday.`,
@@ -220,259 +153,270 @@ export function generateLivestockHeatAlert(
   };
 }
 
-export function getAlertsForLocation(locInput?: any): GovernmentAlert[] {
-  const locName = typeof locInput === 'string' ? locInput : (locInput?.name || 'Indore');
-  const district = typeof locInput === 'string' ? locInput : (locInput?.district || locInput?.city || 'Local District');
-  const state = typeof locInput === 'string' ? 'India' : (locInput?.state || 'India');
-  const lower = (locName + ' ' + district + ' ' + state).toLowerCase();
-  const heatAlert = generateLivestockHeatAlert(district, state);
+export function generateSevereThunderstormAlert(
+  district: string,
+  state: string,
+  windSpeed: number = 60
+): GovernmentAlert {
+  const { validFrom, validTo, expiresInText } = getFormattedTimeWindow(4);
+  const gustSpeed = Math.max(windSpeed + 15, 60);
 
-  // 1. LUCKNOW & CENTRAL UTTAR PRADESH CORRIDOR
-  if (lower.includes('lucknow') || lower.includes('vrindavan') || lower.includes('uttar pradesh') || lower.includes('up')) {
-    return [
-      heatAlert,
+  return {
+    id: generateCapId('THUN', district),
+    severity: 'red',
+    severityLabelEn: 'Red Alert (Take Immediate Action)',
+    severityLabelHi: 'लाल स्तर चेतावनी (तत्काल सावधानी)',
+    source: `National Disaster Management Authority (NDMA CAP-CP) / IMD Regional Hub (${state})`,
+    titleEn: `Severe Thunderstorm, Cloud-to-Ground Lightning & Hail Hazard in ${district}`,
+    titleHi: `${district} एवं आसपास के क्षेत्रों में अति-तीव्र मेघगर्जन, आकाशीय बिजली व ओलावृष्टि की चेतावनी!`,
+    englishSummary: `Severe Thunderstorm with ${gustSpeed}+ km/h gusty squall lines, active convective hail cells, and heavy downpour detected across ${district} telemetry grid.`,
+    hindiSummary: `अगले 4 घंटों में ${gustSpeed} किमी/घंटा तेज़ आंधी, बादलों की भारी गड़गड़ाहट एवं ओले गिरने का तीव्र जोखिम है। खुले खेतों से तुरंत पक्के सुरक्षित स्थानों पर जाएं।`,
+    affectedTehsils: getRegionalTehsils(district, state),
+    validFrom,
+    validTo,
+    expiresInText,
+    radarTracked: true,
+    audioScriptHi: `सावधान किसान भाइयों! मौसम विभाग एवं आपदा प्रबंधन प्राधिकरण द्वारा ${district} में अगले चार घंटों के लिए भारी मेघगर्जन और ओलावृष्टि का रेड अलर्ट जारी किया गया है। तुरंत पक्के मकान में शरण लें और कटी फसल को तिरपाल से सुरक्षित बांधें।`,
+    audioScriptEn: `Attention farmers! National Disaster Management Authority has issued a Red Alert for ${district}. Severe thunderstorm, lightning, and squall winds of ${gustSpeed} km/h expected. Move to secure pucca shelter immediately and weigh down harvested produce.`,
+    farmerDirectives: [
       {
-        id: 'ADV-2024-10-UP-LKO',
-        severity: 'red',
-        severityLabelEn: 'Red Alert (Take Immediate Action)',
-        severityLabelHi: 'लाल स्तर चेतावनी (तत्काल सावधानी)',
-        source: 'India Meteorological Department (IMD Doppler Radar, Lucknow Hub - Amausi)',
-        titleEn: `Severe Thunderstorm, Cloud-to-Ground Lightning & Hail Hazard across ${district}`,
-        titleHi: `${district} एवं आसपास के क्षेत्रों में अति-तीव्र मेघगर्जन, आकाशीय बिजली एवं ओलावृष्टि की चेतावनी!`,
-        englishSummary: `Severe Thunderstorm with 60+ km/h gusty squall lines, active convective cells, and localized hail expected across Mohanlalganj, Sarojini Nagar, and Malihabad belts.`,
-        hindiSummary: `दोपहर 2:30 से शाम 6:30 के बीच 60 किमी/घंटा तेज़ आंधी, बादलों की भारी गड़गड़ाहट एवं ओले गिरने का तीव्र जोखिम है। खुले खेतों व बागों से तुरंत सुरक्षित स्थानों पर जाएं।`,
-        affectedTehsils: ['मोहनलालगंज (Mohanlalganj)', 'सरोजिनी नगर (Sarojini Nagar)', 'मलिहाबाद (Malihabad)', 'बक्शी का तालाब (Bakshi Ka Talab)'],
-        validFrom: '14:30 IST',
-        validTo: '18:30 IST',
-        expiresInText: 'Expires in 3h 45m (18:30 IST)',
-        radarTracked: true,
-        audioScriptHi: `सावधान किसान भाइयों! मौसम विभाग द्वारा लखनऊ व ${district} में भारी मेघगर्जन और ओलावृष्टि का रेड अलर्ट जारी किया गया है। मलिहाबाद, मोहनलालगंज व सरोजिनी नगर में तेज आंधी का खतरा है। तुरंत पक्के मकान में शरण लें और उपज को तिरपाल से सुरक्षित ढकें।`,
-        audioScriptEn: `Attention residents and farmers! IMD Amausi Radar has issued a Red Alert for ${district}, Mohanlalganj, and Malihabad blocks. Severe squall lines, hail, and lightning imminent. Move to safe shelter immediately.`,
-        farmerDirectives: [
-          {
-            step: 1,
-            titleEn: 'Immediate Lightning Shelter',
-            titleHi: 'तुरंत पक्के सुरक्षित स्थान पर जाएं',
-            descriptionEn: 'Evacuate open fields and orchards immediately. Do not shelter under isolated mango trees or near metal power towers.',
-            descriptionHi: 'खेत या आम के बाग में अकेले पेड़ के नीचे बिल्कुल न रुकें। आकाशीय बिजली से बचाव हेतु तुरंत पक्के मकान में जाएं।',
-            icon: 'shelves',
-            urgency: 'immediate',
-            audioSnippetHi: 'खेत या बाग में अकेले पेड़ के नीचे न रुकें, तुरंत पक्के मकान में जाएं।',
-          },
-          {
-            step: 2,
-            titleEn: 'Smart Coping: Mango Orchards & Vegetable Plots',
-            titleHi: 'स्मार्ट रणनीति: आम के बाग व सब्जी फसलों का बचाव',
-            descriptionEn: 'Support young grafts in Malihabad mango belts with bamboo stakes. Secure anti-hail/anti-bird nets over vegetable nurseries.',
-            descriptionHi: 'मलिहाबाद बेल्ट में नए आम के पौधों को बांस की खपच्चियों से सहारा दें। सब्जियों की नर्सरी पर नेट कसकर बांधें।',
-            icon: 'agriculture',
-            urgency: 'high',
-            audioSnippetHi: 'आम की नई कलमी शाखाओं को सहारा दें और सब्जियों की क्यारियों को सुरक्षित करें।',
-          },
-          {
-            step: 3,
-            titleEn: 'Mandi Tarpaulin Shielding',
-            titleHi: 'मंडी व खलिहान में तिरपाल से अनाज ढकें',
-            descriptionEn: 'Cover open produce at Dubagga, Mohanlalganj, and local mandis with waterproof tarpaulins weighed down by sandbags.',
-            descriptionHi: 'दुबग्गा व मोहनलालगंज मंडी अथवा खलिहान में रखी उपज को मोटे तिरपाल से ढककर पत्थरों या बोरियों से दबाएं।',
-            icon: 'warehouse',
-            urgency: 'immediate',
-            audioSnippetHi: 'मंडी व खलिहान में रखी उपज को मोटे तिरपाल से ढकें।',
-          },
-          {
-            step: 4,
-            titleEn: 'Disconnect Electric Submersibles & Pumps',
-            titleHi: 'सबमर्सिबल व सिंचाई पंप के स्टार्टर बंद करें',
-            descriptionEn: 'Switch off agricultural tubewell connections to protect motors and transformers from high-voltage lightning strikes.',
-            descriptionHi: 'खेत के ट्यूबवेल व बोरवेल स्टार्टर बंद कर दें ताकि बिजली गिरने से मोटर न जले।',
-            icon: 'power_off',
-            urgency: 'high',
-            audioSnippetHi: 'खेत के ट्यूबवेल स्टार्टर तुरंत बंद करें।',
-          },
-        ],
+        step: 1,
+        titleEn: 'Move Indoors Immediately',
+        titleHi: 'तुरंत पक्के सुरक्षित स्थान पर जाएं',
+        descriptionEn: 'Do not stand under isolated trees, metal sheds, or open tractors. Lightning strikes are most lethal in open agricultural fields.',
+        descriptionHi: 'खेत में अकेले पेड़ के नीचे या खुले ट्रैक्टर पर बिल्कुल न खड़े रहें। आकाशीय बिजली चमकने पर तुरंत पक्के कमरे या सुरक्षित ढलान में शरण लें।',
+        icon: 'shelves',
+        urgency: 'immediate',
+        audioSnippetHi: 'खेत में अकेले पेड़ के नीचे या ट्रैक्टर पर न रहें। तुरंत पक्के मकान में जाएं।',
       },
       {
-        id: 'ADV-2024-10-UP-ORANGE',
-        severity: 'orange',
-        severityLabelEn: 'Orange Alert (Be Prepared)',
-        severityLabelHi: 'नारंगी स्तर चेतावनी (सतर्क रहें)',
-        source: 'Uttar Pradesh State Disaster Management Authority (UPSDMA, Lucknow)',
-        titleEn: 'Chemical Spray Washout & Gangetic Alluvial Drainage Advisory',
-        titleHi: 'कीटनाशक धुलाई एवं जल-निकासी चेतावनी (छिड़काव स्थगित रखें)',
-        englishSummary: `Intense surface showers will wash off foliar sprays and induce pooling in Gangetic alluvial topsoil across ${district}.`,
-        hindiSummary: `दोपहर बाद तेज बारिश से कीटनाशक धुल जाएगा और दोमट मिट्टी में जल-जमाव का खतरा है। कीटनाशक छिड़काव स्थगित रखें।`,
-        affectedTehsils: ['लखनऊ सदर (Lucknow Sadar)', 'गोसाईंगंज (Gosainganj)', 'इटौंजा (Itaunja)'],
-        validFrom: '12:00 IST',
-        validTo: '21:00 IST',
-        expiresInText: 'Expires at 21:00 IST',
-        radarTracked: true,
-        audioScriptHi: `किसान भाइयों, आज कीटनाशक व यूरिया का छिड़काव रोक दें। बारिश से दवा धुल जाएगी और पैसा बर्बाद होगा। खेत की नालियां खोल दें।`,
-        audioScriptEn: `Farmers in ${district} are advised to postpone chemical spraying today and clear drainage furrows in standing crops.`,
-        farmerDirectives: [
-          {
-            step: 1,
-            titleEn: 'Postpone Chemical Spraying & Top-Dressing',
-            titleHi: 'कीटनाशक व यूरिया छिड़काव 48 घंटे टालें',
-            descriptionEn: 'High washout index will dilute foliar nutrition and pesticides. Resume application once fair weather stabilizes.',
-            descriptionHi: 'बारिश होने से यूरिया और कीटनाशक बह जाएंगे। मौसम साफ होने तक छिड़काव रोकें।',
-            icon: 'cancel',
-            urgency: 'high',
-            audioSnippetHi: 'आज छिड़काव रोकें, मौसम साफ होने पर करें।',
-          },
-          {
-            step: 2,
-            titleEn: 'Open Alluvial Field Drainage Trenches',
-            titleHi: 'खेत की मुख्य जलनिकासी नालियां तुरंत खोलें',
-            descriptionEn: 'Clear sediment and weeds from tail-end field trenches to avoid root rotting in alluvial loam.',
-            descriptionHi: 'खेत के निचले हिस्से की जल निकासी नाली साफ करें ताकि पानी जमा होकर जड़ों को न सड़ाए।',
-            icon: 'water',
-            urgency: 'precautionary',
-            audioSnippetHi: 'खेत की जल निकासी नालियां तुरंत साफ कर दें।',
-          },
-        ],
+        step: 2,
+        titleEn: 'Cover Harvested Crop with Tarpaulin',
+        titleHi: 'कटी हुई उपज व अनाज को तिरपाल से कसकर बांधें',
+        descriptionEn: 'Cover threshing floors or open bags of soybean, wheat, or chickpea with thick plastic tarpaulins and weigh them down with stones.',
+        descriptionHi: 'खलिहान या मंडी में रखी सोयाबीन, गेहूं या चने की बोरियों को मोटे प्लास्टिक तिरपाल से ढककर पत्थरों से दबाएं ताकि तेज हवा में उड़े नहीं।',
+        icon: 'warehouse',
+        urgency: 'immediate',
+        audioSnippetHi: 'खलिहान में रखी फसल को प्लास्टिक तिरपाल से ढककर पत्थरों से बांधें।',
       },
-    ];
-  }
-
-  // 2. DELHI NCR & NORTHERN PLAINS
-  if (lower.includes('delhi') || lower.includes('noida') || lower.includes('gurugram') || lower.includes('ghaziabad')) {
-    return [
-      heatAlert,
       {
-        id: 'ADV-2024-10-NCR-01',
-        severity: 'red',
-        severityLabelEn: 'Red Alert (Dust Storm & Downpour)',
-        severityLabelHi: 'लाल स्तर चेतावनी (धूल भरी आंधी व बारिश)',
-        source: 'India Meteorological Department (IMD Doppler Radar, New Delhi Palam)',
-        titleEn: `Severe Convective Squall Line & Dust Hazard across ${district}`,
-        titleHi: `${district} एवं एनसीआर क्षेत्र में 65 किमी/घंटा धूल भरी आंधी व ओलों की चेतावनी!`,
-        englishSummary: `Severe squall lines (65-75 km/h) approaching the Yamuna corridor with low visibility and convective lightning.`,
-        hindiSummary: `अगले 3 घंटों में 65 से 75 किमी/घंटा की रफ्तार से आंधी और तेज बौछारें पड़ने की संभावना है। पेड़ों और कमजोर शेड से दूर रहें।`,
-        affectedTehsils: [`${district} North`, `${district} South`, 'Yamuna Basin', 'Najafgarh Corridor'],
-        validFrom: '14:00 IST',
-        validTo: '19:00 IST',
-        expiresInText: 'Expires in 4h (19:00 IST)',
-        radarTracked: true,
-        audioScriptHi: `सावधान! दिल्ली एनसीआर व ${district} में 65 किमी प्रति घंटा की आंधी और बारिश की चेतावनी है। सुरक्षित भवनों में रहें।`,
-        audioScriptEn: `Red Alert issued for ${district} and Delhi NCR. High velocity wind squalls and heavy downpours imminent. Stay indoors.`,
-        farmerDirectives: [
-          {
-            step: 1,
-            titleEn: 'Secure Polyhouses & Greenhouse Sheeting',
-            titleHi: 'पॉलीहाउस व टनल शीट्स को कसकर बांधें',
-            descriptionEn: 'Strong cross-winds can tear UV polyfilms. Close side vents and tighten tie-down ratchets.',
-            descriptionHi: 'तेज हवाओं से पॉलीहाउस की प्लास्टिक उड़ सकती है। वेंट्स बंद करें और रस्सियां कसें।',
-            icon: 'warehouse',
-            urgency: 'immediate',
-            audioSnippetHi: 'पॉलीहाउस के वेंट्स बंद करें और तिरपाल कसें।',
-          },
-          {
-            step: 2,
-            titleEn: 'Cease Highway Transport of Open Perishables',
-            titleHi: 'खुले वाहनों में फल व सब्जी परिवहन रोकें',
-            descriptionEn: 'High crosswinds along Yamuna Expressway and peripheral highways risk vehicle sway and produce scattering.',
-            descriptionHi: 'हाईवे पर तेज हवाओं से खुले ट्रकों में रखी सब्जियां उड़ने का खतरा है, वाहन सुरक्षित स्थान पर रोकें।',
-            icon: 'local_shipping',
-            urgency: 'high',
-            audioSnippetHi: 'सब्जियों से भरे खुले वाहनों को सुरक्षित स्थान पर खड़ा करें।',
-          },
-        ],
+        step: 3,
+        titleEn: 'Disconnect Electric Tubewells & Motors',
+        titleHi: 'सिंचाई मोटर व बिजली स्टार्टर स्विच बंद करें',
+        descriptionEn: 'Switch off submersible pumps and high-tension irrigation lines to prevent transformer burnouts and electrical shocks.',
+        descriptionHi: 'खेत में चल रहे ट्यूबवेल, सबमर्सिबल पंप के स्टार्टर तुरंत बंद करें ताकि बिजली गिरने से मोटर न जले और शॉर्ट सर्किट से बचाव हो।',
+        icon: 'power_off',
+        urgency: 'high',
+        audioSnippetHi: 'खेत की मोटर व ट्यूबवेल के स्टार्टर तुरंत बंद करें ताकि मोटर जलने से बचे।',
       },
-    ];
-  }
-
-  // 3. DEFAULT REGIONAL ALERT ADAPTED TO ACTIVE LOCATION
-  return [
-    heatAlert,
-    {
-      id: `ADV-${Date.now()}-${district.slice(0, 3).toUpperCase()}`,
-      severity: 'red',
-      severityLabelEn: 'Red Alert (Take Action)',
-      severityLabelHi: 'लाल स्तर चेतावनी (तत्काल सावधानी)',
-      source: `India Meteorological Department (IMD Doppler Radar, ${state} Regional Station)`,
-      titleEn: `Severe Thunderstorm, Cloud-to-Ground Lightning & Hail Hazard in ${district}`,
-      titleHi: `${district} एवं आसपास के क्षेत्रों में अगले 4 घंटों में अति-तीव्र मेघगर्जन व आंधी की चेतावनी!`,
-      englishSummary: `Severe Thunderstorm with 60+ km/h gusty squall lines, active convective cells, and heavy localized downpour expected in ${district} jurisdiction.`,
-      hindiSummary: `दोपहर बाद 60 किमी/घंटा तेज़ आंधी, बादलों की भारी गड़गड़ाहट एवं वर्षा का तीव्र जोखिम है। खेतों से तुरंत सुरक्षित स्थानों पर जाएं।`,
-      affectedTehsils: [`${district} Sadar`, `${district} Rural`, `${district} East`, `${district} West`],
-      validFrom: '14:30 IST',
-      validTo: '18:30 IST',
-      expiresInText: 'Expires in 3h 45m (18:30 IST)',
-      radarTracked: true,
-      audioScriptHi: `सावधान किसान भाइयों! मौसम विभाग द्वारा ${district} जिले में अगले चार घंटों के लिए भारी मेघगर्जन और आंधी का रेड अलर्ट जारी किया गया है। तुरंत पक्के मकान में शरण लें और कटी फसल को तिरपाल से सुरक्षित बांधें।`,
-      audioScriptEn: `Attention farmers! India Meteorological Department has issued a Red Alert for ${district} and surrounding blocks. Severe thunderstorm, lightning, and wind squalls expected. Move indoors immediately.`,
-      farmerDirectives: [
-        {
-          step: 1,
-          titleEn: 'Move Indoors Immediately',
-          titleHi: 'तुरंत पक्के सुरक्षित स्थान पर जाएं',
-          descriptionEn: 'Do not stand under isolated trees, metal sheds, or open tractors. Lightning strikes are most lethal in open agricultural fields.',
-          descriptionHi: 'खेत में अकेले पेड़ के नीचे या खुले ट्रैक्टर पर बिल्कुल न खड़े रहें। आकाशीय बिजली चमकने पर तुरंत पक्के कमरे में शरण लें।',
-          icon: 'shelves',
-          urgency: 'immediate',
-          audioSnippetHi: 'खेत में अकेले पेड़ के नीचे न रहें, तुरंत पक्के मकान में जाएं।',
-        },
-        {
-          step: 2,
-          titleEn: `Protect Standing Crops & Mandi Produce in ${district}`,
-          titleHi: 'कटी हुई उपज व अनाज को तिरपाल से कसकर बांधें',
-          descriptionEn: 'Cover threshing floors or open bags with thick plastic tarpaulins and weigh them down with stones.',
-          descriptionHi: 'खलिहान या मंडी में रखी उपज को मोटे प्लास्टिक तिरपाल से ढककर पत्थरों से दबाएं ताकि तेज हवा में उड़े नहीं।',
-          icon: 'warehouse',
-          urgency: 'immediate',
-          audioSnippetHi: 'खलिहान में रखी फसल को प्लास्टिक तिरपाल से ढकें।',
-        },
-        {
-          step: 3,
-          titleEn: 'Disconnect Electric Tubewells & Motors',
-          titleHi: 'सिंचाई मोटर व बिजली स्टार्टर स्विच बंद करें',
-          descriptionEn: 'Switch off submersible pumps and irrigation lines to prevent transformer burnouts and electrical shocks.',
-          descriptionHi: 'खेत में चल रहे ट्यूबवेल, सबमर्सिबल पंप के स्टार्टर तुरंत बंद करें ताकि बिजली गिरने से मोटर न जले।',
-          icon: 'power_off',
-          urgency: 'high',
-          audioSnippetHi: 'खेत की मोटर व ट्यूबवेल के स्टार्टर तुरंत बंद करें।',
-        },
-      ],
-    },
-    {
-      id: `ADV-${Date.now() + 1}-${district.slice(0, 3).toUpperCase()}`,
-      severity: 'orange',
-      severityLabelEn: 'Orange Alert (Be Prepared)',
-      severityLabelHi: 'नारंगी स्तर चेतावनी (सतर्क रहें)',
-      source: `State Disaster Management Authority (${state})`,
-      titleEn: `Pesticide Washout & Drainage Stagnation Warning for ${district}`,
-      titleHi: `${district} में कीटनाशक धुलाई एवं जल-निकासी चेतावनी (छिड़काव स्थगित रखें)`,
-      englishSummary: `Surface winds exceeding 35 km/h with high rain probability will wash off chemical sprays across ${district} fields.`,
-      hindiSummary: `दोपहर बाद तेज हवाओं व बारिश से कीटनाशक का असर समाप्त हो जाएगा। छिड़काव स्थगित रखें।`,
-      affectedTehsils: [`${district} Rural Hub`, `${district} Border Block`],
-      validFrom: '12:00 IST',
-      validTo: '21:00 IST',
-      expiresInText: 'Expires at 21:00 IST',
-      radarTracked: true,
-      audioScriptHi: `किसान भाइयों, आज दोपहर बाद हवा और बारिश से कीटनाशक धुल जाएगा। अपनी दवा और पैसे की बर्बादी रोकें।`,
-      audioScriptEn: `Farmers in ${district} are advised to postpone pesticide spraying today due to wind squalls and high washout risk.`,
-      farmerDirectives: [
-        {
-          step: 1,
-          titleEn: 'Postpone Chemical & Fungicide Spraying',
-          titleHi: 'कीटनाशक व फफूंदनाशक छिड़काव स्थगित करें',
-          descriptionEn: 'Rain within 6 hours of application renders systemic chemicals ineffective.',
-          descriptionHi: 'दवा छिड़कने के 6 घंटे के भीतर बारिश होने से दवा बह जाती है और कीटों पर कोई असर नहीं होता।',
-          icon: 'cancel',
-          urgency: 'high',
-          audioSnippetHi: 'आज छिड़काव न करें, मौसम साफ़ होने पर करें।',
-        },
-        {
-          step: 2,
-          titleEn: 'Clear Field Drainage Furrows',
-          titleHi: 'खेत की जल निकासी नालियां साफ़ रखें',
-          descriptionEn: 'Prevent water stagnation in field furrows to protect roots from fungal rotting.',
-          descriptionHi: 'खेत में पानी भरने से जड़ सड़न का खतरा होता है। पानी निकलने का रास्ता खोलें।',
-          icon: 'water',
-          urgency: 'precautionary',
-          audioSnippetHi: 'खेत की नालियों से पानी निकलने का रास्ता साफ़ कर दें।',
-        },
-      ],
-    },
-  ];
+      {
+        step: 4,
+        titleEn: 'Secure Livestock in Pucca Cattle Shed',
+        titleHi: 'मवेशियों को टीन शेड या पक्के बाड़े में बांधें',
+        descriptionEn: 'Move cattle, goats, and calves away from barbed-wire fencing and metal poles into covered, dry shelters.',
+        descriptionHi: 'गायों, बैलों व बकरियों को खुले तारों की बाड़ और खंभों से दूर हटाकर पक्के पशु शेड में बांधें ताकि ओलों व करंट से चोट न पहुंचे।',
+        icon: 'pets',
+        urgency: 'high',
+        audioSnippetHi: 'पशुओं को लोहे के तारों और पेड़ों से दूर पक्के बाड़े में सुरक्षित बांधें।',
+      },
+    ],
+  };
 }
+
+export function generateWashoutAndDrainageAlert(
+  district: string,
+  state: string,
+  precipitation: number = 0,
+  windSpeed: number = 25
+): GovernmentAlert {
+  const { validFrom, validTo, expiresInText } = getFormattedTimeWindow(8);
+
+  return {
+    id: generateCapId('WASH', district),
+    severity: 'orange',
+    severityLabelEn: 'Orange Alert (Chemical Washout & Waterlogging)',
+    severityLabelHi: 'नारंगी स्तर (कीटनाशक धुलाई एवं जल-जमाव)',
+    source: `State Disaster Management Authority (SDMA ${state}) & ICAR Agromet Unit`,
+    titleEn: `Pesticide Washout & Drainage Congestion Advisory in ${district}`,
+    titleHi: `${district} में कीटनाशक धुलाई एवं जल-निकासी चेतावनी (छिड़काव स्थगित रखें)`,
+    englishSummary: `Surface winds exceeding ${Math.max(windSpeed, 28)} km/h and active rain probability will wash off chemical sprays and cause root-zone ponding in ${district}.`,
+    hindiSummary: `दोपहर बाद तेज हवाओं व वर्षा से कीटनाशक का असर धुल जाएगा और खेत में पानी भरने से जड़ सड़न का खतरा है। छिड़काव 48 घंटे स्थगित रखें।`,
+    affectedTehsils: getRegionalTehsils(district, state),
+    validFrom,
+    validTo,
+    expiresInText,
+    radarTracked: true,
+    audioScriptHi: `किसान भाइयों, आज कीटनाशक व यूरिया का छिड़काव रोक दें। बारिश से दवा धुल जाएगी और पैसा बर्बाद होगा। खेत के निचले किनारों से पानी निकलने का रास्ता खोल दें।`,
+    audioScriptEn: `Farmers in ${district} are advised to postpone pesticide and fertilizer applications today. High washout risk will render sprays ineffective. Clear field drainage trenches.`,
+    farmerDirectives: [
+      {
+        step: 1,
+        titleEn: 'Postpone Chemical & Fungicide Spraying',
+        titleHi: 'कीटनाशक व फफूंदनाशक छिड़काव स्थगित करें',
+        descriptionEn: 'Rain within 6 hours of application renders systemic chemicals ineffective and wastes farm inputs.',
+        descriptionHi: 'दवा छिड़कने के 6 घंटे के भीतर बारिश होने से दवा बह जाती है और कीटों पर कोई असर नहीं होता। मौसम साफ़ होने तक छिड़काव टालें।',
+        icon: 'cancel',
+        urgency: 'high',
+        audioSnippetHi: 'आज छिड़काव न करें, मौसम साफ़ होने पर ही करें।',
+      },
+      {
+        step: 2,
+        titleEn: 'Clear Drainage Furrows in Standing Crops',
+        titleHi: 'खेत की जल निकासी नालियां साफ़ रखें',
+        descriptionEn: 'Prevent water stagnation in black / alluvial soil furrows to protect root systems from fungal rotting (pythium / phytophthora).',
+        descriptionHi: 'खेत में पानी भरने से जड़ सड़न का खतरा होता है। खेत के निचले किनारों से पानी निकलने का रास्ता खोलें।',
+        icon: 'water',
+        urgency: 'precautionary',
+        audioSnippetHi: 'खेत की नालियों से पानी निकलने का रास्ता साफ़ कर दें।',
+      },
+    ],
+  };
+}
+
+export function generateHighWindSquallAlert(
+  district: string,
+  state: string,
+  windSpeed: number = 42
+): GovernmentAlert {
+  const { validFrom, validTo, expiresInText } = getFormattedTimeWindow(5);
+
+  return {
+    id: generateCapId('WIND', district),
+    severity: 'orange',
+    severityLabelEn: 'Orange Alert (High Velocity Wind Squalls)',
+    severityLabelHi: 'नारंगी स्तर (तेज़ आंधी व धूल भरी हवाएं)',
+    source: `National Disaster Management Authority (NDMA CAP-CP) / SDMA ${state}`,
+    titleEn: `High Velocity Wind Squalls (${windSpeed}+ km/h) Hazard across ${district}`,
+    titleHi: `${district} में ${windSpeed} किमी/घंटा तेज़ आंधी व धूल भरी हवाओं की चेतावनी!`,
+    englishSummary: `Strong surface wind gusts (${windSpeed} km/h) risk tearing greenhouse polythene, toppling tall standing crops, and scattering loose produce.`,
+    hindiSummary: `${windSpeed} किमी प्रति घंटे की रफ्तार से तेज हवाएं चलने की संभावना है। पॉलीहाउस की रस्सियां कसें और कटी उपज को सुरक्षित रखें।`,
+    affectedTehsils: getRegionalTehsils(district, state),
+    validFrom,
+    validTo,
+    expiresInText,
+    radarTracked: true,
+    audioScriptHi: `सावधान! ${district} में ${windSpeed} किमी प्रति घंटा की तेज आंधी चलने की संभावना है। पॉलीहाउस के वेंट्स बंद करें और खुले ट्रकों में उपज परिवहन रोकें।`,
+    audioScriptEn: `Wind Squall Advisory for ${district}. Gusts up to ${windSpeed} km/h expected. Fasten greenhouse sheets, stake tall crops, and secure mandi produce.`,
+    farmerDirectives: [
+      {
+        step: 1,
+        titleEn: 'Secure Polyhouses & Greenhouse Sheeting',
+        titleHi: 'पॉलीहाउस व टनल शीट्स को कसकर बांधें',
+        descriptionEn: 'Strong cross-winds can tear UV polyfilms. Close side vents and tighten tie-down ratchets.',
+        descriptionHi: 'तेज हवाओं से पॉलीहाउस की प्लास्टिक उड़ सकती है। वेंट्स बंद करें और रस्सियां कसें।',
+        icon: 'warehouse',
+        urgency: 'immediate',
+        audioSnippetHi: 'पॉलीहाउस के वेंट्स बंद करें और तिरपाल कसें।',
+      },
+      {
+        step: 2,
+        titleEn: 'Cease Highway Transport of Open Perishables',
+        titleHi: 'खुले वाहनों में फल व सब्जी परिवहन रोकें',
+        descriptionEn: 'High crosswinds along arterial highways risk vehicle sway and cargo scattering.',
+        descriptionHi: 'हाईवे पर तेज हवाओं से खुले ट्रकों में रखी सब्जियां उड़ने का खतरा है, वाहन सुरक्षित स्थान पर रोकें।',
+        icon: 'local_shipping',
+        urgency: 'high',
+        audioSnippetHi: 'सब्जियों से भरे खुले वाहनों को सुरक्षित स्थान पर खड़ा करें।',
+      },
+      {
+        step: 3,
+        titleEn: 'Stake Tall Standing Crops against Lodging',
+        titleHi: 'मक्का, गन्ना व पपीता की फसलों को सहारा दें',
+        descriptionEn: 'Erect earthen ridges or tie bamboo supports for tall stalks vulnerable to wind lodging.',
+        descriptionHi: 'मक्का, सूरजमुखी और गन्ने की फसलों को गिरने से बचाने के लिए जड़ों पर मिट्टी चढ़ाएं व सहारा दें।',
+        icon: 'park',
+        urgency: 'high',
+        audioSnippetHi: 'लंबी फसलों को गिरने से बचाने के लिए सहारा दें।',
+      },
+    ],
+  };
+}
+
+export function generateOptimalAgrometAdvisory(
+  district: string,
+  state: string
+): GovernmentAlert {
+  const { validFrom, validTo, expiresInText } = getFormattedTimeWindow(12);
+
+  return {
+    id: generateCapId('GKMS', district),
+    severity: 'green',
+    severityLabelEn: 'Green Advisory (Optimal Agro-Weather Window)',
+    severityLabelHi: 'हरा स्तर परामर्श (अनुकूल कृषि मौसम अवधि)',
+    source: `Gramin Krishi Mausam Sewa (GKMS - IMD / ICAR Krishi Vigyan Kendra, ${district})`,
+    titleEn: `Favorable Field Spraying & Agro-Operations Window in ${district}`,
+    titleHi: `${district} में कीटनाशक छिड़काव एवं खेत कार्य हेतु अनुकूल मौसम परामर्श`,
+    englishSummary: `Calm surface winds (<15 km/h), stable atmospheric pressure, and clear skies provide an optimal window for foliar chemical sprays, soil aeration, and field harvesting.`,
+    hindiSummary: `हवा की गति 15 किमी/घंटे से कम व मौसम साफ़ रहने से कीटनाशक छिड़काव, यूरिया टॉप-ड्रेसिंग एवं कटी फसल की मड़ाई के लिए परिस्थितियां सर्वथा अनुकूल हैं।`,
+    affectedTehsils: getRegionalTehsils(district, state),
+    validFrom,
+    validTo,
+    expiresInText,
+    radarTracked: false,
+    audioScriptHi: `किसान भाइयों, वर्तमान में ${district} में मौसम साफ़ व हवा की गति धीमी है। यह समय कीटनाशक छिड़काव और यूरिया डालने के लिए बहुत अनुकूल है। इस अवसर का लाभ उठाकर खेत के काम पूरे करें।`,
+    audioScriptEn: `Agromet advisory for ${district}: Weather conditions are favorable with gentle winds and dry skies. This is an ideal operational window for foliar pesticide application and harvest processing.`,
+    farmerDirectives: [
+      {
+        step: 1,
+        titleEn: 'Optimal Chemical Spraying Window',
+        titleHi: 'कीटनाशक व फफूंदनाशक छिड़काव का उत्तम समय',
+        descriptionEn: 'Light winds prevent drift and 0% rain chance ensures maximum absorption of systemic sprays.',
+        descriptionHi: 'हवा धीमी होने से दवा हवा में नहीं उड़ती और बारिश न होने से पूरा असर पत्तियों पर होता है।',
+        icon: 'check_circle',
+        urgency: 'precautionary',
+        audioSnippetHi: 'आज कीटनाशक का छिड़काव आसानी से कर सकते हैं।',
+      },
+      {
+        step: 2,
+        titleEn: 'Field Aeration & Inter-Cultivation',
+        titleHi: 'निराई-गुड़ाई एवं खेत की जुताई करें',
+        descriptionEn: 'Dry topsoil allows tractor inter-cultivation to destroy weeds and improve soil root respiration.',
+        descriptionHi: 'मिट्टी में उचित नमी होने से खरपतवार निकालने और गुड़ाई करने से जड़ों का विकास अच्छा होता है।',
+        icon: 'agriculture',
+        urgency: 'precautionary',
+        audioSnippetHi: 'खेत में निराई-गुड़ाई का कार्य समय पर पूरा करें।',
+      },
+    ],
+  };
+}
+
+export function getAlertsForLocation(
+  locInput?: any,
+  currentWeather?: Partial<WeatherCurrent>
+): GovernmentAlert[] {
+  const locName = typeof locInput === 'string' ? locInput : (locInput?.name || 'Indore');
+  const district = typeof locInput === 'string' ? locInput : (locInput?.district || locInput?.city || 'Indore');
+  const state = typeof locInput === 'string' ? 'Madhya Pradesh' : (locInput?.state || 'Madhya Pradesh');
+
+  const temp = currentWeather?.temperature ?? 31;
+  const humidity = currentWeather?.relativeHumidity ?? 60;
+  const windSpeed = currentWeather?.windSpeed ?? 14;
+  const precip = currentWeather?.precipitation ?? 0;
+  const weatherCode = currentWeather?.weatherCode ?? 2;
+
+  const heatAlert = generateLivestockHeatAlert(district, state, temp, humidity);
+  const alertsList: GovernmentAlert[] = [heatAlert];
+
+  // 1. Severe Convective / Thunderstorm / Hailstorm Condition (weather code 95-99, squall >= 50, violent showers)
+  if (weatherCode >= 95 || windSpeed >= 50 || weatherCode === 82) {
+    alertsList.unshift(generateSevereThunderstormAlert(district, state, windSpeed));
+  }
+  // 2. High Wind Squalls without severe thunderstorm
+  else if (windSpeed >= 32) {
+    alertsList.unshift(generateHighWindSquallAlert(district, state, windSpeed));
+  }
+
+  // 3. Washout & Heavy Rain / Ponding Risk
+  if (precip > 0.5 || weatherCode === 61 || weatherCode === 63 || weatherCode === 65 || weatherCode === 80 || weatherCode === 81) {
+    alertsList.push(generateWashoutAndDrainageAlert(district, state, precip, windSpeed));
+  }
+
+  // 4. Default: If no severe weather and conditions are calm/favorable, include GKMS agromet operational advisory
+  if (alertsList.length === 1) {
+    alertsList.push(generateOptimalAgrometAdvisory(district, state));
+  }
+
+  return alertsList;
+}
+
+export const ACTIVE_GOVERNMENT_ALERTS: GovernmentAlert[] = getAlertsForLocation();

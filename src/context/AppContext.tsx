@@ -70,7 +70,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [weather, setWeather] = useState(getFallbackWeatherData());
-  const [alerts, setAlerts] = useState<GovernmentAlert[]>(() => getAlertsForLocation(DEFAULT_LOCATION));
+  const [alerts, setAlerts] = useState<GovernmentAlert[]>(() => getAlertsForLocation(DEFAULT_LOCATION, weather.current));
   const [cropRecommendations, setCropRecommendations] = useState<CropRecommendation[]>([]);
 
   // Detect Network Speed (FR-8.1 Network detection)
@@ -100,10 +100,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     refreshWeather();
   }, [location.lat, location.lng]);
 
-  // Update Alerts dynamically when location changes
+  // Update Alerts dynamically when location or weather telemetry changes
   useEffect(() => {
-    setAlerts(getAlertsForLocation(location));
-  }, [location.name, location.district, location.state]);
+    setAlerts(getAlertsForLocation(location, weather?.current));
+  }, [
+    location.name,
+    location.district,
+    location.state,
+    weather?.current?.temperature,
+    weather?.current?.relativeHumidity,
+    weather?.current?.weatherCode,
+    weather?.current?.windSpeed,
+    weather?.current?.precipitation,
+  ]);
 
   // Update Crop Recommendations when soilConfig changes
   useEffect(() => {
