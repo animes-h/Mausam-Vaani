@@ -121,21 +121,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, [soilConfig, location.name]);
 
+  const stopSpeech = () => {
+    SpeechHandler.stopSpeaking();
+    setIsPlayingAudio(false);
+  };
+
+  const handleSetLanguage = (lang: Language) => {
+    stopSpeech();
+    setLanguage(lang);
+  };
+
   const toggleLanguage = () => {
+    stopSpeech();
     setLanguage(prev => (prev === 'hi' ? 'en' : 'hi'));
   };
+
+  // Stop ongoing speech immediately whenever language is switched
+  useEffect(() => {
+    stopSpeech();
+  }, [language]);
+
+  // Stop ongoing speech when switching tabs or modes
+  useEffect(() => {
+    stopSpeech();
+  }, [activeKisanTab, activeExplorerTab, mode]);
 
   const toggleNetworkMode = () => {
     setNetworkMode(prev => (prev === 'normal' ? 'degraded' : 'normal'));
     if (networkMode === 'normal') {
-      SpeechHandler.stopSpeaking();
-      setIsPlayingAudio(false);
+      stopSpeech();
     }
   };
 
   const playSpeech = (text: string, lang?: 'hi-IN' | 'en-IN', rate?: number) => {
     // If under degraded mode, speech is paused per FR-8.2
     if (networkMode === 'degraded') return;
+
+    // Immediately stop any prior speech before beginning new utterance
+    stopSpeech();
 
     SpeechHandler.prewarmAudio();
 
@@ -153,18 +176,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const stopSpeech = () => {
-    SpeechHandler.stopSpeaking();
-    setIsPlayingAudio(false);
-  };
-
   return (
     <AppContext.Provider
       value={{
         mode,
         setMode,
         language,
-        setLanguage,
+        setLanguage: handleSetLanguage,
         toggleLanguage,
         activeKisanTab,
         setActiveKisanTab,

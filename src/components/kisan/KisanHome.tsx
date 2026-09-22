@@ -50,7 +50,7 @@ export default function KisanHome() {
 
   const toggleAudioReadout = () => {
     SpeechHandler.prewarmAudio();
-    if (isPlayingAudio) {
+    if (isPlayingAudio || SpeechHandler.isCurrentlySpeaking()) {
       stopSpeech();
     } else {
       playSpeech(fullWeatherSpokenScript, language === 'hi' ? 'hi-IN' : 'en-IN');

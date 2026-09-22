@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 import { CropRecommendation } from '@/types';
+import { SpeechHandler } from '@/lib/speechService';
 
 export default function KisanCropAdvisory() {
   const {
@@ -22,6 +23,24 @@ export default function KisanCropAdvisory() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [selectedCrop, setSelectedCrop] = useState<CropRecommendation | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'kharif' | 'lowWater' | 'cashCrop'>('all');
+  const [playingCropId, setPlayingCropId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isPlayingAudio) {
+      setPlayingCropId(null);
+    }
+  }, [isPlayingAudio]);
+
+  useEffect(() => {
+    stopSpeech();
+    setPlayingCropId(null);
+  }, [language]);
+
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+    };
+  }, []);
 
   const filteredCrops = cropRecommendations.filter(c => {
     if (categoryFilter === 'kharif') return c.category === 'primary' || c.sowingWindowEn.toLowerCase().includes('june');
@@ -69,10 +88,14 @@ export default function KisanCropAdvisory() {
     }
   }, [language, soilConfig, moisturePct, primaryCrop, safeCrop, altCrop]);
 
+  const isFullVoicePlaying = (isPlayingAudio || SpeechHandler.isCurrentlySpeaking()) && (playingCropId === 'full' || !playingCropId);
+
   const toggleFullVoice = () => {
-    if (isPlayingAudio) {
+    if (isPlayingAudio || SpeechHandler.isCurrentlySpeaking()) {
       stopSpeech();
+      setPlayingCropId(null);
     } else {
+      setPlayingCropId('full');
       playSpeech(fullAdvisoryAudio);
     }
   };
@@ -99,19 +122,19 @@ export default function KisanCropAdvisory() {
         <div className="relative z-10 w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm">
           <button
             className={`h-target-touch-kisan px-space-lg rounded-2xl font-label-lg text-sm shadow-md transition-all flex items-center justify-center gap-space-sm active:scale-95 ${
-              isPlayingAudio
-                ? 'bg-secondary text-on-secondary animate-pulse'
+              isFullVoicePlaying
+                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
                 : 'bg-primary hover:bg-primary-container text-on-primary'
             }`}
             onClick={toggleFullVoice}
             type="button"
           >
             <span className="material-symbols-outlined text-[1.75rem]">
-              {isPlayingAudio ? 'stop_circle' : 'volume_up'}
+              {isFullVoicePlaying ? 'stop_circle' : 'volume_up'}
             </span>
             <div className="flex flex-col text-left">
               <span className="font-label-md text-sm font-bold leading-tight">
-                {isPlayingAudio ? (language === 'hi' ? 'रोकें' : 'Stop') : (language === 'hi' ? 'पूरी सलाह सुनें' : 'Listen Advice')}
+                {isFullVoicePlaying ? (language === 'hi' ? 'रोकें' : 'Stop') : (language === 'hi' ? 'पूरी सलाह सुनें' : 'Listen Advice')}
               </span>
               <span className="font-label-sm text-[0.7rem] opacity-90">
                 {language === 'hi' ? 'ऑडियो विवरण' : 'Audio Brief'}
@@ -379,12 +402,30 @@ export default function KisanCropAdvisory() {
               {/* Action Buttons */}
               <div className="mt-space-md pt-1 flex items-center gap-space-xs">
                 <button
-                  className="flex-1 h-target-touch-kisan rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-xs font-bold flex items-center justify-center gap-space-xs transition-colors active:scale-95"
-                  onClick={() => playSpeech(crop.audioSpeechText)}
+                  className={`flex-1 h-target-touch-kisan rounded-xl font-label-md text-xs font-bold flex items-center justify-center gap-space-xs transition-colors active:scale-95 ${
+                    playingCropId === crop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking())
+                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                      : 'bg-surface-container hover:bg-surface-container-high text-on-surface'
+                  }`}
+                  onClick={() => {
+                    if (playingCropId === crop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking())) {
+                      stopSpeech();
+                      setPlayingCropId(null);
+                    } else {
+                      setPlayingCropId(crop.id);
+                      playSpeech(crop.audioSpeechText);
+                    }
+                  }}
                   type="button"
                 >
-                  <span className="material-symbols-outlined text-[1.25rem] text-primary">play_circle</span>
-                  <span>{language === 'hi' ? 'विवरण सुनें' : 'Listen'}</span>
+                  <span className={`material-symbols-outlined text-[1.25rem] ${playingCropId === crop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking()) ? 'text-white' : 'text-primary'}`}>
+                    {playingCropId === crop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking()) ? 'stop_circle' : 'play_circle'}
+                  </span>
+                  <span>
+                    {playingCropId === crop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking())
+                      ? (language === 'hi' ? 'रोकें' : 'Stop')
+                      : (language === 'hi' ? 'विवरण सुनें' : 'Listen')}
+                  </span>
                 </button>
                 <button
                   onClick={() => setSelectedCrop(crop)}
@@ -478,12 +519,30 @@ export default function KisanCropAdvisory() {
 
               <div className="flex flex-col gap-2 pt-2">
                 <button
-                  onClick={() => playSpeech(selectedCrop.audioSpeechText)}
-                  className="w-full py-3 bg-primary text-on-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary-container transition-all active:scale-95 cursor-pointer shadow-sm"
+                  onClick={() => {
+                    if (playingCropId === selectedCrop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking())) {
+                      stopSpeech();
+                      setPlayingCropId(null);
+                    } else {
+                      setPlayingCropId(selectedCrop.id);
+                      playSpeech(selectedCrop.audioSpeechText);
+                    }
+                  }}
+                  className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-sm ${
+                    playingCropId === selectedCrop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking())
+                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                      : 'bg-primary text-on-primary hover:bg-primary-container'
+                  }`}
                   type="button"
                 >
-                  <span className="material-symbols-outlined">volume_up</span>
-                  <span>{language === 'hi' ? 'आवाज़ में सुनें' : 'Listen Spoken Advice'}</span>
+                  <span className="material-symbols-outlined">
+                    {playingCropId === selectedCrop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking()) ? 'stop_circle' : 'volume_up'}
+                  </span>
+                  <span>
+                    {playingCropId === selectedCrop.id && (isPlayingAudio || SpeechHandler.isCurrentlySpeaking())
+                      ? (language === 'hi' ? 'रोकें' : 'Stop Audio')
+                      : (language === 'hi' ? 'आवाज़ में सुनें' : 'Listen Spoken Advice')}
+                  </span>
                 </button>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

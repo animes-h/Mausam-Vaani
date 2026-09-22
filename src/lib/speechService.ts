@@ -84,6 +84,8 @@ export class SpeechHandler {
   private static activeAudioElement: HTMLAudioElement | null = null;
   private static ttsAudioContext: AudioContext | null = null;
   private static currentBufferSource: AudioBufferSourceNode | null = null;
+  private static activeSessionId: number = 0;
+  private static currentAbortController: AbortController | null = null;
 
   // MediaStream and Audio Recording fallback handles
   private static activeMediaStream: MediaStream | null = null;
@@ -520,6 +522,10 @@ export class SpeechHandler {
     return this.isListeningActive;
   }
 
+  static isCurrentlySpeaking(): boolean {
+    return this.isSpeaking;
+  }
+
   /**
    * Pre-warms Web Audio Context within a synchronous user gesture (click, tap, mic).
    * Unlocks persistent audio playback permissions in Chrome, Edge, Safari, and Firefox.
@@ -568,6 +574,8 @@ export class SpeechHandler {
 
     if (!cleanText) return;
 
+    const sessionId = this.activeSessionId;
+
     // Detect actual language from the text content:
     // If text contains ANY Devanagari characters, it is 100% Hindi and MUST be spoken in Hindi!
     const isDevanagari = /[\u0900-\u097F]/.test(cleanText);
@@ -577,7 +585,7 @@ export class SpeechHandler {
     // This produces authentic, natural Hindi accent and handles numbers & agricultural terms perfectly,
     // avoiding the common Windows issue where native Hindi voices are completely absent.
     if (targetLang === 'hi-IN') {
-      this.playViaAudioEndpoint(cleanText, 'hi', onStart, onEnd, rate);
+      this.playViaAudioEndpoint(cleanText, 'hi', onStart, onEnd, rate, sessionId);
       return;
     }
 
@@ -589,10 +597,15 @@ export class SpeechHandler {
         onStart,
         onEnd,
         rate,
-        () => this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate)
+        () => {
+          if (sessionId === this.activeSessionId) {
+            this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate, sessionId);
+          }
+        },
+        sessionId
       );
     } else {
-      this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate);
+      this.playViaAudioEndpoint(cleanText, 'en', onStart, onEnd, rate, sessionId);
     }
   }
 
@@ -602,15 +615,24 @@ export class SpeechHandler {
     onStart?: () => void,
     onEnd?: () => void,
     rate?: number,
-    onFallback?: () => void
+    onFallback?: () => void,
+    sessionId: number = this.activeSessionId
   ): void {
     if (!this.isSynthesisSupported()) {
-      if (onFallback) onFallback();
-      else if (onEnd) onEnd();
+      if (sessionId === this.activeSessionId) {
+        if (onFallback) onFallback();
+        else if (onEnd) onEnd();
+      }
       return;
     }
 
+    if (sessionId !== this.activeSessionId) return;
+
     try {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (_) {}
+
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = targetLang;
       utterance.rate = rate !== undefined ? rate : (targetLang === 'hi-IN' ? 0.95 : 1.0);
@@ -636,32 +658,57 @@ export class SpeechHandler {
       this.currentUtterance = utterance;
 
       utterance.onstart = () => {
+        if (sessionId !== this.activeSessionId) {
+          try {
+            window.speechSynthesis.cancel();
+          } catch (_) {}
+          return;
+        }
         this.isSpeaking = true;
         if (onStart) onStart();
       };
 
       utterance.onend = () => {
-        this.isSpeaking = false;
-        this.currentUtterance = null;
+        if (this.currentUtterance === utterance) {
+          this.isSpeaking = false;
+          this.currentUtterance = null;
+        }
         if (this.resumeInterval) {
           clearInterval(this.resumeInterval);
           this.resumeInterval = null;
         }
-        if (onEnd) onEnd();
+        if (sessionId === this.activeSessionId && onEnd) {
+          onEnd();
+        }
       };
 
       utterance.onerror = (e) => {
-        console.warn('[SpeechHandler] Web Speech utterance error:', e);
-        this.isSpeaking = false;
-        this.currentUtterance = null;
+        if (this.currentUtterance === utterance) {
+          this.isSpeaking = false;
+          this.currentUtterance = null;
+        }
         if (this.resumeInterval) {
           clearInterval(this.resumeInterval);
           this.resumeInterval = null;
         }
-        if (onFallback) {
-          onFallback();
-        } else if (onEnd) {
-          onEnd();
+
+        // If canceled, interrupted, or session has advanced (e.g. stopped or switched language),
+        // DO NOT trigger the fallback or report error!
+        if (
+          e.error === 'interrupted' ||
+          e.error === 'canceled' ||
+          sessionId !== this.activeSessionId
+        ) {
+          return;
+        }
+
+        console.warn('[SpeechHandler] Web Speech utterance error:', e);
+        if (sessionId === this.activeSessionId) {
+          if (onFallback) {
+            onFallback();
+          } else if (onEnd) {
+            onEnd();
+          }
         }
       };
 
@@ -680,8 +727,10 @@ export class SpeechHandler {
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.warn('[SpeechHandler] Web Speech failed:', e);
-      if (onFallback) onFallback();
-      else if (onEnd) onEnd();
+      if (sessionId === this.activeSessionId) {
+        if (onFallback) onFallback();
+        else if (onEnd) onEnd();
+      }
     }
   }
 
@@ -690,13 +739,17 @@ export class SpeechHandler {
     lang: 'hi' | 'en',
     onStart?: () => void,
     onEnd?: () => void,
-    rate?: number
+    rate?: number,
+    sessionId: number = this.activeSessionId
   ): Promise<void> {
     if (typeof window === 'undefined') return;
+    if (sessionId !== this.activeSessionId) return;
 
-    this.stopSpeaking();
     this.isSpeaking = true;
     if (onStart) onStart();
+
+    const abortController = new AbortController();
+    this.currentAbortController = abortController;
 
     // 1. Primary: High-fidelity Web Audio API playback via /api/tts POST
     try {
@@ -706,10 +759,15 @@ export class SpeechHandler {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, lang }),
+        signal: abortController.signal,
       });
+
+      if (sessionId !== this.activeSessionId) return;
 
       if (res.ok) {
         const arrayBuf = await res.arrayBuffer();
+        if (sessionId !== this.activeSessionId) return;
+
         if (arrayBuf && arrayBuf.byteLength > 0) {
           if (!this.ttsAudioContext) {
             const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -720,7 +778,21 @@ export class SpeechHandler {
             if (this.ttsAudioContext.state === 'suspended') {
               await this.ttsAudioContext.resume();
             }
+            if (sessionId !== this.activeSessionId) return;
+
             const audioBuffer = await this.ttsAudioContext.decodeAudioData(arrayBuf);
+            if (sessionId !== this.activeSessionId) return;
+
+            // Stop any existing buffer source before creating and starting a new one
+            if (this.currentBufferSource) {
+              try {
+                this.currentBufferSource.onended = null;
+                this.currentBufferSource.stop(0);
+                this.currentBufferSource.disconnect();
+              } catch (_) {}
+              this.currentBufferSource = null;
+            }
+
             const source = this.ttsAudioContext.createBufferSource();
             source.buffer = audioBuffer;
             if (rate !== undefined && rate > 0) {
@@ -730,9 +802,13 @@ export class SpeechHandler {
             this.currentBufferSource = source;
 
             source.onended = () => {
-              this.isSpeaking = false;
-              this.currentBufferSource = null;
-              if (onEnd) onEnd();
+              if (this.currentBufferSource === source) {
+                this.currentBufferSource = null;
+                this.isSpeaking = false;
+              }
+              if (sessionId === this.activeSessionId && onEnd) {
+                onEnd();
+              }
             };
 
             source.start(0);
@@ -740,9 +816,14 @@ export class SpeechHandler {
           }
         }
       }
-    } catch (webAudioErr) {
+    } catch (webAudioErr: any) {
+      if (webAudioErr?.name === 'AbortError' || sessionId !== this.activeSessionId) {
+        return;
+      }
       console.warn('[SpeechHandler] Web Audio playback error, trying HTMLAudioElement:', webAudioErr);
     }
+
+    if (sessionId !== this.activeSessionId) return;
 
     // 2. Secondary fallback: HTMLAudioElement
     try {
@@ -754,53 +835,89 @@ export class SpeechHandler {
       this.activeAudioElement = audio;
 
       audio.onended = () => {
-        this.isSpeaking = false;
-        this.activeAudioElement = null;
-        if (onEnd) onEnd();
+        if (this.activeAudioElement === audio) {
+          this.activeAudioElement = null;
+          this.isSpeaking = false;
+        }
+        if (sessionId === this.activeSessionId && onEnd) {
+          onEnd();
+        }
       };
 
       audio.onerror = (err) => {
+        if (sessionId !== this.activeSessionId) return;
         console.warn('[SpeechHandler] HTMLAudioElement error, falling back to Web Speech:', err);
-        this.isSpeaking = false;
-        this.activeAudioElement = null;
-        this.speakWithWebSpeech(text, lang === 'hi' ? 'hi-IN' : 'en-IN', onStart, onEnd, rate);
+        if (this.activeAudioElement === audio) {
+          this.activeAudioElement = null;
+          this.isSpeaking = false;
+        }
+        this.speakWithWebSpeech(text, lang === 'hi' ? 'hi-IN' : 'en-IN', onStart, onEnd, rate, undefined, sessionId);
       };
 
       await audio.play();
+      if (sessionId !== this.activeSessionId) {
+        audio.pause();
+        audio.currentTime = 0;
+        return;
+      }
       return;
-    } catch (audioErr) {
+    } catch (audioErr: any) {
+      if (sessionId !== this.activeSessionId) return;
       console.warn('[SpeechHandler] HTMLAudioElement play() prevented, falling back to Web Speech:', audioErr);
       this.activeAudioElement = null;
-      this.speakWithWebSpeech(text, lang === 'hi' ? 'hi-IN' : 'en-IN', onStart, onEnd, rate);
+      this.speakWithWebSpeech(text, lang === 'hi' ? 'hi-IN' : 'en-IN', onStart, onEnd, rate, undefined, sessionId);
     }
   }
 
   static stopSpeaking(): void {
+    // 1. Invalidate session so any pending async fetches/decodes immediately abort
+    this.activeSessionId++;
+
+    // 2. Abort active network fetch if any
+    if (this.currentAbortController) {
+      try {
+        this.currentAbortController.abort();
+      } catch (_) {}
+      this.currentAbortController = null;
+    }
+
+    // 3. Stop and disconnect Web Audio BufferSource
     if (this.currentBufferSource) {
       try {
-        this.currentBufferSource.stop();
+        this.currentBufferSource.onended = null;
+        this.currentBufferSource.stop(0);
         this.currentBufferSource.disconnect();
       } catch (_) {}
       this.currentBufferSource = null;
     }
 
+    // 4. Pause and reset HTMLAudioElement
     if (this.activeAudioElement) {
       try {
+        this.activeAudioElement.onended = null;
+        this.activeAudioElement.onerror = null;
         this.activeAudioElement.pause();
         this.activeAudioElement.currentTime = 0;
+        this.activeAudioElement.src = '';
       } catch (_) {}
       this.activeAudioElement = null;
     }
 
+    // 5. Cancel Web Speech API utterance
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       if (this.resumeInterval) {
         clearInterval(this.resumeInterval);
         this.resumeInterval = null;
       }
+      if (this.currentUtterance) {
+        this.currentUtterance.onend = null;
+        this.currentUtterance.onerror = null;
+        this.currentUtterance.onstart = null;
+        this.currentUtterance = null;
+      }
       try {
         window.speechSynthesis.cancel();
       } catch (_) {}
-      this.currentUtterance = null;
     }
 
     this.isSpeaking = false;

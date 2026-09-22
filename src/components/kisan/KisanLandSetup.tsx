@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 import { diagnoseSoilFromPhoto, STANDARD_SOIL_TYPES } from '@/lib/cropAdvisorService';
+import { SpeechHandler } from '@/lib/speechService';
 
 export default function KisanLandSetup() {
   const {
@@ -12,6 +13,8 @@ export default function KisanLandSetup() {
     setSoilConfig,
     setActiveKisanTab,
     playSpeech,
+    stopSpeech,
+    isPlayingAudio,
     networkMode,
   } = useApp();
 
@@ -20,6 +23,16 @@ export default function KisanLandSetup() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    stopSpeech();
+  }, [language]);
+
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+    };
+  }, []);
 
   const handleSelectSoil = (soil: typeof STANDARD_SOIL_TYPES[0]) => {
     setSoilConfig(prev => ({
@@ -126,11 +139,17 @@ export default function KisanLandSetup() {
     }, 600);
   };
 
+  const isInstructionsPlaying = isPlayingAudio || SpeechHandler.isCurrentlySpeaking();
+
   const playInstructionsAudio = () => {
     const script = language === 'hi'
       ? 'कृपया अपनी ज़मीन की मिट्टी चुनें। यदि मिट्टी का नाम नहीं पता, तो कैमरा बटन दबाकर खेत की मिट्टी का फोटो खींचें। इसके बाद अपनी पानी की व्यवस्था चुनें।'
       : 'Please choose your soil type, or take a photo of your soil using the camera. Next, select your irrigation water source.';
-    playSpeech(script);
+    if (isPlayingAudio || SpeechHandler.isCurrentlySpeaking()) {
+      stopSpeech();
+    } else {
+      playSpeech(script);
+    }
   };
 
   return (
@@ -164,12 +183,22 @@ export default function KisanLandSetup() {
 
         <div className="flex flex-wrap items-center gap-space-sm w-full md:w-auto">
           <button
-            className="h-target-touch-kisan px-space-md flex items-center justify-center gap-space-xs rounded-full bg-surface-container hover:bg-surface-container-high text-primary transition-all font-label-md text-sm font-bold shadow-xs active:scale-95 w-full sm:w-auto"
+            className={`h-target-touch-kisan px-space-md flex items-center justify-center gap-space-xs rounded-full transition-all font-label-md text-sm font-bold shadow-xs active:scale-95 w-full sm:w-auto ${
+              isInstructionsPlaying
+                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                : 'bg-surface-container hover:bg-surface-container-high text-primary'
+            }`}
             onClick={playInstructionsAudio}
             type="button"
           >
-            <span className="material-symbols-outlined text-[1.5rem]">volume_up</span>
-            <span>{language === 'hi' ? 'निर्देश सुनें' : 'Listen Instructions'}</span>
+            <span className="material-symbols-outlined text-[1.5rem]">
+              {isInstructionsPlaying ? 'stop_circle' : 'volume_up'}
+            </span>
+            <span>
+              {isInstructionsPlaying
+                ? (language === 'hi' ? 'रोकें' : 'Stop')
+                : (language === 'hi' ? 'निर्देश सुनें' : 'Listen Instructions')}
+            </span>
           </button>
           <button
             className="h-target-touch-kisan px-space-md flex items-center justify-center gap-space-xs rounded-full bg-secondary-container hover:opacity-90 text-on-secondary-container transition-all font-label-md text-sm font-bold shadow-xs active:scale-95 w-full sm:w-auto"

@@ -19,6 +19,7 @@ export default function MobileNavDrawer({
     mode,
     setMode,
     language,
+    setLanguage,
     toggleLanguage,
     location,
     networkMode,
@@ -350,7 +351,7 @@ export default function MobileNavDrawer({
               </span>
               <div className="flex items-center bg-surface-container p-0.5 rounded-lg text-xs">
                 <button
-                  onClick={toggleLanguage}
+                  onClick={() => { if (language !== 'en') setLanguage('en'); }}
                   className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                     language === 'en' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant'
                   }`}
@@ -359,7 +360,7 @@ export default function MobileNavDrawer({
                   English
                 </button>
                 <button
-                  onClick={toggleLanguage}
+                  onClick={() => { if (language !== 'hi') setLanguage('hi'); }}
                   className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                     language === 'hi' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant'
                   }`}

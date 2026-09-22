@@ -26,6 +26,7 @@ export default function Header() {
     mode,
     setMode,
     language,
+    setLanguage,
     toggleLanguage,
     location,
     setLocation,
@@ -218,7 +219,7 @@ export default function Header() {
                     ? 'bg-primary-container text-on-primary font-bold shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
-                onClick={() => toggleLanguage()}
+                onClick={() => { if (language !== 'en') setLanguage('en'); }}
                 type="button"
               >
                 EN
@@ -230,7 +231,7 @@ export default function Header() {
                     ? 'bg-primary-container text-on-primary font-bold shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
-                onClick={() => toggleLanguage()}
+                onClick={() => { if (language !== 'hi') setLanguage('hi'); }}
                 type="button"
               >
                 हिन्दी
