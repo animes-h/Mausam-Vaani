@@ -127,17 +127,12 @@ export default function Header() {
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm shrink-0">
                 <span className="material-symbols-outlined text-[1.35rem] sm:text-[1.5rem]">cloud_sync</span>
               </div>
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-baseline gap-1 sm:gap-space-xs">
-                  <span className="font-headline-sm text-sm sm:text-headline-sm text-primary tracking-tight font-bold truncate">
-                    {language === 'hi' ? 'मौसम वाणी' : 'Mausam Vaani'}
-                  </span>
-                  <span className="font-label-sm text-[0.65rem] sm:text-label-sm text-outline uppercase tracking-wider font-semibold hidden md:inline">
-                    {language === 'hi' ? 'Mausam Vaani' : 'मौसम वाणी'}
-                  </span>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant hidden lg:inline">
-                  {t.tagline}
+              <div className="flex items-baseline gap-1 sm:gap-space-xs min-w-0">
+                <span className="font-headline-sm text-sm sm:text-headline-sm text-primary tracking-tight font-bold truncate">
+                  {language === 'hi' ? 'मौसम वाणी' : 'Mausam Vaani'}
+                </span>
+                <span className="font-label-sm text-[0.65rem] sm:text-label-sm text-outline uppercase tracking-wider font-semibold hidden md:inline">
+                  {language === 'hi' ? 'Mausam Vaani' : 'मौसम वाणी'}
                 </span>
               </div>
             </div>
