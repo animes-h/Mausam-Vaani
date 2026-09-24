@@ -46,6 +46,16 @@ export default function InteractiveRadarMap() {
   const [mapTheme, setMapTheme] = useState<'dark' | 'satellite' | 'terrain' | 'osm'>('dark');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [selectedStation, setSelectedStation] = useState<typeof IMD_RADAR_STATIONS[0] | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false);
+  const [isTouchLocked, setIsTouchLocked] = useState<boolean>(true);
+
+  // Detect touch-capable devices on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      setIsTouchDevice(hasTouch);
+    }
+  }, []);
 
   // Fetch Live RainViewer radar frames
   useEffect(() => {
@@ -117,6 +127,7 @@ export default function InteractiveRadarMap() {
         zoom: 7,
         zoomControl: false,
         attributionControl: false,
+        scrollWheelZoom: false,
       });
 
       L.control.zoom({ position: 'topright' }).addTo(map);
@@ -243,6 +254,11 @@ export default function InteractiveRadarMap() {
         }
       });
 
+      if (isTouchDevice && isTouchLocked && !isFullscreen) {
+        map.dragging?.disable();
+        map.touchZoom?.disable();
+      }
+
       mapInstanceRef.current = map;
     });
 
@@ -253,7 +269,31 @@ export default function InteractiveRadarMap() {
         mapInstanceRef.current = null;
       }
     };
-  }, [mapTheme, showRadarRings]);
+  }, [mapTheme, showRadarRings, isTouchDevice, isTouchLocked, isFullscreen]);
+
+  // Synchronize mobile gesture locking to prevent page scrolling interception
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (isFullscreen || !isTouchDevice || !isTouchLocked) {
+      map.dragging?.enable();
+      map.touchZoom?.enable();
+    } else {
+      map.dragging?.disable();
+      map.touchZoom?.disable();
+    }
+  }, [isTouchLocked, isTouchDevice, isFullscreen]);
+
+  // Recalculate leaflet tile layout on fullscreen transition
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      const timer = setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize();
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [isFullscreen]);
 
   // Update map center when user location changes
   useEffect(() => {
@@ -423,6 +463,26 @@ export default function InteractiveRadarMap() {
         />
       )}
 
+      {/* Mobile Gesture Trap Prevention Overlay (Tapping enables interaction; swiping scrolls page) */}
+      {isTouchDevice && isTouchLocked && !isFullscreen && (
+        <div
+          onClick={() => setIsTouchLocked(false)}
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/20 backdrop-blur-[1px] transition-all cursor-pointer"
+        >
+          <div className="px-4 py-2.5 bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl shadow-xl border border-primary/40 flex items-center gap-2.5 transform active:scale-95 transition-transform pointer-events-auto">
+            <span className="material-symbols-outlined text-primary text-[1.35rem]">touch_app</span>
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold text-on-surface">
+                {language === 'hi' ? 'मैप चलाने के लिए टैप करें' : 'Tap to interact with map'}
+              </span>
+              <span className="text-[0.65rem] text-on-surface-variant">
+                {language === 'hi' ? 'पेज स्क्रॉल करने के लिए बाहर स्वाइप करें' : 'Swipe outside or tap Lock to scroll page'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Floating Telemetry & Control Bar */}
       <div className="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
         {/* Active Radar Station & Live Frame Indicator */}
@@ -499,6 +559,20 @@ export default function InteractiveRadarMap() {
             <option value="osm">Street Map</option>
           </select>
 
+          {/* Recenter View on Current Location */}
+          <button
+            onClick={() => {
+              if (mapInstanceRef.current && location) {
+                mapInstanceRef.current.setView([location.lat, location.lng], 7, { animate: true });
+              }
+            }}
+            className="p-1.5 rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+            title={language === 'hi' ? 'स्थान पर रीसेट करें' : 'Recenter on current location'}
+            type="button"
+          >
+            <span className="material-symbols-outlined text-[1.125rem]">my_location</span>
+          </button>
+
           {/* Fullscreen Expand */}
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
@@ -510,6 +584,29 @@ export default function InteractiveRadarMap() {
               {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
             </span>
           </button>
+
+          {/* Mobile Pan Lock/Unlock Toggle */}
+          {isTouchDevice && !isFullscreen && (
+            <button
+              onClick={() => setIsTouchLocked(!isTouchLocked)}
+              className={`px-2 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                isTouchLocked
+                  ? 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                  : 'bg-primary text-on-primary shadow-xs'
+              }`}
+              title={isTouchLocked ? 'Unlock map for touch gestures' : 'Lock map to scroll page'}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[1rem]">
+                {isTouchLocked ? 'lock' : 'lock_open'}
+              </span>
+              <span className="text-[0.68rem]">
+                {isTouchLocked
+                  ? (language === 'hi' ? 'लॉक' : 'Locked')
+                  : (language === 'hi' ? 'अनलॉक' : 'Active')}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
