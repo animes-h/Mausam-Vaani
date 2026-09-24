@@ -66,17 +66,12 @@ export async function GET(req: NextRequest) {
       const state = addr.state || 'India';
       const postcode = addr.postcode || '';
 
-      // Format place name: e.g. "Vrindavan Yojna, Lucknow" or "Vrindavan Colony, Lucknow"
+      // Format place name: e.g. "Vrindavan, Mathura" or "Hazratganj, Lucknow"
       let formattedName = '';
       if (locality && locality.toLowerCase() !== city.toLowerCase()) {
         formattedName = `${locality}, ${city}`;
       } else {
         formattedName = `${city}, ${state}`;
-      }
-
-      // If suburb includes words like Vrindavan, append Yojna/Colony if helpful
-      if (locality.toLowerCase().includes('vrindavan') && !locality.toLowerCase().includes('yojna') && !locality.toLowerCase().includes('colony')) {
-        formattedName = `Vrindavan Yojna, ${city}`;
       }
 
       const result = {
