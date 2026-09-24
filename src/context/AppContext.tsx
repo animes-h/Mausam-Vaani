@@ -45,7 +45,35 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<AppMode>('kisan');
+  const [mode, setModeState] = useState<AppMode>('kisan');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const syncModeFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlMode = params.get('mode');
+      if (urlMode === 'kisan' || urlMode === 'explorer') {
+        setModeState(urlMode);
+      }
+    };
+
+    syncModeFromUrl();
+    window.addEventListener('popstate', syncModeFromUrl);
+    return () => window.removeEventListener('popstate', syncModeFromUrl);
+  }, []);
+
+  const setMode = (newMode: AppMode) => {
+    setModeState(newMode);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('mode') !== newMode) {
+        url.searchParams.set('mode', newMode);
+        window.history.replaceState(null, '', url.pathname + url.search);
+      }
+    }
+  };
+
   const [language, setLanguage] = useState<Language>('hi');
   const [activeKisanTab, setActiveKisanTab] = useState<KisanTab>('home');
   const [activeExplorerTab, setActiveExplorerTab] = useState<ExplorerTab>('current-weather');

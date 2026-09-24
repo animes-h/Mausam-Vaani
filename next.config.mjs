@@ -23,6 +23,20 @@ const nextConfig = {
     config.resolve.alias['@'] = path.resolve(__dirname, 'src');
     return config;
   },
+  async redirects() {
+    return [
+      {
+        source: '/kisan',
+        destination: '/?mode=kisan',
+        permanent: false,
+      },
+      {
+        source: '/explorer',
+        destination: '/?mode=explorer',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
