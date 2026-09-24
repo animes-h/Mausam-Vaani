@@ -116,12 +116,18 @@ export default function Header() {
           <div className="flex items-center gap-1 sm:gap-space-sm min-w-0">
             <button
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="md:hidden p-1.5 rounded-xl text-primary hover:bg-surface-container-high transition-colors -ml-1 cursor-pointer"
+              className="md:hidden relative p-1.5 rounded-xl text-primary hover:bg-surface-container-high transition-colors -ml-1 cursor-pointer"
               type="button"
               aria-label="Open navigation menu"
               title="Open menu"
             >
               <span className="material-symbols-outlined text-[1.6rem]">menu</span>
+              {alerts && alerts.length > 0 && (
+                <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+                </span>
+              )}
             </button>
 
             {/* Logo & Brand Identity */}
