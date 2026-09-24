@@ -1,12 +1,16 @@
 import { GoogleGenerativeAI, GenerateContentResult } from '@google/generative-ai';
 
 // Ordered candidate list for high availability and future deprecation resilience
-export const CANDIDATE_GEMINI_MODELS: string[] = [
-  'gemini-3.6-flash',
-  process.env.GEMINI_MODEL || '',
-  'gemini-3.5-flash',
-  'gemini-flash-latest',
-].filter(Boolean);
+export const CANDIDATE_GEMINI_MODELS: string[] = Array.from(
+  new Set(
+    [
+      process.env.GEMINI_MODEL || '',
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+    ].filter(Boolean)
+  )
+);
 
 /**
  * Executes generateContent trying candidate models in sequence.
