@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { searchIndiaLocations } from '@/lib/indiaLocations';
 import { translations } from '@/lib/translations';
 import MobileNavDrawer from './MobileNavDrawer';
 
@@ -95,11 +96,17 @@ export default function Header() {
     );
   };
 
-  const filteredLocations = PRESET_LOCATIONS.filter(
-    (l) =>
-      l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.nameHi.includes(searchQuery)
-  );
+  const filteredLocations = searchQuery.trim()
+    ? searchIndiaLocations(searchQuery).map(l => ({
+        name: `${l.name}, ${l.state}`,
+        nameHi: `${l.nameHi}, ${l.stateHi}`,
+        district: l.district || l.name,
+        state: l.state,
+        lat: l.lat,
+        lng: l.lng,
+        elevation: l.elevation || 150,
+      }))
+    : PRESET_LOCATIONS;
 
   return (
     <>
