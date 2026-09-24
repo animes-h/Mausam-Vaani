@@ -16,6 +16,8 @@ export default function KisanHome() {
     playSpeech,
     stopSpeech,
     isPlayingAudio,
+    speechRate,
+    setSpeechRate,
     networkMode,
   } = useApp();
 
@@ -286,10 +288,10 @@ export default function KisanHome() {
           </div>
         </div>
 
-        {/* 56px Listen Spoken Readout Trigger */}
-        <div className="flex items-center gap-space-xs w-full md:w-auto shrink-0">
+        {/* 56px Listen Spoken Readout Trigger & Speed Selector */}
+        <div className="flex flex-wrap items-center gap-space-xs w-full md:w-auto shrink-0">
           <button
-            className={`w-full md:w-auto h-target-touch-kisan px-space-lg rounded-full flex items-center justify-center gap-space-sm font-label-lg text-label-lg shadow-sm transition-all active:scale-95 ${
+            className={`flex-1 md:flex-initial h-target-touch-kisan px-space-lg rounded-full flex items-center justify-center gap-space-sm font-label-lg text-label-lg shadow-sm transition-all active:scale-95 cursor-pointer ${
               isPlayingAudio
                 ? 'bg-secondary text-on-secondary animate-pulse'
                 : 'bg-surface-container hover:bg-surface-container-high text-primary'
@@ -309,6 +311,26 @@ export default function KisanHome() {
               </span>
             </span>
           </button>
+
+          {/* Voice Speed Selector */}
+          <div className="flex items-center bg-surface-container/90 backdrop-blur-sm p-1 rounded-full border border-outline-variant/40 shadow-xs">
+            <span className="material-symbols-outlined text-[1.1rem] text-primary ml-1.5 mr-0.5">speed</span>
+            {([0.8, 1.0, 1.2] as const).map((rate) => (
+              <button
+                key={rate}
+                onClick={() => setSpeechRate(rate)}
+                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  speechRate === rate
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+                type="button"
+                title={`${rate}x speed`}
+              >
+                {rate}x
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 

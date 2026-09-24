@@ -38,6 +38,8 @@ interface AppContextType {
   refreshWeather: () => Promise<void>;
   isLoadingWeather: boolean;
   isPlayingAudio: boolean;
+  speechRate: number;
+  setSpeechRate: (rate: number) => void;
   playSpeech: (text: string, lang?: 'hi-IN' | 'en-IN', rate?: number) => void;
   stopSpeech: () => void;
 }
@@ -81,6 +83,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [networkMode, setNetworkMode] = useState<NetworkMode>('normal');
   const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const [speechRate, setSpeechRateState] = useState<number>(1.0);
 
   const [soilConfig, setSoilConfig] = useState<SoilConfig>({
     soilType: 'black',
@@ -133,6 +136,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setSoilConfig(parsedSoil);
         }
       }
+
+      const savedRate = localStorage.getItem('mausam_speech_rate');
+      if (savedRate) {
+        const parsedRate = parseFloat(savedRate);
+        if (!isNaN(parsedRate) && [0.8, 1.0, 1.2].includes(parsedRate)) {
+          setSpeechRateState(parsedRate);
+        }
+      }
     } catch (err) {
       console.warn('Failed to rehydrate settings from localStorage:', err);
     } finally {
@@ -179,6 +190,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.warn('Failed to persist soilConfig:', e);
     }
   }, [soilConfig]);
+
+  // Persist speechRate to localStorage
+  useEffect(() => {
+    if (!hasHydrated.current || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('mausam_speech_rate', speechRate.toString());
+    } catch (e) {
+      console.warn('Failed to persist speechRate:', e);
+    }
+  }, [speechRate]);
 
   // Detect Network Speed (FR-8.1 Network detection)
   useEffect(() => {
@@ -279,8 +300,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       speechLang,
       () => setIsPlayingAudio(true),
       () => setIsPlayingAudio(false),
-      rate
+      rate ?? speechRate
     );
+  };
+
+  const setSpeechRate = (rate: number) => {
+    setSpeechRateState(rate);
   };
 
   return (
@@ -308,6 +333,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         refreshWeather,
         isLoadingWeather,
         isPlayingAudio,
+        speechRate,
+        setSpeechRate,
         playSpeech,
         stopSpeech,
       }}

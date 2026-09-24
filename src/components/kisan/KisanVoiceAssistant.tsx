@@ -15,6 +15,8 @@ export default function KisanVoiceAssistant() {
     playSpeech,
     stopSpeech,
     isPlayingAudio,
+    speechRate,
+    setSpeechRate,
     networkMode,
   } = useApp();
 
@@ -28,7 +30,6 @@ export default function KisanVoiceAssistant() {
       : 'Can we spray pesticide on soybean crops tomorrow morning?'
   );
   const [timerSeconds, setTimerSeconds] = useState(6);
-  const [slowAudio, setSlowAudio] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [solution, setSolution] = useState({
@@ -294,7 +295,7 @@ export default function KisanVoiceAssistant() {
       const textToSpeak = !isHi
         ? `${solution.titleEn}. ${solution.descriptionEn}. Best window is ${solution.bestWindowEn}.`
         : `${solution.titleHi}। ${solution.descriptionHi}। सर्वोत्तम सुरक्षित समय: ${solution.bestWindowHi}।`;
-      playSpeech(textToSpeak, isHi ? 'hi-IN' : 'en-IN', slowAudio ? 0.75 : undefined);
+      playSpeech(textToSpeak, isHi ? 'hi-IN' : 'en-IN', speechRate);
     }
   };
 
@@ -391,18 +392,27 @@ export default function KisanVoiceAssistant() {
                 </button>
               </div>
 
-              <button
-                onClick={() => setSlowAudio(!slowAudio)}
-                className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
-                  slowAudio
-                    ? 'bg-tertiary text-on-tertiary font-bold'
-                    : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
-                }`}
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[1rem]">speed</span>
-                <span>{queryLanguage === 'hi' ? 'धीमी आवाज़' : 'Slow Audio'}</span>
-              </button>
+              <div className="flex items-center bg-surface-container p-0.5 rounded-full border border-outline-variant/30">
+                <span className="material-symbols-outlined text-[1rem] text-primary ml-2 mr-1">speed</span>
+                <span className="text-[0.65rem] font-bold text-on-surface-variant mr-1.5 hidden sm:inline">
+                  {queryLanguage === 'hi' ? 'गति:' : 'Speed:'}
+                </span>
+                {([0.8, 1.0, 1.2] as const).map((rate) => (
+                  <button
+                    key={rate}
+                    onClick={() => setSpeechRate(rate)}
+                    className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      speechRate === rate
+                        ? 'bg-primary text-on-primary shadow-xs'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                    type="button"
+                    title={`${rate}x speed`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
