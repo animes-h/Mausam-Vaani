@@ -5,19 +5,11 @@ import { useApp } from '@/context/AppContext';
 import { translations } from '@/lib/translations';
 import { RouteWaypoint } from '@/types';
 import { INDIA_LOCATIONS } from '@/lib/indiaLocations';
+import RouteCorridorPresets, { PRESET_ROUTES, PresetRoute } from './RouteCorridorPresets';
+import RouteMapOverview from './RouteMapOverview';
+import WaypointWeatherTable from './WaypointWeatherTable';
 
 type VehicleType = 'car' | 'truck' | 'bike';
-type ChipTarget = 'destination' | 'origin' | 'waypoint';
-
-interface PresetRoute {
-  id: string;
-  nameEn: string;
-  nameHi: string;
-  origin: string;
-  destination: string;
-  waypoints: string[];
-  distanceKm: number;
-}
 
 interface Coord {
   lat: number;
@@ -405,208 +397,75 @@ function calculateCrosswind(
   return { crosswind, bearing: Math.round(bearing) };
 }
 
-const PRESET_ROUTES: PresetRoute[] = [
-  {
-    id: 'delhi-lucknow',
-    nameEn: 'New Delhi ⇄ Lucknow (Yamuna / Agra-Lucknow Exp.)',
-    nameHi: 'नई दिल्ली ⇄ लखनऊ (यमुना / आगरा-लखनऊ एक्सप्रेसवे)',
-    origin: 'New Delhi',
-    destination: 'Lucknow',
-    waypoints: ['Mathura', 'Agra', 'Kannauj'],
-    distanceKm: 535,
-  },
-  {
-    id: 'lucknow-ayodhya',
-    nameEn: 'Lucknow ⇄ Ayodhya (NH-27 / Ram Janmabhoomi Corridor)',
-    nameHi: 'लखनऊ ⇄ अयोध्या (NH-27 फोर-लेन एक्सप्रेस)',
-    origin: 'Lucknow',
-    destination: 'Ayodhya',
-    waypoints: [],
-    distanceKm: 135,
-  },
-  {
-    id: 'lucknow-varanasi',
-    nameEn: 'Lucknow ⇄ Varanasi (Purvanchal Exp.)',
-    nameHi: 'लखनऊ ⇄ वाराणसी (पूर्वांचल एक्सप्रेसवे)',
-    origin: 'Lucknow',
-    destination: 'Varanasi',
-    waypoints: ['Sultanpur', 'Jaunpur'],
-    distanceKm: 315,
-  },
-  {
-    id: 'delhi-jaipur',
-    nameEn: 'New Delhi ⇄ Jaipur (Delhi-Mumbai Exp.)',
-    nameHi: 'नई दिल्ली ⇄ जयपुर (दिल्ली-मुंबई एक्सप्रेसवे)',
-    origin: 'New Delhi',
-    destination: 'Jaipur',
-    waypoints: ['Gurugram', 'Dausa'],
-    distanceKm: 280,
-  },
-  {
-    id: 'indore-bhopal',
-    nameEn: 'Indore ⇄ Bhopal (NH-46 / SH-18)',
-    nameHi: 'इंदौर ⇄ भोपाल (NH-46 / SH-18)',
-    origin: 'Indore',
-    destination: 'Bhopal',
-    waypoints: ['Dewas', 'Ashta', 'Sehore'],
-    distanceKm: 192,
-  },
-  {
-    id: 'mumbai-pune',
-    nameEn: 'Mumbai ⇄ Pune (Mumbai-Pune Exp.)',
-    nameHi: 'मुंबई ⇄ पुणे (मुंबई-पुणे एक्सप्रेसवे)',
-    origin: 'Mumbai',
-    destination: 'Pune',
-    waypoints: ['Navi Mumbai', 'Lonavala'],
-    distanceKm: 150,
-  },
-  {
-    id: 'delhi-chandigarh',
-    nameEn: 'New Delhi ⇄ Chandigarh (NH-44)',
-    nameHi: 'नई दिल्ली ⇄ चंडीगढ़ (NH-44)',
-    origin: 'New Delhi',
-    destination: 'Chandigarh',
-    waypoints: ['Panipat', 'Karnal', 'Ambala'],
-    distanceKm: 245,
-  },
-  {
-    id: 'lucknow-kanpur',
-    nameEn: 'Lucknow ⇄ Kanpur (NH-27 / Exp.)',
-    nameHi: 'लखनऊ ⇄ कानपुर (NH-27)',
-    origin: 'Lucknow',
-    destination: 'Kanpur',
-    waypoints: ['Unnao'],
-    distanceKm: 82,
-  },
-  {
-    id: 'bhopal-delhi',
-    nameEn: 'Bhopal ⇄ New Delhi (NH-44)',
-    nameHi: 'भोपाल ⇄ नई दिल्ली (NH-44)',
-    origin: 'Bhopal',
-    destination: 'New Delhi',
-    waypoints: ['Gwalior', 'Agra', 'Mathura'],
-    distanceKm: 780,
-  },
-  {
-    id: 'bhopal-jabalpur',
-    nameEn: 'Bhopal ⇄ Jabalpur (NH-45)',
-    nameHi: 'भोपाल ⇄ जबलपुर (NH-45)',
-    origin: 'Bhopal',
-    destination: 'Jabalpur',
-    waypoints: ['Narmadapuram', 'Pipariya', 'Narsinghpur'],
-    distanceKm: 308,
-  },
-  {
-    id: 'patna-varanasi',
-    nameEn: 'Patna ⇄ Varanasi (NH-19)',
-    nameHi: 'पटना ⇄ वाराणसी (NH-19)',
-    origin: 'Patna',
-    destination: 'Varanasi',
-    waypoints: ['Buxar', 'Ghazipur'],
-    distanceKm: 255,
-  },
-];
-
 export default function ExplorerJourneyPlanner() {
-  const { language, location, weather } = useApp();
+  const { language, weather, location } = useApp();
   const t = translations[language];
 
-  // Route Input State - Defaulting to New Delhi -> Lucknow (direct, no forced intermediate stops)
+  // Primary routing state
   const [origin, setOrigin] = useState<string>('New Delhi');
   const [destination, setDestination] = useState<string>('Lucknow');
-  const [waypoints, setWaypoints] = useState<string[]>([]);
-  const [resolvedCoords, setResolvedCoords] = useState<Record<string, Coord>>({});
+  const [waypoints, setWaypoints] = useState<string[]>(['Mathura', 'Agra', 'Kannauj']);
   const [vehicle, setVehicle] = useState<VehicleType>('car');
-  const [departureOffset, setDepartureOffset] = useState<number>(0); // hours from now
+  const [departureOffset, setDepartureOffset] = useState<number>(0); // 0 = now, 1 = +1h, etc.
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
   const [selectedSegmentIdx, setSelectedSegmentIdx] = useState<number | null>(null);
 
-  // Autocomplete dropdown state
+  // Dynamic geocoded coordinates cache for custom searched towns
+  const [resolvedCoords, setResolvedCoords] = useState<Record<string, Coord>>({});
+
+  // Autocomplete UI suggestions state
   const [originSuggestionsOpen, setOriginSuggestionsOpen] = useState(false);
   const [destSuggestionsOpen, setDestSuggestionsOpen] = useState(false);
 
   const originInputRef = useRef<HTMLInputElement>(null);
   const destInputRef = useRef<HTMLInputElement>(null);
 
-  // Speed config by vehicle (km/h)
+  // Filtered city suggestion lists for Point A and B inputs
+  const originSuggestions = useMemo(() => {
+    if (!origin || origin.trim() === '') return INDIA_LOCATIONS.slice(0, 12);
+    const q = origin.toLowerCase().trim();
+    return INDIA_LOCATIONS.filter(
+      c => c.name.toLowerCase().includes(q) || c.nameHi.includes(q) || c.state.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [origin]);
+
+  const destSuggestions = useMemo(() => {
+    if (!destination || destination.trim() === '') return INDIA_LOCATIONS.slice(0, 12);
+    const q = destination.toLowerCase().trim();
+    return INDIA_LOCATIONS.filter(
+      c => c.name.toLowerCase().includes(q) || c.nameHi.includes(q) || c.state.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [destination]);
+
+  // Dynamic vehicle speed defaults
   const vehicleSpeed = useMemo(() => {
     switch (vehicle) {
       case 'car':
-        return 65;
+        return 75; // average expressway cruising speed
       case 'truck':
-        return 42;
+        return 48; // commercial freight speed
       case 'bike':
-        return 48;
-      default:
-        return 60;
+        return 58;
     }
   }, [vehicle]);
 
-  // Autocomplete suggestions for origin input
-  const originSuggestions = useMemo(() => {
-    if (!origin || origin.trim().length === 0) return INDIA_LOCATIONS.slice(0, 8);
-    const q = origin.toLowerCase().trim();
-    return INDIA_LOCATIONS.filter(c => c.name.toLowerCase().includes(q) || c.nameHi.includes(q)).slice(0, 8);
-  }, [origin]);
+  // Recalculate and trigger brief calculation state indicator
+  const triggerRecalculate = () => {
+    setIsCalculating(true);
+    setTimeout(() => {
+      setIsCalculating(false);
+    }, 450);
+  };
 
-  // Autocomplete suggestions for destination input
-  const destSuggestions = useMemo(() => {
-    if (!destination || destination.trim().length === 0) return INDIA_LOCATIONS.slice(0, 8);
-    const q = destination.toLowerCase().trim();
-    return INDIA_LOCATIONS.filter(c => c.name.toLowerCase().includes(q) || c.nameHi.includes(q)).slice(0, 8);
-  }, [destination]);
+  // Preset selector
+  const handleSelectPreset = (preset: PresetRoute) => {
+    setOrigin(preset.origin);
+    setDestination(preset.destination);
+    setWaypoints(preset.waypoints);
+    triggerRecalculate();
+  };
 
-  // Dynamic Geocoding: Fetch accurate GPS coordinates for any custom location/town typed by the user
-  useEffect(() => {
-    const candidates = [origin, destination, ...waypoints].filter(
-      loc => loc && loc.trim().length > 0 && !loc.startsWith('Stop ')
-    );
-    const pending = candidates
-      .map(c => c.toLowerCase().trim())
-      .filter(name => !CITY_COORDS[name] && !DYNAMIC_GEOCODE_CACHE[name] && !resolvedCoords[name]);
-
-    if (pending.length === 0) return;
-
-    let isMounted = true;
-    const controller = new AbortController();
-
-    const fetchCoords = async () => {
-      const updates: Record<string, Coord> = {};
-      await Promise.all(
-        pending.map(async name => {
-          try {
-            const res = await fetch(
-              `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=en&format=json`,
-              { signal: controller.signal }
-            );
-            if (!res.ok) return;
-            const data = await res.json();
-            if (data.results && data.results.length > 0) {
-              const { latitude, longitude } = data.results[0];
-              const coord = { lat: latitude, lng: longitude };
-              DYNAMIC_GEOCODE_CACHE[name] = coord;
-              updates[name] = coord;
-            }
-          } catch {
-            // ignore network / abort exceptions
-          }
-        })
-      );
-
-      if (isMounted && Object.keys(updates).length > 0) {
-        setResolvedCoords(prev => ({ ...prev, ...updates }));
-      }
-    };
-
-    fetchCoords();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [origin, destination, waypoints, resolvedCoords]);
-
-  // Handle location swap (A <-> B)
+  // Swap Point A and Point B
   const handleSwapLocations = () => {
     const temp = origin;
     setOrigin(destination);
@@ -615,48 +474,29 @@ export default function ExplorerJourneyPlanner() {
     triggerRecalculate();
   };
 
-  // Add waypoint
+  // Add / Remove / Edit Waypoints
   const handleAddWaypoint = () => {
     if (waypoints.length >= 5) return;
     setWaypoints([...waypoints, `Stop ${waypoints.length + 1}`]);
+    triggerRecalculate();
   };
 
-  // Remove waypoint
   const handleRemoveWaypoint = (idx: number) => {
     setWaypoints(waypoints.filter((_, i) => i !== idx));
     triggerRecalculate();
   };
 
-  // Update waypoint text
   const handleUpdateWaypoint = (idx: number, val: string) => {
     const updated = [...waypoints];
     updated[idx] = val;
     setWaypoints(updated);
   };
 
-  // Load preset
-  const handleSelectPreset = (preset: PresetRoute) => {
-    setOrigin(preset.origin);
-    setDestination(preset.destination);
-    setWaypoints(preset.waypoints);
-    triggerRecalculate();
-  };
-
-  // Trigger calculation
-  const triggerRecalculate = () => {
-    setIsCalculating(true);
-    setTimeout(() => {
-      setIsCalculating(false);
-    }, 500);
-  };
-
-  // Helper to format time given start hour and elapsed minutes
-  const formatETA = (startHourOffset: number, elapsedMinutes: number) => {
-    const now = new Date();
-    const totalMinutes = (now.getHours() + startHourOffset) * 60 + now.getMinutes() + elapsedMinutes;
-    const h = Math.floor((totalMinutes / 60) % 24);
-    const m = Math.floor(totalMinutes % 60);
-    return `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m} IST`;
+  // Calculate ETA time string with offset
+  const formatETA = (hoursOffset: number, additionalMinutes: number = 0): string => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() + Math.round(hoursOffset * 60) + additionalMinutes);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
   // Build dynamic segments between Origin -> Waypoints -> Destination
@@ -669,7 +509,7 @@ export default function ExplorerJourneyPlanner() {
     const baseWind = weather?.current?.windSpeed ?? 18;
     const baseWindDir = weather?.current?.windDirection ?? 240;
     const baseTemp = weather?.current?.temperature ?? 29;
-    const isStormHour = departureOffset >= 0 && departureOffset <= 1.5; // Afternoon squall window simulation
+    const isStormHour = departureOffset >= 0 && departureOffset <= 1.5;
     const isEveningClear = departureOffset >= 2;
 
     for (let i = 0; i < allStops.length - 1; i++) {
@@ -758,168 +598,40 @@ export default function ExplorerJourneyPlanner() {
 
   // Overall route summary metrics
   const totalDistance = dynamicSegments.reduce((acc, s) => acc + s.distanceKm, 0);
-  const totalDurationMins = Math.round((totalDistance / vehicleSpeed) * 60);
-  const totalHours = Math.floor(totalDurationMins / 60);
-  const totalMinutesRemain = totalDurationMins % 60;
-  const maxWindGust = Math.max(...dynamicSegments.map(s => s.windGustKm), 14);
-  const minVisibility = Math.min(...dynamicSegments.map(s => s.visibilityKm), 10);
-  const hasSevereSegment = dynamicSegments.some(s => s.riskLevel === 'severe');
-  const hasModerateSegment = dynamicSegments.some(s => s.riskLevel === 'moderate');
+  const totalMinutes = Math.round((totalDistance / vehicleSpeed) * 60);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const totalMinutesRemain = totalMinutes % 60;
+
+  const maxWindGust = dynamicSegments.reduce((max, s) => Math.max(max, s.windGustKm), 0);
+  const minVisibility = dynamicSegments.reduce((min, s) => Math.min(min, s.visibilityKm), 10);
 
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto gap-space-lg">
-      {/* Top Header */}
-      <section className="bg-surface-container-lowest p-space-lg rounded-3xl shadow-sm border border-surface-container-high flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-space-xs text-primary text-xs font-bold uppercase tracking-wider">
-            <span className="material-symbols-outlined text-[1.25rem]">route</span>
-            <span>All-India & State Corridor Telemetry • National Highway Weather Network</span>
-          </div>
-          <h1 className="font-headline-lg text-xl sm:text-2xl font-extrabold text-on-surface tracking-tight mt-1">
-            {language === 'hi' ? 'यात्रा मौसम एवं हाइवे कॉरिडोर मार्गदर्शक' : 'Point-to-Point Journey Weather Planner'}
-          </h1>
-          <p className="font-body-md text-xs sm:text-sm text-on-surface-variant max-w-3xl">
-            {language === 'hi'
-              ? 'प्रस्थान (स्थान A) और गंतव्य (स्थान B) दर्ज करें एवं कॉरिडोर मौसम, सड़क की स्थिति, क्रॉसविंड्स और आंधी का रीयल-टाइम पूर्वानुमान देखें।'
-              : 'Enter Origin (Point A) and Destination (Point B) to evaluate real-time corridor weather, tarmac conditions, crosswinds, and squall lines.'}
-          </p>
-        </div>
-
-        {/* Action Button */}
-        <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
-          <button
-            type="button"
-            onClick={triggerRecalculate}
-            disabled={isCalculating}
-            className="px-4 py-2.5 rounded-2xl bg-primary text-on-primary font-bold text-xs flex items-center gap-2 hover:bg-primary-container hover:text-on-primary transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <span className={`material-symbols-outlined text-[1.125rem] ${isCalculating ? 'animate-spin' : ''}`}>
-              refresh
-            </span>
-            <span>
-              {isCalculating
-                ? language === 'hi'
-                  ? 'गणना जारी...'
-                  : 'Calculating...'
-                : language === 'hi'
-                ? 'मार्ग मौसम जांचें'
-                : 'Calculate Route'}
-            </span>
-          </button>
-        </div>
-      </section>
-
-      {/* Corridor Alert Banner based on current route risk */}
-      <section
-        className={`rounded-2xl p-space-md flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md shadow-xs border ${
-          hasSevereSegment
-            ? 'bg-secondary-container/20 border-secondary/30'
-            : hasModerateSegment
-            ? 'bg-tertiary-fixed/20 border-tertiary/30'
-            : 'bg-primary-container/20 border-primary/30'
-        }`}
-      >
-        <div className="flex items-center gap-space-md">
-          <div
-            className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${
-              hasSevereSegment
-                ? 'bg-secondary text-on-secondary'
-                : hasModerateSegment
-                ? 'bg-tertiary text-on-tertiary'
-                : 'bg-primary text-on-primary'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[1.5rem]">
-              {hasSevereSegment ? 'thunderstorm' : hasModerateSegment ? 'cloudy_snowing' : 'verified'}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-space-xs">
-              <span className="font-label-md text-xs font-bold uppercase tracking-wide text-on-surface">
-                {hasSevereSegment
-                  ? language === 'hi'
-                    ? 'गंभीर मौसम चेतावनी: मार्ग में आंधी व जलभराव'
-                    : 'Severe Weather Alert: Squall Line Ingress'
-                  : hasModerateSegment
-                  ? language === 'hi'
-                    ? 'सावधानी: मार्ग में तेज हवा व गीली सड़कें'
-                    : 'Corridor Advisory: Damp Tarmac & Crosswinds'
-                  : language === 'hi'
-                  ? 'मार्ग मौसम अनुकूल: सुरक्षित व साफ़ यात्रा'
-                  : 'Favorable Transit Conditions'}
-              </span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[0.65rem] font-bold ${
-                  hasSevereSegment
-                    ? 'bg-secondary text-on-secondary'
-                    : hasModerateSegment
-                    ? 'bg-tertiary text-on-tertiary'
-                    : 'bg-primary text-on-primary'
-                }`}
-              >
-                {hasSevereSegment ? 'HIGH RISK' : hasModerateSegment ? 'MODERATE RISK' : 'OPTIMAL'}
-              </span>
+      {/* Route Configurator Header & Form */}
+      <section className="bg-surface-container-lowest p-space-lg rounded-3xl shadow-sm border border-surface-container-high flex flex-col gap-space-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+          <div>
+            <div className="flex items-center gap-space-xs text-primary text-xs font-bold uppercase tracking-wider">
+              <span className="material-symbols-outlined text-[1.25rem]">route</span>
+              <span>Agricultural Transit & Highway Corridor Weather</span>
             </div>
-            <p className="font-body-sm text-xs text-on-surface-variant mt-0.5">
-              {hasSevereSegment
-                ? language === 'hi'
-                  ? `अनुशंसित: 2 घंटे बाद प्रस्थान करें ताकि मार्ग के घाट व निचले हिस्सों में भारी बारिश व तेज हवाओं (अधिकतम ${maxWindGust} किमी/घंटा) से बचा जा सके।`
-                  : `Departure delay recommended. Convective squall line active with peak gusts up to ${maxWindGust} km/h and reduced visibility down to ${minVisibility} km.`
-                : language === 'hi'
-                ? `कुल दूरी ${totalDistance} किमी। अनुमानित समय ${totalHours} घंटे ${totalMinutesRemain} मिनट। मार्ग में दृश्यता अच्छी रहेगी।`
-                : `Total distance ${totalDistance} km. Estimated transit time ${totalHours}h ${totalMinutesRemain}m. Road surface conditions remain stable.`}
+            <h1 className="font-headline-lg text-xl sm:text-2xl font-extrabold text-on-surface tracking-tight mt-1">
+              {language === 'hi' ? 'स्मार्ट यात्रा व कृषि परिवहन मौसम योजना' : 'Smart Transit Corridor Weather Planner'}
+            </h1>
+            <p className="font-body-md text-xs sm:text-sm text-on-surface-variant max-w-2xl">
+              {language === 'hi'
+                ? 'राष्ट्रीय राजमार्गों, एक्सप्रेसवे व मंडी मार्गों पर आंधी, बारिश, तेज क्रॉसविंड्स और सड़क फिसलन का लाइव विश्लेषण।'
+                : 'Real-time road weather telemetry, convective squalls, crosswinds, and aquaplaning risks along inter-state transport routes.'}
             </p>
           </div>
-        </div>
 
-        {/* Departure Window Recommendation Pill */}
-        <div className="flex items-center gap-1 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-outline-variant/30 shrink-0 self-end md:self-auto text-xs font-semibold">
-          <span className="material-symbols-outlined text-primary text-[1rem]">nest_clock_farsight_analog</span>
-          <span className="text-on-surface">
-            {language === 'hi' ? 'सर्वोत्तम प्रस्थान:' : 'Best Window:'}{' '}
-            <strong className="text-primary">{departureOffset === 2 ? 'Current' : '+2h Later (16:30 IST)'}</strong>
-          </span>
-        </div>
-      </section>
-
-      {/* Main Route Inputs Box (Point A -> Point B) */}
-      <section className="bg-surface-container-lowest rounded-3xl p-space-lg shadow-sm border border-surface-container-high flex flex-col gap-space-md">
-        {/* Header & Quick Presets */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
-          <div>
-            <span className="text-xs font-bold text-primary uppercase tracking-wider">
-              {language === 'hi' ? 'मार्ग निर्धारण (स्थान A से स्थान B)' : 'Route Definition (Point A to Point B)'}
-            </span>
-            <h2 className="font-headline-sm text-base sm:text-lg font-bold text-on-surface">
-              {language === 'hi' ? 'प्रस्थान, पड़ाव एवं गंतव्य स्थान दर्ज करें' : 'Configure Origin, Stops & Destination'}
-            </h2>
-          </div>
-
-          {/* Quick Presets Pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[0.7rem] font-bold text-on-surface-variant uppercase mr-1">
-              {language === 'hi' ? 'लोकप्रिय मार्ग:' : 'Corridor Presets:'}
-            </span>
-            {PRESET_ROUTES.map(preset => {
-              const isCurrent =
-                origin.toLowerCase().includes(preset.origin.toLowerCase()) &&
-                destination.toLowerCase().includes(preset.destination.toLowerCase());
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => handleSelectPreset(preset)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${
-                    isCurrent
-                      ? 'bg-primary text-on-primary shadow-xs'
-                      : 'bg-surface-container-low hover:bg-surface-container text-on-surface border border-surface-container-high'
-                  }`}
-                >
-                  {language === 'hi' ? preset.nameHi.split('(')[0] : preset.nameEn.split('(')[0]}
-                </button>
-              );
-            })}
-          </div>
+          {/* Preset Corridors Subcomponent */}
+          <RouteCorridorPresets
+            language={language}
+            currentOrigin={origin}
+            currentDestination={destination}
+            onSelectPreset={handleSelectPreset}
+          />
         </div>
 
         {/* Location Inputs Grid */}
@@ -1300,246 +1012,29 @@ export default function ExplorerJourneyPlanner() {
         </div>
       </section>
 
-      {/* Corridor Summary Metrics Strip */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-space-sm">
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
-          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between">
-            <span>{language === 'hi' ? 'कुल दूरी' : 'Total Distance'}</span>
-            <span className="material-symbols-outlined text-primary text-[1.125rem]">straighten</span>
-          </span>
-          <div className="text-2xl font-extrabold text-on-surface my-1">{totalDistance} km</div>
-          <span className="text-[0.7rem] text-on-surface-variant">
-            {dynamicSegments.length} {language === 'hi' ? 'मार्ग खंड' : 'route segments'}
-          </span>
-        </div>
+      {/* Visual Corridor Diagram & Metrics (RouteMapOverview) */}
+      <RouteMapOverview
+        language={language}
+        origin={origin}
+        destination={destination}
+        totalDistance={totalDistance}
+        totalHours={totalHours}
+        totalMinutesRemain={totalMinutesRemain}
+        vehicleSpeed={vehicleSpeed}
+        maxWindGust={maxWindGust}
+        minVisibility={minVisibility}
+        dynamicSegments={dynamicSegments}
+        selectedSegmentIdx={selectedSegmentIdx}
+        onSelectSegment={setSelectedSegmentIdx}
+      />
 
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
-          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between">
-            <span>{language === 'hi' ? 'अनुमानित यात्रा समय' : 'Estimated Time'}</span>
-            <span className="material-symbols-outlined text-primary text-[1.125rem]">schedule</span>
-          </span>
-          <div className="text-2xl font-extrabold text-on-surface my-1">
-            {totalHours}h {totalMinutesRemain}m
-          </div>
-          <span className="text-[0.7rem] text-on-surface-variant">
-            {language === 'hi' ? `औसत गति: ${vehicleSpeed} किमी/घंटा` : `Avg speed: ${vehicleSpeed} km/h`}
-          </span>
-        </div>
-
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
-          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between">
-            <span>{language === 'hi' ? 'अधिकतम हवा का झोंका' : 'Max Crosswinds'}</span>
-            <span className="material-symbols-outlined text-tertiary text-[1.125rem]">air</span>
-          </span>
-          <div className={`text-2xl font-extrabold my-1 ${maxWindGust > 40 ? 'text-secondary' : 'text-on-surface'}`}>
-            {maxWindGust} km/h
-          </div>
-          <span className="text-[0.7rem] text-on-surface-variant">
-            {maxWindGust > 40
-              ? language === 'hi'
-                ? 'ट्रक व बाइक हेतु खतरनाक'
-                : 'Hazardous for high-sided trucks'
-              : language === 'hi'
-              ? 'सामान्य हवा'
-              : 'Manageable cross-drafts'}
-          </span>
-        </div>
-
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
-          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between">
-            <span>{language === 'hi' ? 'न्यूनतम दृश्यता' : 'Lowest Visibility'}</span>
-            <span className="material-symbols-outlined text-primary text-[1.125rem]">visibility</span>
-          </span>
-          <div className={`text-2xl font-extrabold my-1 ${minVisibility < 3 ? 'text-secondary' : 'text-on-surface'}`}>
-            {minVisibility} km
-          </div>
-          <span className="text-[0.7rem] text-on-surface-variant">
-            {minVisibility < 3
-              ? language === 'hi'
-                ? 'तेज बारिश/धुंध में हेडलाइट जलाएं'
-                : 'Heavy rain fog; use hazard lights'
-              : language === 'hi'
-              ? 'साफ़ दृश्यता'
-              : 'Clear highway sightlines'}
-          </span>
-        </div>
-      </section>
-
-      {/* Visual Corridor Diagram (Waypoints Journey Bar) */}
-      <section className="bg-surface-container-lowest rounded-3xl p-space-lg shadow-sm border border-surface-container-high flex flex-col gap-space-md">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
-          <div>
-            <span className="text-xs font-bold text-primary uppercase tracking-wider">
-              {language === 'hi' ? 'मार्ग दृश्य रूपरेखा' : 'Highway Corridor Schematic'}
-            </span>
-            <h2 className="font-headline-sm text-lg font-bold text-on-surface">
-              {origin} → {destination}
-            </h2>
-          </div>
-          <div className="flex items-center gap-3 text-xs font-bold">
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>{' '}
-              {language === 'hi' ? 'सुरक्षित' : 'Clear'}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-tertiary"></span>{' '}
-              {language === 'hi' ? 'सावधानी' : 'Caution'}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-secondary"></span>{' '}
-              {language === 'hi' ? 'गंभीर' : 'Severe'}
-            </span>
-          </div>
-        </div>
-
-        {/* Schematic Corridor Flow */}
-        <div className="relative py-4 px-2">
-          {/* Connecting Line */}
-          <div className="absolute top-1/2 left-6 right-6 h-1 -translate-y-1/2 bg-surface-container-high z-0 hidden sm:block"></div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
-            {dynamicSegments.map((seg, idx) => (
-              <div
-                key={idx}
-                onClick={() => setSelectedSegmentIdx(selectedSegmentIdx === idx ? null : idx)}
-                className={`p-space-md rounded-2xl border flex flex-col justify-between gap-2 cursor-pointer transition-all active:scale-[0.98] ${
-                  selectedSegmentIdx === idx ? 'ring-2 ring-primary shadow-md' : ''
-                } ${
-                  seg.riskLevel === 'severe'
-                    ? 'bg-secondary/10 border-secondary/40'
-                    : seg.riskLevel === 'moderate'
-                    ? 'bg-tertiary-fixed/30 border-tertiary/30'
-                    : 'bg-surface-container-low border-surface-container-high hover:bg-surface-container'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-primary">{seg.eta}</span>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[1.25rem] text-on-surface">
-                      {seg.icon}
-                    </span>
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${
-                        seg.riskLevel === 'severe'
-                          ? 'bg-secondary'
-                          : seg.riskLevel === 'moderate'
-                          ? 'bg-tertiary'
-                          : 'bg-primary'
-                      }`}
-                    ></span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col mt-1">
-                  <span className="font-headline-sm text-xs sm:text-sm font-bold text-on-surface line-clamp-1">
-                    {seg.name}
-                  </span>
-                  <span className="text-[0.7rem] text-on-surface-variant font-medium">
-                    {seg.distanceKm} km • {seg.condition}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1 pt-2 border-t border-outline-variant/30 text-[0.7rem]">
-                  <div className="flex justify-between">
-                    <span className="text-on-surface-variant">
-                      {language === 'hi' ? 'सड़क स्थिति:' : 'Surface:'}
-                    </span>
-                    <span className="font-bold text-on-surface">{seg.surfaceStatus}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-on-surface-variant">
-                      {language === 'hi' ? 'हवा:' : 'Crosswinds:'}
-                    </span>
-                    <span className="font-bold text-on-surface">{seg.windGustKm} km/h</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-on-surface-variant">
-                      {language === 'hi' ? 'दृश्यता:' : 'Visibility:'}
-                    </span>
-                    <span className="font-bold text-on-surface">{seg.visibilityKm} km</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Expanded Segment Detail Modal / Box */}
-        {selectedSegmentIdx !== null && dynamicSegments[selectedSegmentIdx] && (
-          <div className="p-space-md rounded-2xl bg-surface-container-low border border-primary/30 flex flex-col gap-2 animate-fadeIn">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-[1.25rem]">info</span>
-                <span className="font-bold text-xs text-on-surface">
-                  {language === 'hi' ? 'खंड विस्तृत विवरण:' : 'Corridor Segment Telemetry:'}{' '}
-                  {dynamicSegments[selectedSegmentIdx].name} ({dynamicSegments[selectedSegmentIdx].eta})
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedSegmentIdx(null)}
-                className="text-outline hover:text-on-surface p-1 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[1rem]">close</span>
-              </button>
-            </div>
-            <p className="text-xs text-on-surface-variant leading-relaxed">
-              {dynamicSegments[selectedSegmentIdx].riskLevel === 'severe'
-                ? language === 'hi'
-                  ? 'चेतावनी: इस खंड में मूसलाधार बारिश और 45+ किमी/घंटा की क्रॉसविंड्स सक्रिय हैं। खुले ट्रकों में अनाज भीगने का खतरा है। गति 35 किमी/घंटा से कम रखें एवं जलभराव वाली पुलिया पार न करें।'
-                  : 'Hazard Alert: Severe convective squall crossing this segment. Aquaplaning danger and extreme cross-drafts. Heavy transport must tarp cargo securely. Two-wheelers advise halting at fuel station sheds.'
-                : language === 'hi'
-                ? 'इस खंड में सड़क सूखी व सामान्य है। दृश्यता अनुकूल है। सामान्य गति से यात्रा जारी रखी जा सकती है।'
-                : 'Optimal transit conditions for this corridor leg. Surface friction nominal and visibility exceeds 8 km.'}
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* Driver & Logistics Advisory Checklist */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-primary">
-            <span className="material-symbols-outlined text-[1.25rem]">local_shipping</span>
-            <span className="font-bold text-xs text-on-surface">
-              {language === 'hi' ? 'कृषि उपज व अनाज परिवहन' : 'Agricultural Cargo Directives'}
-            </span>
-          </div>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            {language === 'hi'
-              ? 'सोयाबीन व गेहूं की बोरियों को डबल-लेयर वाटरप्रूफ तिरपाल से कसकर बांधें। मोड़ पर अचानक ब्रेक लगाने से बचें।'
-              : 'Secure open grain trailers with heavy-duty tarpaulins. Saturated grain leads to rapid spoilage and transit weight deductions.'}
-          </p>
-        </div>
-
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-tertiary">
-            <span className="material-symbols-outlined text-[1.25rem]">warning_amber</span>
-            <span className="font-bold text-xs text-on-surface">
-              {language === 'hi' ? 'हाइवे सुरक्षा व ब्रेक नियम' : 'High-Speed Brake & Wet Tarmac'}
-            </span>
-          </div>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            {language === 'hi'
-              ? 'गीली सड़क पर ब्रेक दूरी 2.5 गुना बढ़ जाती है। आगे वाले वाहन से कम से कम 40 मीटर का सुरक्षित फासला बनाकर चलें।'
-              : 'Wet road friction decreases stopping distance by 150%. Maintain a minimum 3-second buffer distance behind heavy commercial haulers on wet bypass corridors.'}
-          </p>
-        </div>
-
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-secondary">
-            <span className="material-symbols-outlined text-[1.25rem]">emergency</span>
-            <span className="font-bold text-xs text-on-surface">
-              {language === 'hi' ? 'आपातकालीन हाइवे सहायता' : 'Corridor Emergency Assistance'}
-            </span>
-          </div>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            {language === 'hi'
-              ? 'NHAI आपातकालीन हेल्पलाइन: 1033। राष्ट्रीय आपातकालीन नंबर: 112। तेज आंधी में पेड़ के नीचे गाड़ी पार्क न करें।'
-              : 'NHAI Highway Patrol: 1033 • State Emergency Dispatch: 112. In severe squalls, pull over at well-lit toll plazas or designated fuel service stations.'}
-          </p>
-        </div>
-      </section>
+      {/* Waypoint Weather Telemetry Table & Driver Advisory Checklist */}
+      <WaypointWeatherTable
+        language={language}
+        dynamicSegments={dynamicSegments}
+        selectedSegmentIdx={selectedSegmentIdx}
+        onSelectSegment={setSelectedSegmentIdx}
+      />
     </div>
   );
 }
