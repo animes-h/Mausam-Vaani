@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AppMode, ConsensusInfo, CropRecommendation, GovernmentAlert, Language, LocationInfo, NetworkMode, SoilConfig, WeatherCurrent, WeatherDaily, WeatherHourly } from '@/types';
 import { DEFAULT_LOCATION, fetchWeatherData, getFallbackWeatherData } from '@/lib/weatherService';
 import { ACTIVE_GOVERNMENT_ALERTS, getAlertsForLocation } from '@/lib/alertService';
@@ -100,6 +100,85 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [weather, setWeather] = useState(getFallbackWeatherData());
   const [alerts, setAlerts] = useState<GovernmentAlert[]>(() => getAlertsForLocation(DEFAULT_LOCATION, weather.current));
   const [cropRecommendations, setCropRecommendations] = useState<CropRecommendation[]>([]);
+
+  const hasHydrated = useRef(false);
+
+  // Hydrate settings from localStorage on client mount (safe against SSR hydration mismatch)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const savedLang = localStorage.getItem('mausam_language');
+      if (savedLang === 'hi' || savedLang === 'en') {
+        setLanguage(savedLang);
+      }
+
+      const savedLoc = localStorage.getItem('mausam_location');
+      if (savedLoc) {
+        const parsedLoc = JSON.parse(savedLoc);
+        if (parsedLoc && typeof parsedLoc.lat === 'number' && typeof parsedLoc.lng === 'number' && parsedLoc.name) {
+          setLocation(parsedLoc);
+        }
+      }
+
+      const savedNetwork = localStorage.getItem('mausam_network_mode');
+      if (savedNetwork === 'normal' || savedNetwork === 'degraded') {
+        setNetworkMode(savedNetwork);
+      }
+
+      const savedSoil = localStorage.getItem('mausam_soil_config');
+      if (savedSoil) {
+        const parsedSoil = JSON.parse(savedSoil);
+        if (parsedSoil && parsedSoil.soilType) {
+          setSoilConfig(parsedSoil);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to rehydrate settings from localStorage:', err);
+    } finally {
+      hasHydrated.current = true;
+    }
+  }, []);
+
+  // Persist language to localStorage
+  useEffect(() => {
+    if (!hasHydrated.current || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('mausam_language', language);
+    } catch (e) {
+      console.warn('Failed to persist language:', e);
+    }
+  }, [language]);
+
+  // Persist location to localStorage
+  useEffect(() => {
+    if (!hasHydrated.current || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('mausam_location', JSON.stringify(location));
+    } catch (e) {
+      console.warn('Failed to persist location:', e);
+    }
+  }, [location]);
+
+  // Persist network mode to localStorage
+  useEffect(() => {
+    if (!hasHydrated.current || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('mausam_network_mode', networkMode);
+    } catch (e) {
+      console.warn('Failed to persist networkMode:', e);
+    }
+  }, [networkMode]);
+
+  // Persist soilConfig to localStorage
+  useEffect(() => {
+    if (!hasHydrated.current || typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('mausam_soil_config', JSON.stringify(soilConfig));
+    } catch (e) {
+      console.warn('Failed to persist soilConfig:', e);
+    }
+  }, [soilConfig]);
 
   // Detect Network Speed (FR-8.1 Network detection)
   useEffect(() => {
