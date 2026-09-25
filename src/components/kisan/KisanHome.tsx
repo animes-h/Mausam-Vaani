@@ -245,42 +245,42 @@ export default function KisanHome() {
   return (
     <div className="flex flex-col w-full max-w-6xl mx-auto gap-space-md">
       {/* Top Greeting & Audio Readout Strip */}
-      <section className="relative bg-surface-container-lowest rounded-2xl p-space-md md:p-space-lg shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md border border-surface-container-high">
-        <div className="flex items-center gap-space-md">
+      <section className="relative bg-surface-container-lowest rounded-2xl p-space-md md:p-space-lg shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md border border-surface-container-high">
+        <div className="flex items-center gap-space-md min-w-0">
           <div className="relative shrink-0">
             <img
               alt="Ramesh Patel Profile"
-              className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover shadow-md ring-4 ring-primary-fixed"
+              className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full object-cover shadow-md ring-4 ring-primary-fixed"
               src="/images/farmer-ramesh.png"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDq7Fe2bTiC-A9FsJWLnWrxhyQlYkBFVjVPuYhiTVv3hJKENXuTiPeAtTs9oLod3oWd1NSkvYHfZl_mEtL9PnXR3SxwxjeiIl7m9z_blNtMHW5hXnbLIy6bL3YJXDpYmFIxKCgAT4nsvF31edW7cnS0BVMq4FyFDAoYBfDxRb8N9I__vTkYFAVuLACso4_1hNEtmzr00N1JqpuEA5EnJDAlvj67up9DYbOhMIrGP1kYIK7rdqv6dppR';
               }}
             />
-            <span className="absolute bottom-0 right-0 w-6 h-6 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-sm ring-2 ring-surface-container-lowest">
-              <span className="material-symbols-outlined text-[1rem]">check</span>
+            <span className="absolute bottom-0 right-0 w-5 h-5 sm:w-6 sm:h-6 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-sm ring-2 ring-surface-container-lowest">
+              <span className="material-symbols-outlined text-[0.875rem] sm:text-[1rem]">check</span>
             </span>
           </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <div className="flex flex-wrap items-center gap-space-xs">
-              <span className="px-space-xs py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-bold tracking-wide">
+              <span className="px-space-xs py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-xs font-bold tracking-wide">
                 {language === 'hi'
                   ? `स्थान: ${locDisplayHi} (${location.state || 'भारत'})`
                   : `Location: ${locDisplayEn} (${location.state || 'India'})`}
               </span>
-              <span className="font-label-sm text-label-sm text-outline">•</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
+              <span className="font-label-sm text-xs text-outline">•</span>
+              <span className="font-label-sm text-xs text-on-surface-variant font-semibold">
                 {language === 'hi' ? 'आज का दिन' : 'Today'}
               </span>
             </div>
-            <h1 className="font-headline-md text-headline-md text-primary font-extrabold tracking-tight mt-1">
+            <h1 className="font-headline-md text-lg sm:text-xl lg:text-2xl text-primary font-extrabold tracking-tight mt-1 break-words">
               {language === 'hi' ? (
                 <>नमस्ते किसान साथी! <span className="text-on-surface font-semibold">आज मौसम कैसा है, पूछिए।</span></>
               ) : (
                 <>Namaste Farmer Friend! <span className="text-on-surface font-semibold">Ask your weather question.</span></>
               )}
             </h1>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
+            <p className="font-body-sm text-xs sm:text-sm text-on-surface-variant">
               {language === 'hi'
                 ? 'बोलकर या एक टैप में अपने खेत का मौसम व फसल सलाह जानें।'
                 : 'Hands-free voice & tactile agronomic intelligence for your farmland.'}
@@ -288,10 +288,10 @@ export default function KisanHome() {
           </div>
         </div>
 
-        {/* 56px Listen Spoken Readout Trigger & Speed Selector */}
-        <div className="flex flex-wrap items-center gap-space-xs w-full md:w-auto shrink-0">
+        {/* Listen Spoken Readout Trigger & Speed Selector */}
+        <div className="flex flex-wrap items-center gap-space-xs w-full lg:w-auto shrink-0">
           <button
-            className={`flex-1 md:flex-initial h-target-touch-kisan px-space-lg rounded-full flex items-center justify-center gap-space-sm font-label-lg text-label-lg shadow-sm transition-all active:scale-95 cursor-pointer ${
+            className={`flex-1 lg:flex-initial h-target-touch-kisan px-space-md sm:px-space-lg rounded-full flex items-center justify-center gap-space-sm font-label-lg text-sm shadow-sm transition-all active:scale-95 cursor-pointer ${
               isPlayingAudio
                 ? 'bg-secondary text-on-secondary animate-pulse'
                 : 'bg-surface-container hover:bg-surface-container-high text-primary'
@@ -299,14 +299,14 @@ export default function KisanHome() {
             onClick={toggleAudioReadout}
             type="button"
           >
-            <span className="material-symbols-outlined text-[1.75rem]">
+            <span className="material-symbols-outlined text-[1.5rem] sm:text-[1.75rem]">
               {isPlayingAudio ? 'stop_circle' : 'volume_up'}
             </span>
             <span className="flex flex-col text-left">
               <span className="leading-none font-bold">
                 {isPlayingAudio ? (language === 'hi' ? 'रोकें (Stop)' : 'Stop Audio') : t.listen}
               </span>
-              <span className="font-label-sm text-xs opacity-90 font-normal">
+              <span className="font-label-sm text-[0.7rem] sm:text-xs opacity-90 font-normal">
                 {language === 'hi' ? 'पूरा मौसम विवरण' : 'Full Weather Brief'}
               </span>
             </span>
@@ -314,12 +314,12 @@ export default function KisanHome() {
 
           {/* Voice Speed Selector */}
           <div className="flex items-center bg-surface-container/90 backdrop-blur-sm p-1 rounded-full border border-outline-variant/40 shadow-xs">
-            <span className="material-symbols-outlined text-[1.1rem] text-primary ml-1.5 mr-0.5">speed</span>
+            <span className="material-symbols-outlined text-[1rem] sm:text-[1.1rem] text-primary ml-1.5 mr-0.5">speed</span>
             {([0.8, 1.0, 1.2] as const).map((rate) => (
               <button
                 key={rate}
                 onClick={() => setSpeechRate(rate)}
-                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   speechRate === rate
                     ? 'bg-primary text-on-primary shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
@@ -335,19 +335,19 @@ export default function KisanHome() {
       </section>
 
       {/* Urgent Harvest Amber Advisory Banner */}
-      <section className="bg-tertiary-fixed text-on-tertiary-fixed p-space-md rounded-2xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md border border-tertiary-container/30">
-        <div className="flex items-start gap-space-sm">
-          <div className="w-12 h-12 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-            <span className="material-symbols-outlined text-[1.75rem]">eco</span>
+      <section className="bg-tertiary-fixed text-on-tertiary-fixed p-space-md rounded-2xl shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md border border-tertiary-container/30">
+        <div className="flex items-start gap-space-sm min-w-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+            <span className="material-symbols-outlined text-[1.5rem] sm:text-[1.75rem]">eco</span>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-space-xs">
               <span className="font-label-sm text-xs uppercase tracking-widest text-tertiary font-extrabold">
                 {t.urgentAdvisory}
               </span>
               <span className="w-2.5 h-2.5 rounded-full bg-secondary animate-ping"></span>
             </div>
-            <p className="font-headline-sm text-headline-sm text-on-tertiary-fixed font-bold mt-1">
+            <p className="font-headline-sm text-sm sm:text-base lg:text-lg text-on-tertiary-fixed font-bold mt-1 break-words">
               {language === 'hi'
                 ? (hasWashoutRisk
                     ? `फसल सूचना: ${locDisplayHi} में आज कीटनाशक छिड़काव स्थगित रखें।`
@@ -356,7 +356,7 @@ export default function KisanHome() {
                     ? `Crop Directive: Postpone pesticide spraying in ${locDisplayEn} today.`
                     : `Crop Directive: Weather in ${locDisplayEn} is favorable for field operations.`)}
             </p>
-            <p className="font-body-sm text-body-sm text-on-tertiary-fixed-variant mt-0.5">
+            <p className="font-body-sm text-xs sm:text-sm text-on-tertiary-fixed-variant mt-0.5">
               {language === 'hi'
                 ? (hasWashoutRisk
                     ? `दोपहर बाद ${precipProb}% बारिश एवं ${wind} किमी/घंटा हवा चलने से दवा बहने का जोखिम है।`
@@ -369,7 +369,7 @@ export default function KisanHome() {
         </div>
 
         <button
-          className="shrink-0 w-full md:w-auto h-12 px-space-md bg-tertiary hover:bg-tertiary-container text-on-tertiary rounded-xl font-label-md text-label-md font-bold flex items-center justify-center gap-space-xs transition-colors shadow-sm"
+          className="shrink-0 w-full lg:w-auto h-11 sm:h-12 px-space-md bg-tertiary hover:bg-tertiary-container text-on-tertiary rounded-xl font-label-md text-xs sm:text-sm font-bold flex items-center justify-center gap-space-xs transition-colors shadow-sm cursor-pointer"
           onClick={() => setActiveKisanTab('crop-advisory')}
           type="button"
         >
@@ -514,43 +514,43 @@ export default function KisanHome() {
       </section>
 
       {/* Today's Agronomic Weather Snapshot */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-space-md">
         {/* Main Condition Tile */}
-        <div className="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div className="bg-surface-container-lowest p-space-md sm:p-space-lg rounded-2xl shadow-sm border border-surface-container-high flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between">
             <span className="font-label-sm text-xs font-bold text-outline uppercase tracking-wider">
               {language === 'hi' ? 'आज का मौसम' : "Today's Temperature"}
             </span>
             <span className="material-symbols-outlined text-primary text-[1.5rem]">thermostat</span>
           </div>
-          <div className="flex items-baseline gap-2 my-2">
-            <span className="font-display-lg text-4xl sm:text-5xl font-extrabold text-on-surface">
+          <div className="flex flex-wrap items-baseline gap-2 my-2">
+            <span className="font-display-lg text-3xl sm:text-4xl lg:text-5xl font-extrabold text-on-surface">
               {weather.current.temperature}°
             </span>
             <span className="font-headline-sm text-lg text-outline">C</span>
-            <span className="font-body-sm text-xs text-on-surface-variant ml-2">
+            <span className="font-body-sm text-xs text-on-surface-variant font-medium">
               {language === 'hi' ? `अनुभव: ${weather.current.apparentTemperature}°C` : `Feels like ${weather.current.apparentTemperature}°C`}
             </span>
           </div>
-          <div className="flex items-center gap-space-xs text-primary font-bold text-sm">
-            <span className="material-symbols-outlined text-[1.25rem]">{weather.current.icon}</span>
-            <span>{language === 'hi' ? weather.current.conditionHi : weather.current.conditionEn}</span>
+          <div className="flex items-center gap-space-xs text-primary font-bold text-sm min-w-0">
+            <span className="material-symbols-outlined text-[1.25rem] shrink-0">{weather.current.icon}</span>
+            <span className="truncate">{language === 'hi' ? weather.current.conditionHi : weather.current.conditionEn}</span>
           </div>
         </div>
 
         {/* Soil Moisture Tile */}
-        <div className="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div className="bg-surface-container-lowest p-space-md sm:p-space-lg rounded-2xl shadow-sm border border-surface-container-high flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between">
             <span className="font-label-sm text-xs font-bold text-outline uppercase tracking-wider">
               {language === 'hi' ? 'खेत की नमी (Soil Wetness)' : 'Soil Moisture'}
             </span>
             <span className="material-symbols-outlined text-primary text-[1.5rem]">water_drop</span>
           </div>
-          <div className="flex items-baseline gap-2 my-2">
-            <span className="font-display-lg text-4xl sm:text-5xl font-extrabold text-primary">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 my-2">
+            <span className="font-display-lg text-3xl sm:text-4xl lg:text-5xl font-extrabold text-primary">
               {weather.current.soilMoisture}%
             </span>
-            <span className="font-label-sm text-xs font-bold bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full">
+            <span className="font-label-sm text-xs font-bold bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full shrink-0">
               {language === 'hi' ? 'पर्याप्त नमी' : 'Optimal'}
             </span>
           </div>
@@ -560,52 +560,52 @@ export default function KisanHome() {
         </div>
 
         {/* Rain Probability & Wind Tile */}
-        <div className="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm border border-surface-container-high flex flex-col justify-between">
+        <div className="bg-surface-container-lowest p-space-md sm:p-space-lg rounded-2xl shadow-sm border border-surface-container-high flex flex-col justify-between min-w-0 sm:col-span-2 xl:col-span-1">
           <div className="flex items-center justify-between">
             <span className="font-label-sm text-xs font-bold text-outline uppercase tracking-wider">
               {language === 'hi' ? 'बारिश व हवा' : 'Rain & Wind'}
             </span>
             <span className="material-symbols-outlined text-secondary text-[1.5rem]">air</span>
           </div>
-          <div className="flex items-baseline justify-between my-2">
-            <div>
-              <span className="font-headline-lg text-2xl font-bold text-on-surface">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 my-2">
+            <div className="min-w-0">
+              <span className="font-headline-lg text-xl sm:text-2xl font-bold text-on-surface">
                 {weather.daily[0]?.precipitationProbability ?? 20}%
               </span>
               <span className="font-body-sm text-xs text-on-surface-variant block">
                 {language === 'hi' ? 'वर्षा संभावना' : 'Rain Chance'}
               </span>
             </div>
-            <div className="text-right">
-              <span className="font-headline-lg text-2xl font-bold text-on-surface">
+            <div className="text-right min-w-0">
+              <span className="font-headline-lg text-xl sm:text-2xl font-bold text-on-surface">
                 {weather.current.windSpeed} km/h
               </span>
-              <span className="font-body-sm text-xs text-on-surface-variant block">
-                {weather.current.windCompass} ({language === 'hi' ? (weather.current.windCompass.includes('W') ? 'पछुआ हवा' : weather.current.windCompass.includes('E') ? 'पुरवाई' : 'हवा दिशा') : weather.current.windCompass})
+              <span className="font-body-sm text-xs text-on-surface-variant block truncate">
+                {weather.current.windCompass} ({language === 'hi' ? (weather.current.windCompass.includes('W') ? 'पछुआ' : weather.current.windCompass.includes('E') ? 'पुरवाई' : 'दिशा') : weather.current.windCompass})
               </span>
             </div>
           </div>
-          <span className="text-[0.75rem] text-outline">
+          <span className="text-[0.72rem] text-outline truncate">
             {language === 'hi' ? 'शाम को ओलों व गरज चमक से सावधान रहें' : 'Caution against evening gusty squalls'}
           </span>
         </div>
       </section>
 
       {/* Quick Action Navigation Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-space-md mt-space-xs">
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-space-md mt-space-xs">
         <button
           onClick={() => setActiveKisanTab('land')}
-          className="bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-md text-left transition-all group"
+          className="bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-md text-left transition-all group min-w-0 cursor-pointer"
           type="button"
         >
           <div className="w-12 h-12 rounded-xl bg-primary-container text-on-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-[1.75rem]">landscape</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-headline-sm text-base font-bold text-on-surface">
+          <div className="flex flex-col min-w-0">
+            <span className="font-headline-sm text-sm sm:text-base font-bold text-on-surface truncate">
               {language === 'hi' ? 'मेरी ज़मीन (My Land)' : 'My Land Setup'}
             </span>
-            <span className="font-body-sm text-xs text-on-surface-variant">
+            <span className="font-body-sm text-xs text-on-surface-variant truncate">
               {language === 'hi' ? 'मिट्टी चुनें या फोटो खींचें' : 'Select soil or scan with AI camera'}
             </span>
           </div>
@@ -613,17 +613,17 @@ export default function KisanHome() {
 
         <button
           onClick={() => setActiveKisanTab('crop-advisory')}
-          className="bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-md text-left transition-all group"
+          className="bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-md text-left transition-all group min-w-0 cursor-pointer"
           type="button"
         >
           <div className="w-12 h-12 rounded-xl bg-primary-container text-on-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-[1.75rem]">potted_plant</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-headline-sm text-base font-bold text-on-surface">
+          <div className="flex flex-col min-w-0">
+            <span className="font-headline-sm text-sm sm:text-base font-bold text-on-surface truncate">
               {language === 'hi' ? 'फसल सलाह (Crop Advisory)' : 'Crop Advisory'}
             </span>
-            <span className="font-body-sm text-xs text-on-surface-variant">
+            <span className="font-body-sm text-xs text-on-surface-variant truncate">
               {language === 'hi' ? 'सोयाबीन, मक्का व कपास के कार्ड्स' : 'Recommended seeds & sowing windows'}
             </span>
           </div>
@@ -631,17 +631,17 @@ export default function KisanHome() {
 
         <button
           onClick={() => setActiveKisanTab('alerts')}
-          className="bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-secondary/30 flex items-center gap-space-md text-left transition-all group"
+          className="bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-secondary/30 flex items-center gap-space-md text-left transition-all group min-w-0 sm:col-span-2 xl:col-span-1 cursor-pointer"
           type="button"
         >
           <div className="w-12 h-12 rounded-xl bg-secondary text-on-secondary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-[1.75rem]">crisis_alert</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-headline-sm text-base font-bold text-secondary">
+          <div className="flex flex-col min-w-0">
+            <span className="font-headline-sm text-sm sm:text-base font-bold text-secondary truncate">
               {language === 'hi' ? 'मौसम चेतावनी (Alerts)' : 'Weather Alerts'}
             </span>
-            <span className="font-body-sm text-xs text-on-surface-variant">
+            <span className="font-body-sm text-xs text-on-surface-variant truncate">
               {language === 'hi' ? 'रेड अलर्ट व सुरक्षा निर्देश' : 'Disaster alerts & farmer safety steps'}
             </span>
           </div>

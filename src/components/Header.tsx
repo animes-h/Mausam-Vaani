@@ -111,17 +111,17 @@ export default function Header() {
   return (
     <>
       <header className="fixed top-0 inset-x-0 h-20 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 transition-colors">
-        <div className="w-full h-full px-2 sm:px-4 md:px-space-lg flex items-center justify-between gap-1.5 sm:gap-space-md">
+        <div className="w-full h-full px-2 sm:px-3 md:px-4 lg:px-space-lg flex items-center justify-between gap-1 sm:gap-2 lg:gap-space-md min-w-0">
           {/* Left: Mobile Hamburger & Logo */}
-          <div className="flex items-center gap-1 sm:gap-space-sm min-w-0">
+          <div className="flex items-center gap-1 sm:gap-space-sm min-w-0 shrink">
             <button
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="md:hidden relative p-1.5 rounded-xl text-primary hover:bg-surface-container-high transition-colors -ml-1 cursor-pointer"
+              className="lg:hidden relative p-1.5 rounded-xl text-primary hover:bg-surface-container-high transition-colors -ml-1 cursor-pointer shrink-0"
               type="button"
               aria-label="Open navigation menu"
               title="Open menu"
             >
-              <span className="material-symbols-outlined text-[1.6rem]">menu</span>
+              <span className="material-symbols-outlined text-[1.5rem] sm:text-[1.6rem]">menu</span>
               {alerts && alerts.length > 0 && (
                 <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
@@ -138,14 +138,14 @@ export default function Header() {
                 else setActiveExplorerTab('current-weather');
               }}
             >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm shrink-0">
-                <span className="material-symbols-outlined text-[1.35rem] sm:text-[1.5rem]">cloud_sync</span>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm shrink-0">
+                <span className="material-symbols-outlined text-[1.25rem] sm:text-[1.5rem]">cloud_sync</span>
               </div>
               <div className="flex items-baseline gap-1 sm:gap-space-xs min-w-0">
-                <span className="font-headline-sm text-sm sm:text-headline-sm text-primary tracking-tight font-bold truncate">
+                <span className="font-headline-sm text-xs sm:text-sm lg:text-base text-primary tracking-tight font-bold truncate">
                   {language === 'hi' ? 'मौसम वाणी' : 'Mausam Vaani'}
                 </span>
-                <span className="font-label-sm text-[0.65rem] sm:text-label-sm text-outline uppercase tracking-wider font-semibold hidden md:inline">
+                <span className="font-label-sm text-[0.65rem] sm:text-label-sm text-outline uppercase tracking-wider font-semibold hidden xl:inline shrink-0">
                   {language === 'hi' ? 'Mausam Vaani' : 'मौसम वाणी'}
                 </span>
               </div>
@@ -155,7 +155,7 @@ export default function Header() {
           {/* Center: Universal Mode Switcher (Kisan Mode vs Explorer Mode) */}
           <div className="flex items-center bg-surface-container-high p-0.5 sm:p-1 rounded-full shadow-[0_1px_4px_rgba(0,0,0,0.03)] shrink-0">
             <button
-              className={`flex items-center gap-1 sm:gap-space-xs px-2 sm:px-space-md py-1 sm:py-space-xs rounded-full transition-all cursor-pointer active:scale-95 text-[0.7rem] sm:text-sm ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 lg:px-space-md py-1 sm:py-space-xs rounded-full transition-all cursor-pointer active:scale-95 text-[0.7rem] sm:text-xs lg:text-sm ${
                 mode === 'kisan'
                   ? 'bg-surface-container-lowest text-primary font-bold shadow-[0_2px_6px_rgba(45,106,79,0.12)]'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -163,14 +163,14 @@ export default function Header() {
               onClick={() => setMode('kisan')}
               type="button"
             >
-              <span className="material-symbols-outlined text-[1rem] sm:text-[1.125rem]">agriculture</span>
-              <span className="font-label-md font-bold">
-                <span className="inline sm:hidden">किसान</span>
-                <span className="hidden sm:inline">किसान मोड (Kisan)</span>
+              <span className="material-symbols-outlined text-[0.95rem] sm:text-[1.125rem]">agriculture</span>
+              <span className="font-label-md font-bold whitespace-nowrap">
+                <span className="inline lg:hidden">किसान</span>
+                <span className="hidden lg:inline">किसान मोड (Kisan)</span>
               </span>
             </button>
             <button
-              className={`flex items-center gap-1 sm:gap-space-xs px-2 sm:px-space-md py-1 sm:py-space-xs rounded-full transition-all cursor-pointer active:scale-95 text-[0.7rem] sm:text-sm ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 lg:px-space-md py-1 sm:py-space-xs rounded-full transition-all cursor-pointer active:scale-95 text-[0.7rem] sm:text-xs lg:text-sm ${
                 mode === 'explorer'
                   ? 'bg-surface-container-lowest text-primary font-bold shadow-[0_2px_6px_rgba(45,106,79,0.12)]'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -178,29 +178,29 @@ export default function Header() {
               onClick={() => setMode('explorer')}
               type="button"
             >
-              <span className="material-symbols-outlined text-[1rem] sm:text-[1.125rem]">insights</span>
-              <span className="font-label-md font-bold">
-                <span className="inline sm:hidden">Explorer</span>
-                <span className="hidden sm:inline">Explorer Mode</span>
+              <span className="material-symbols-outlined text-[0.95rem] sm:text-[1.125rem]">insights</span>
+              <span className="font-label-md font-bold whitespace-nowrap">
+                <span className="inline lg:hidden">Explorer</span>
+                <span className="hidden lg:inline">Explorer Mode</span>
               </span>
             </button>
           </div>
 
           {/* Right: Location Badge, Language, Network Toggle & Alerts */}
-          <div className="flex items-center gap-1 sm:gap-space-sm md:gap-space-md shrink-0">
-            {/* Location Selector Pill - Now VISIBLE ON ALL SCREENS INCLUDING MOBILE */}
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-space-sm shrink-0">
+            {/* Location Selector Pill */}
             <button
-              className="flex items-center gap-1.5 bg-surface-container-low hover:bg-surface-container px-2 sm:px-space-sm py-1 sm:py-space-xs rounded-full text-on-surface transition-all cursor-pointer active:scale-95"
+              className="flex items-center gap-1 sm:gap-1.5 bg-surface-container-low hover:bg-surface-container px-2 sm:px-2.5 lg:px-space-sm py-1 sm:py-space-xs rounded-full text-on-surface transition-all cursor-pointer active:scale-95"
               onClick={() => setShowLocationModal(true)}
               type="button"
               title="Click to change location"
             >
-              <span className="material-symbols-outlined text-primary text-[1.1rem] sm:text-[1.25rem]">location_on</span>
-              <span className="font-label-sm text-[0.7rem] sm:text-label-sm font-semibold max-w-[80px] sm:max-w-[150px] truncate">
+              <span className="material-symbols-outlined text-primary text-[1rem] sm:text-[1.2rem]">location_on</span>
+              <span className="font-label-sm text-[0.68rem] sm:text-xs lg:text-label-sm font-semibold max-w-[70px] xs:max-w-[90px] sm:max-w-[120px] xl:max-w-[160px] truncate">
                 {language === 'hi' ? location.nameHi || location.name : location.name}
               </span>
-              <span className="text-outline text-label-sm hidden md:inline">•</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant hidden md:inline truncate max-w-[110px]">
+              <span className="text-outline text-label-sm hidden xl:inline">•</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant hidden xl:inline truncate max-w-[110px]">
                 {location.district || location.state || 'India'}
               </span>
             </button>
@@ -208,7 +208,7 @@ export default function Header() {
             {/* Network Degradation Indicator / Tester (FR-8) */}
             <button
               onClick={toggleNetworkMode}
-              className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[0.75rem] font-bold transition-all shadow-xs cursor-pointer active:scale-95 ${
+              className={`hidden md:flex items-center gap-1 px-2 py-1 lg:px-2.5 lg:py-1.5 rounded-full text-[0.7rem] lg:text-[0.75rem] font-bold transition-all shadow-xs cursor-pointer active:scale-95 ${
                 networkMode === 'degraded'
                   ? 'bg-secondary text-on-secondary animate-pulse'
                   : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
@@ -216,18 +216,18 @@ export default function Header() {
               title="Toggle to simulate 2G / EDGE low-bandwidth conditions"
               type="button"
             >
-              <span className="material-symbols-outlined text-[1rem]">
+              <span className="material-symbols-outlined text-[0.95rem] lg:text-[1rem]">
                 {networkMode === 'degraded' ? 'signal_cellular_alt_1_bar' : 'network_check'}
               </span>
-              <span className="hidden lg:inline">
+              <span className="hidden xl:inline">
                 {networkMode === 'degraded' ? '2G Mode' : '4G/5G Live'}
               </span>
             </button>
 
             {/* Language Switcher (EN | हिन्दी) */}
-            <div className="flex items-center bg-surface-container p-0.5 rounded-full">
+            <div className="flex items-center bg-surface-container p-0.5 rounded-full shrink-0">
               <button
-                className={`px-1.5 sm:px-space-xs py-0.5 sm:py-space-2xs rounded-full font-label-sm text-[0.65rem] sm:text-label-sm transition-all cursor-pointer active:scale-95 ${
+                className={`px-1.5 sm:px-2 py-0.5 rounded-full font-label-sm text-[0.65rem] sm:text-xs transition-all cursor-pointer active:scale-95 ${
                   language === 'en'
                     ? 'bg-primary-container text-on-primary font-bold shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
@@ -237,9 +237,9 @@ export default function Header() {
               >
                 EN
               </button>
-              <span className="text-outline text-[0.65rem] sm:text-xs mx-0.5">|</span>
+              <span className="text-outline text-[0.6rem] sm:text-xs mx-0.5">|</span>
               <button
-                className={`px-1.5 sm:px-space-xs py-0.5 sm:py-space-2xs rounded-full font-label-sm text-[0.65rem] sm:text-label-sm transition-all cursor-pointer active:scale-95 ${
+                className={`px-1.5 sm:px-2 py-0.5 rounded-full font-label-sm text-[0.65rem] sm:text-xs transition-all cursor-pointer active:scale-95 ${
                   language === 'hi'
                     ? 'bg-primary-container text-on-primary font-bold shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
@@ -253,7 +253,7 @@ export default function Header() {
 
             {/* Alerts Notification Button */}
             <button
-              className="relative flex items-center justify-center p-1.5 sm:p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer active:scale-95"
+              className="relative flex items-center justify-center p-1.5 sm:p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer active:scale-95 shrink-0"
               onClick={() => {
                 if (mode === 'kisan') setActiveKisanTab('alerts');
                 else setActiveExplorerTab('alerts-center');
@@ -261,7 +261,7 @@ export default function Header() {
               type="button"
               aria-label="View Active Alerts"
             >
-              <span className="material-symbols-outlined text-[1.25rem] sm:text-[1.5rem]">notifications</span>
+              <span className="material-symbols-outlined text-[1.2rem] sm:text-[1.4rem]">notifications</span>
               {alerts.length > 0 && (
                 <span className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-secondary animate-ping"></span>
               )}
@@ -269,7 +269,7 @@ export default function Header() {
 
             {/* Ramesh Patel Profile */}
             <div
-              className="hidden sm:flex items-center gap-1.5 pl-1 cursor-pointer"
+              className="hidden xl:flex items-center gap-1.5 pl-1 cursor-pointer shrink-0"
               onClick={() => {
                 if (mode === 'kisan') setActiveKisanTab('land');
               }}
@@ -283,7 +283,7 @@ export default function Header() {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-              <span className="material-symbols-outlined text-primary text-[1rem] hidden xl:inline">
+              <span className="material-symbols-outlined text-primary text-[1rem]">
                 verified
               </span>
             </div>

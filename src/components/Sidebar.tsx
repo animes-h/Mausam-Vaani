@@ -19,7 +19,7 @@ export default function Sidebar() {
   const t = translations[language];
 
   return (
-    <aside className="fixed left-0 top-20 bottom-0 w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.03)] z-40 flex flex-col justify-between pt-space-md pb-space-lg overflow-y-auto border-r border-surface-container-high hidden md:flex">
+    <aside className="fixed left-0 top-20 bottom-0 w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.03)] z-40 flex flex-col justify-between pt-space-md pb-space-lg overflow-y-auto border-r border-surface-container-high hidden lg:flex">
       <div className="flex flex-col gap-space-md px-space-md">
         {/* Voice Trigger Fast Box */}
         <div className="bg-surface-container-low rounded-xl p-space-sm flex flex-col gap-space-2xs border border-outline-variant/30">

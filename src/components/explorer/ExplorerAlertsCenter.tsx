@@ -94,15 +94,15 @@ export default function ExplorerAlertsCenter() {
                 STATION ID: RADAR-${(location.district || 'REG').slice(0, 3).toUpperCase()}-01 (ACTIVE RADIAL)
               </span>
             </div>
-            <div className="flex items-center gap-space-sm text-on-surface-variant">
+            <div className="flex flex-wrap items-center gap-space-sm text-on-surface-variant text-xs">
               <span>Next Synoptic Refresh: <strong className="text-on-surface">04:12 mins</strong></span>
-              <span className="text-outline">|</span>
-              <span className="text-outline">CAP 1.2 Compliant Feed</span>
+              <span className="text-outline hidden sm:inline">|</span>
+              <span className="text-outline hidden sm:inline">CAP 1.2 Compliant Feed</span>
             </div>
           </div>
 
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md">
-            <div className="max-w-3xl">
+            <div className="max-w-3xl min-w-0">
               <h1 className="font-headline-lg text-xl sm:text-2xl font-extrabold text-on-surface tracking-tight">
                 Regional Meteorological Advisory & Threat Matrix
               </h1>
@@ -111,7 +111,7 @@ export default function ExplorerAlertsCenter() {
               </p>
             </div>
 
-            <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-full text-xs">
+            <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-full text-xs shrink-0 self-start lg:self-auto">
               <button className="px-3 py-1 rounded-full bg-surface-container-lowest text-primary font-bold shadow-xs" type="button">
                 Live Feed
               </button>
@@ -122,47 +122,47 @@ export default function ExplorerAlertsCenter() {
           </div>
 
           {/* 4 Stat Quadrants */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-space-sm pt-space-xs">
-            <div className="p-space-md rounded-2xl bg-surface-container-low flex items-center justify-between border border-secondary/20">
-              <div className="flex flex-col">
-                <span className="text-[0.7rem] font-bold text-secondary uppercase tracking-wider">High Severity</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-sm pt-space-xs">
+            <div className="p-space-md rounded-2xl bg-surface-container-low flex items-center justify-between border border-secondary/20 min-w-0">
+              <div className="flex flex-col min-w-0 pr-2">
+                <span className="text-[0.7rem] font-bold text-secondary uppercase tracking-wider truncate">High Severity</span>
                 <span className="text-2xl font-extrabold text-secondary mt-0.5">01</span>
-                <span className="text-[0.65rem] text-on-surface-variant">Active convective storm</span>
+                <span className="text-[0.65rem] text-on-surface-variant truncate">Active convective storm</span>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+              <div className="w-10 h-10 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed shrink-0">
                 <span className="material-symbols-outlined text-[1.5rem]">bolt</span>
               </div>
             </div>
 
-            <div className="p-space-md rounded-2xl bg-surface-container-low flex items-center justify-between border border-tertiary/20">
-              <div className="flex flex-col">
-                <span className="text-[0.7rem] font-bold text-tertiary uppercase tracking-wider">Advisories</span>
+            <div className="p-space-md rounded-2xl bg-surface-container-low flex items-center justify-between border border-tertiary/20 min-w-0">
+              <div className="flex flex-col min-w-0 pr-2">
+                <span className="text-[0.7rem] font-bold text-tertiary uppercase tracking-wider truncate">Advisories</span>
                 <span className="text-2xl font-extrabold text-tertiary mt-0.5">02</span>
-                <span className="text-[0.65rem] text-on-surface-variant">Thermal & wind strain</span>
+                <span className="text-[0.65rem] text-on-surface-variant truncate">Thermal & wind strain</span>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed">
+              <div className="w-10 h-10 rounded-xl bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed shrink-0">
                 <span className="material-symbols-outlined text-[1.5rem]">warning</span>
               </div>
             </div>
 
-            <div className="p-space-md rounded-2xl bg-surface-container-low flex items-center justify-between border border-outline-variant/30">
-              <div className="flex flex-col">
-                <span className="text-[0.7rem] font-bold text-outline uppercase tracking-wider">Watch Notices</span>
+            <div className="p-space-md rounded-2xl bg-surface-container-low flex items-center justify-between border border-outline-variant/30 min-w-0">
+              <div className="flex flex-col min-w-0 pr-2">
+                <span className="text-[0.7rem] font-bold text-outline uppercase tracking-wider truncate">Watch Notices</span>
                 <span className="text-2xl font-extrabold text-on-surface mt-0.5">00</span>
-                <span className="text-[0.65rem] text-on-surface-variant">No active watches</span>
+                <span className="text-[0.65rem] text-on-surface-variant truncate">No active watches</span>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-outline">
+              <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-outline shrink-0">
                 <span className="material-symbols-outlined text-[1.5rem]">visibility</span>
               </div>
             </div>
 
-            <div className="p-space-md rounded-2xl bg-surface-container-low flex items-center justify-between border border-primary/20">
-              <div className="flex flex-col">
-                <span className="text-[0.7rem] font-bold text-primary uppercase tracking-wider">Confidence</span>
+            <div className="p-space-md rounded-2xl bg-surface-container-low flex items-center justify-between border border-primary/20 min-w-0">
+              <div className="flex flex-col min-w-0 pr-2">
+                <span className="text-[0.7rem] font-bold text-primary uppercase tracking-wider truncate">Confidence</span>
                 <span className="text-2xl font-extrabold text-primary mt-0.5">94%</span>
-                <span className="text-[0.65rem] text-on-surface-variant">IMD + INSAT Consensus</span>
+                <span className="text-[0.65rem] text-on-surface-variant truncate">IMD + INSAT Consensus</span>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+              <div className="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center text-on-primary-fixed shrink-0">
                 <span className="material-symbols-outlined text-[1.5rem]">verified</span>
               </div>
             </div>

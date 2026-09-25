@@ -35,40 +35,40 @@ export default function RouteMapOverview({
   return (
     <div className="flex flex-col gap-space-lg">
       {/* Corridor Summary Metrics Strip */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-space-sm">
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
-          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between">
-            <span>{language === 'hi' ? 'कुल दूरी' : 'Total Distance'}</span>
-            <span className="material-symbols-outlined text-primary text-[1.125rem]">straighten</span>
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-sm">
+        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between min-w-0">
+          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between gap-1">
+            <span className="truncate">{language === 'hi' ? 'कुल दूरी' : 'Total Distance'}</span>
+            <span className="material-symbols-outlined text-primary text-[1.125rem] shrink-0">straighten</span>
           </span>
           <div className="text-2xl font-extrabold text-on-surface my-1">{totalDistance} km</div>
-          <span className="text-[0.7rem] text-on-surface-variant">
+          <span className="text-[0.7rem] text-on-surface-variant truncate">
             {dynamicSegments.length} {language === 'hi' ? 'मार्ग खंड' : 'route segments'}
           </span>
         </div>
 
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
-          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between">
-            <span>{language === 'hi' ? 'अनुमानित यात्रा समय' : 'Estimated Time'}</span>
-            <span className="material-symbols-outlined text-primary text-[1.125rem]">schedule</span>
+        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between min-w-0">
+          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between gap-1">
+            <span className="truncate">{language === 'hi' ? 'अनुमानित यात्रा समय' : 'Estimated Time'}</span>
+            <span className="material-symbols-outlined text-primary text-[1.125rem] shrink-0">schedule</span>
           </span>
           <div className="text-2xl font-extrabold text-on-surface my-1">
             {totalHours}h {totalMinutesRemain}m
           </div>
-          <span className="text-[0.7rem] text-on-surface-variant">
+          <span className="text-[0.7rem] text-on-surface-variant truncate">
             {language === 'hi' ? `औसत गति: ${vehicleSpeed} किमी/घंटा` : `Avg speed: ${vehicleSpeed} km/h`}
           </span>
         </div>
 
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
-          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between">
-            <span>{language === 'hi' ? 'अधिकतम हवा का झोंका' : 'Max Crosswinds'}</span>
-            <span className="material-symbols-outlined text-tertiary text-[1.125rem]">air</span>
+        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between min-w-0">
+          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between gap-1">
+            <span className="truncate">{language === 'hi' ? 'अधिकतम हवा का झोंका' : 'Max Crosswinds'}</span>
+            <span className="material-symbols-outlined text-tertiary text-[1.125rem] shrink-0">air</span>
           </span>
           <div className={`text-2xl font-extrabold my-1 ${maxWindGust > 40 ? 'text-secondary' : 'text-on-surface'}`}>
             {maxWindGust} km/h
           </div>
-          <span className="text-[0.7rem] text-on-surface-variant">
+          <span className="text-[0.7rem] text-on-surface-variant truncate">
             {maxWindGust > 40
               ? language === 'hi'
                 ? 'ट्रक व बाइक हेतु खतरनाक'
@@ -79,15 +79,15 @@ export default function RouteMapOverview({
           </span>
         </div>
 
-        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between">
-          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between">
-            <span>{language === 'hi' ? 'न्यूनतम दृश्यता' : 'Lowest Visibility'}</span>
-            <span className="material-symbols-outlined text-primary text-[1.125rem]">visibility</span>
+        <div className="bg-surface-container-lowest p-space-md rounded-2xl border border-surface-container-high shadow-xs flex flex-col justify-between min-w-0">
+          <span className="text-xs text-on-surface-variant font-bold flex items-center justify-between gap-1">
+            <span className="truncate">{language === 'hi' ? 'न्यूनतम दृश्यता' : 'Lowest Visibility'}</span>
+            <span className="material-symbols-outlined text-primary text-[1.125rem] shrink-0">visibility</span>
           </span>
           <div className={`text-2xl font-extrabold my-1 ${minVisibility < 3 ? 'text-secondary' : 'text-on-surface'}`}>
             {minVisibility} km
           </div>
-          <span className="text-[0.7rem] text-on-surface-variant">
+          <span className="text-[0.7rem] text-on-surface-variant truncate">
             {minVisibility < 3
               ? language === 'hi'
                 ? 'तेज बारिश/धुंध में हेडलाइट जलाएं'
@@ -129,14 +129,14 @@ export default function RouteMapOverview({
         {/* Schematic Corridor Flow */}
         <div className="relative py-4 px-2">
           {/* Connecting Line */}
-          <div className="absolute top-1/2 left-6 right-6 h-1 -translate-y-1/2 bg-surface-container-high z-0 hidden sm:block"></div>
+          <div className="absolute top-1/2 left-6 right-6 h-1 -translate-y-1/2 bg-surface-container-high z-0 hidden xl:block"></div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 relative z-10">
             {dynamicSegments.map((seg, idx) => (
               <div
                 key={idx}
                 onClick={() => onSelectSegment(selectedSegmentIdx === idx ? null : idx)}
-                className={`p-space-md rounded-2xl border flex flex-col justify-between gap-2 cursor-pointer transition-all active:scale-[0.98] ${
+                className={`p-space-md rounded-2xl border flex flex-col justify-between gap-2 cursor-pointer transition-all min-w-0 active:scale-[0.98] ${
                   selectedSegmentIdx === idx ? 'ring-2 ring-primary shadow-md' : ''
                 } ${
                   seg.riskLevel === 'severe'

@@ -155,22 +155,22 @@ export default function KisanLandSetup() {
   return (
     <div className="flex flex-col w-full max-w-6xl mx-auto gap-space-lg">
       {/* Top Banner with Instruction Listen & Voice Buttons */}
-      <section className="bg-surface-container-lowest rounded-2xl p-space-md md:p-space-lg shadow-sm border border-surface-container-high flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
-        <div className="flex items-start gap-space-md max-w-2xl">
+      <section className="bg-surface-container-lowest rounded-2xl p-space-md md:p-space-lg shadow-sm border border-surface-container-high flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md">
+        <div className="flex items-start gap-space-md max-w-2xl min-w-0">
           <div className="w-14 h-14 rounded-2xl bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-sm">
             <span className="material-symbols-outlined text-[2rem]">eco</span>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-space-xs mb-1">
-              <span className="bg-primary/10 text-primary px-space-sm py-0.5 rounded-full font-label-sm text-xs uppercase tracking-wider font-bold">
+              <span className="bg-primary/10 text-primary px-space-sm py-0.5 rounded-full font-label-sm text-xs uppercase tracking-wider font-bold shrink-0">
                 {language === 'hi' ? 'कदम 1 / 2' : 'Step 1 of 2'}
               </span>
               <span className="text-outline text-label-sm">•</span>
-              <span className="font-label-sm text-xs text-on-surface-variant font-semibold">
+              <span className="font-label-sm text-xs text-on-surface-variant font-semibold truncate">
                 {language === 'hi' ? 'खेत विन्यास' : 'Farm Soil Setup'}
               </span>
             </div>
-            <h1 className="font-headline-md text-headline-md text-primary tracking-tight font-extrabold">
+            <h1 className="font-headline-md text-xl sm:text-2xl text-primary tracking-tight font-extrabold">
               {language === 'hi' ? 'अपनी ज़मीन और मिट्टी पहचानें' : 'Identify Your Land & Soil Type'}
             </h1>
             <p className="font-body-md text-sm text-on-surface-variant mt-0.5">
@@ -181,7 +181,7 @@ export default function KisanLandSetup() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-space-sm w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-space-sm w-full lg:w-auto shrink-0">
           <button
             className={`h-target-touch-kisan px-space-md flex items-center justify-center gap-space-xs rounded-full transition-all font-label-md text-sm font-bold shadow-xs active:scale-95 w-full sm:w-auto ${
               isInstructionsPlaying

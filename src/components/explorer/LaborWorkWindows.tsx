@@ -22,8 +22,8 @@ export default function LaborWorkWindows({
 
   return (
     <section className="bg-surface-container-lowest rounded-3xl p-space-lg shadow-sm border border-surface-container-high flex flex-col gap-space-md animate-fadeIn">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+        <div className="min-w-0">
           <span className="text-xs font-bold text-primary uppercase tracking-wider">
             {language === 'hi'
               ? 'FR-7.2 खेत कार्य समय-सारणी (Field Work Windows)'
@@ -40,7 +40,7 @@ export default function LaborWorkWindows({
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 bg-surface-container p-1 rounded-full self-start sm:self-auto text-xs">
+        <div className="flex flex-wrap items-center gap-1.5 bg-surface-container p-1 rounded-full self-start md:self-auto text-xs shrink-0">
           {(['all', 'safe', 'caution', 'hazardous'] as const).map(f => (
             <button
               key={f}
@@ -66,7 +66,7 @@ export default function LaborWorkWindows({
             <div
               key={idx}
               onClick={() => setSelectedSlot(isSelected ? null : slot)}
-              className={`p-space-sm rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm border cursor-pointer transition-all active:scale-[0.99] ${
+              className={`p-space-sm rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-space-sm border cursor-pointer transition-all min-w-0 active:scale-[0.99] ${
                 isSelected ? 'ring-2 ring-primary shadow-md' : ''
               } ${
                 slot.safetyStatus === 'safe'
@@ -76,8 +76,8 @@ export default function LaborWorkWindows({
                   : 'bg-secondary-fixed/30 border-secondary/40 hover:bg-secondary-fixed/50'
               }`}
             >
-              <div className="flex items-center gap-space-md">
-                <span className="font-headline-sm text-base font-extrabold w-14 text-on-surface">
+              <div className="flex items-center gap-space-md min-w-0">
+                <span className="font-headline-sm text-base font-extrabold w-14 shrink-0 text-on-surface">
                   {slot.hour}
                 </span>
                 <div
@@ -98,12 +98,12 @@ export default function LaborWorkWindows({
                   </span>
                   <span>{language === 'hi' ? slot.safetyLabelHi : slot.safetyLabelEn}</span>
                 </div>
-                <span className="text-xs text-on-surface font-medium hidden lg:inline line-clamp-1">
+                <span className="text-xs text-on-surface font-medium hidden xl:inline truncate">
                   {language === 'hi' ? slot.advisoryNoteHi : slot.advisoryNoteEn}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 sm:gap-4 text-xs font-semibold text-on-surface-variant shrink-0">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-semibold text-on-surface-variant">
                 <span>
                   Temp: <strong className="text-on-surface">{slot.temperature}°C</strong>
                 </span>

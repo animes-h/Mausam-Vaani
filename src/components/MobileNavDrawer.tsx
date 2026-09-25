@@ -49,7 +49,7 @@ export default function MobileNavDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden flex">
+    <div className="fixed inset-0 z-50 lg:hidden flex">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-inverse-surface/60 backdrop-blur-sm transition-opacity"

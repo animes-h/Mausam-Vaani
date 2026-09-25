@@ -12,6 +12,12 @@
     background-color: #f2fcf6;
     color: #141d1a;
     font-family: 'Noto Sans', 'Plus Jakarta Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Prevent text collisions and horizontal overflows when resizing / shrinking tabs */
+  h1, h2, h3, h4, h5, h6, p, span, a, label, button {
+    overflow-wrap: break-word;
   }
 }
 

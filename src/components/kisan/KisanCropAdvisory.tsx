@@ -103,8 +103,8 @@ export default function KisanCropAdvisory() {
   return (
     <div className="flex flex-col w-full max-w-6xl mx-auto gap-space-lg">
       {/* Hero Header Strip */}
-      <section className="relative overflow-hidden rounded-3xl bg-surface-container-lowest shadow-sm p-space-lg md:p-space-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md border border-surface-container-high">
-        <div className="flex flex-col gap-space-xs relative z-10 max-w-2xl">
+      <section className="relative overflow-hidden rounded-3xl bg-surface-container-lowest shadow-sm p-space-lg md:p-space-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md border border-surface-container-high">
+        <div className="flex flex-col gap-space-xs relative z-10 max-w-2xl min-w-0">
           <div className="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-primary-fixed text-on-primary-fixed self-start font-bold text-xs">
             <span className="material-symbols-outlined text-[1.125rem]">verified</span>
             <span>{language === 'hi' ? 'कृषि वैज्ञानिक अनुशंसा • Kisan AI Verified' : 'Agronomist Consensus • Kisan AI Verified'}</span>
@@ -119,7 +119,7 @@ export default function KisanCropAdvisory() {
           </p>
         </div>
 
-        <div className="relative z-10 w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm">
+        <div className="relative z-10 w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm shrink-0">
           <button
             className={`h-target-touch-kisan px-space-lg rounded-2xl font-label-lg text-sm shadow-md transition-all flex items-center justify-center gap-space-sm active:scale-95 ${
               isFullVoicePlaying

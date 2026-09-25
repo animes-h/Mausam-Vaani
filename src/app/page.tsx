@@ -40,11 +40,11 @@ export default function Home() {
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="md:pl-72 flex flex-col flex-1 pt-20">
+      <div className="lg:pl-72 flex flex-col flex-1 pt-20 min-w-0">
         {/* Network Degradation Warning Banner (FR-8.2) */}
         <NetworkBanner />
 
-        <main className="w-full px-space-md sm:px-space-lg py-space-lg pb-28 md:pb-space-2xl">
+        <main className="w-full px-3 sm:px-space-md lg:px-space-lg py-space-md lg:py-space-lg pb-28 lg:pb-space-2xl min-w-0">
           {mode === 'kisan' ? (
             <>
               {activeKisanTab === 'home' && <KisanHome />}
@@ -66,8 +66,8 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Mobile Sticky Bottom Navigation (Ergonomic thumb-reach per DESIGN.md) */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 bg-surface-container-lowest/95 backdrop-blur-lg border-t border-surface-container-high py-2 px-3 z-40 flex items-center justify-around shadow-lg">
+      {/* Mobile / Shrunk-Tab Sticky Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-surface-container-lowest/95 backdrop-blur-lg border-t border-surface-container-high py-2 px-3 z-40 flex items-center justify-around shadow-lg">
         {mode === 'kisan' ? (
           <>
             <button

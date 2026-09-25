@@ -249,17 +249,17 @@ export default function ExplorerWeatherDashboard() {
           </div>
 
           {/* Metric Reading Core: Big Stat & Realtime Sensor Deck */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-space-lg items-center">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-center">
             {/* Dominant Temperature Display */}
-            <div className="md:col-span-6 lg:col-span-5 flex items-center gap-space-lg">
-              <div className="flex flex-col">
+            <div className="xl:col-span-5 flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-start gap-space-md sm:gap-space-lg min-w-0">
+              <div className="flex flex-col min-w-0">
                 <div className="flex items-start">
-                  <span className="font-display-lg text-5xl sm:text-6xl text-on-surface font-extrabold tracking-tight">
+                  <span className="font-display-lg text-4xl sm:text-5xl lg:text-6xl text-on-surface font-extrabold tracking-tight">
                     {weather.current.temperature}
                   </span>
                   <span className="font-headline-lg text-2xl text-outline font-semibold mt-1">°C</span>
                 </div>
-                <div className="flex items-center gap-space-xs text-on-surface font-headline-sm text-sm sm:text-base font-bold">
+                <div className="flex flex-wrap items-center gap-space-xs text-on-surface font-headline-sm text-sm sm:text-base font-bold">
                   <span>{language === 'hi' ? weather.current.conditionHi : weather.current.conditionEn}</span>
                   <span className="text-outline">•</span>
                   <span className="font-body-md text-on-surface-variant font-normal">
@@ -272,8 +272,8 @@ export default function ExplorerWeatherDashboard() {
               </div>
 
               {/* Atmospheric Visual Icon */}
-              <div className="flex flex-col items-center justify-center p-space-md rounded-2xl bg-surface-container-lowest/80 backdrop-blur shadow-xs">
-                <span className="material-symbols-outlined text-[3.5rem] text-tertiary-container animate-pulse">
+              <div className="flex flex-col items-center justify-center p-space-md rounded-2xl bg-surface-container-lowest/80 backdrop-blur shadow-xs shrink-0">
+                <span className="material-symbols-outlined text-[3rem] sm:text-[3.5rem] text-tertiary-container animate-pulse">
                   {weather.current.icon}
                 </span>
                 <span className="font-label-sm text-[0.7rem] text-on-surface-variant mt-1 font-semibold">
@@ -283,55 +283,55 @@ export default function ExplorerWeatherDashboard() {
             </div>
 
             {/* Secondary Instrument Cluster */}
-            <div className="md:col-span-6 lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-space-sm">
+            <div className="xl:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-space-sm min-w-0">
               {/* Surface Wind */}
-              <div className="bg-surface-container-lowest/90 backdrop-blur p-space-md rounded-2xl flex flex-col justify-between shadow-xs border border-surface-container-high">
-                <div className="flex items-center justify-between text-on-surface-variant">
-                  <span className="font-label-sm text-[0.7rem] uppercase tracking-wider font-semibold">Surface Wind</span>
-                  <span className="material-symbols-outlined text-[1.125rem] text-primary">air</span>
+              <div className="bg-surface-container-lowest/90 backdrop-blur p-space-md rounded-2xl flex flex-col justify-between shadow-xs border border-surface-container-high min-w-0">
+                <div className="flex items-center justify-between text-on-surface-variant gap-1">
+                  <span className="font-label-sm text-[0.68rem] uppercase tracking-wider font-semibold truncate">Surface Wind</span>
+                  <span className="material-symbols-outlined text-[1.125rem] text-primary shrink-0">air</span>
                 </div>
-                <div className="mt-space-sm">
-                  <span className="font-data-metric text-xl font-bold text-on-surface">{weather.current.windSpeed}</span>
+                <div className="mt-space-sm min-w-0">
+                  <span className="font-data-metric text-lg sm:text-xl font-bold text-on-surface">{weather.current.windSpeed}</span>
                   <span className="font-label-sm text-xs text-on-surface-variant ml-1">km/h</span>
-                  <div className="font-body-sm text-[0.7rem] text-on-surface-variant">{weather.current.windCompass} ({weather.current.windDirection}°)</div>
+                  <div className="font-body-sm text-[0.68rem] text-on-surface-variant truncate">{weather.current.windCompass} ({weather.current.windDirection}°)</div>
                 </div>
               </div>
 
               {/* Rel Humidity */}
-              <div className="bg-surface-container-lowest/90 backdrop-blur p-space-md rounded-2xl flex flex-col justify-between shadow-xs border border-surface-container-high">
-                <div className="flex items-center justify-between text-on-surface-variant">
-                  <span className="font-label-sm text-[0.7rem] uppercase tracking-wider font-semibold">Rel. Humidity</span>
-                  <span className="material-symbols-outlined text-[1.125rem] text-primary">humidity_percentage</span>
+              <div className="bg-surface-container-lowest/90 backdrop-blur p-space-md rounded-2xl flex flex-col justify-between shadow-xs border border-surface-container-high min-w-0">
+                <div className="flex items-center justify-between text-on-surface-variant gap-1">
+                  <span className="font-label-sm text-[0.68rem] uppercase tracking-wider font-semibold truncate">Rel. Humidity</span>
+                  <span className="material-symbols-outlined text-[1.125rem] text-primary shrink-0">humidity_percentage</span>
                 </div>
-                <div className="mt-space-sm">
-                  <span className="font-data-metric text-xl font-bold text-on-surface">{weather.current.relativeHumidity}%</span>
-                  <div className="font-body-sm text-[0.7rem] text-on-surface-variant">Dew Pt: 21°C</div>
+                <div className="mt-space-sm min-w-0">
+                  <span className="font-data-metric text-lg sm:text-xl font-bold text-on-surface">{weather.current.relativeHumidity}%</span>
+                  <div className="font-body-sm text-[0.68rem] text-on-surface-variant truncate">Dew Pt: 21°C</div>
                 </div>
               </div>
 
               {/* Barometer */}
-              <div className="bg-surface-container-lowest/90 backdrop-blur p-space-md rounded-2xl flex flex-col justify-between shadow-xs border border-surface-container-high">
-                <div className="flex items-center justify-between text-on-surface-variant">
-                  <span className="font-label-sm text-[0.7rem] uppercase tracking-wider font-semibold">Barometer</span>
-                  <span className="material-symbols-outlined text-[1.125rem] text-primary">compress</span>
+              <div className="bg-surface-container-lowest/90 backdrop-blur p-space-md rounded-2xl flex flex-col justify-between shadow-xs border border-surface-container-high min-w-0">
+                <div className="flex items-center justify-between text-on-surface-variant gap-1">
+                  <span className="font-label-sm text-[0.68rem] uppercase tracking-wider font-semibold truncate">Barometer</span>
+                  <span className="material-symbols-outlined text-[1.125rem] text-primary shrink-0">compress</span>
                 </div>
-                <div className="mt-space-sm">
-                  <span className="font-data-metric text-xl font-bold text-on-surface">{weather.current.surfacePressure}</span>
+                <div className="mt-space-sm min-w-0">
+                  <span className="font-data-metric text-lg sm:text-xl font-bold text-on-surface">{weather.current.surfacePressure}</span>
                   <span className="font-label-sm text-xs text-on-surface-variant ml-1">hPa</span>
-                  <div className="font-body-sm text-[0.7rem] text-on-surface-variant">Steady Trend</div>
+                  <div className="font-body-sm text-[0.68rem] text-on-surface-variant truncate">Steady Trend</div>
                 </div>
               </div>
 
               {/* UV Index */}
-              <div className="bg-surface-container-lowest/90 backdrop-blur p-space-md rounded-2xl flex flex-col justify-between shadow-xs border border-surface-container-high">
-                <div className="flex items-center justify-between text-on-surface-variant">
-                  <span className="font-label-sm text-[0.7rem] uppercase tracking-wider font-semibold">UV Index</span>
-                  <span className="material-symbols-outlined text-[1.125rem] text-tertiary">wb_sunny</span>
+              <div className="bg-surface-container-lowest/90 backdrop-blur p-space-md rounded-2xl flex flex-col justify-between shadow-xs border border-surface-container-high min-w-0">
+                <div className="flex items-center justify-between text-on-surface-variant gap-1">
+                  <span className="font-label-sm text-[0.68rem] uppercase tracking-wider font-semibold truncate">UV Index</span>
+                  <span className="material-symbols-outlined text-[1.125rem] text-tertiary shrink-0">wb_sunny</span>
                 </div>
-                <div className="mt-space-sm">
-                  <span className="font-data-metric text-xl font-bold text-tertiary">{weather.current.uvIndex}</span>
+                <div className="mt-space-sm min-w-0">
+                  <span className="font-data-metric text-lg sm:text-xl font-bold text-tertiary">{weather.current.uvIndex}</span>
                   <span className="font-label-sm text-xs text-on-surface-variant ml-1">{weather.current.uvLabel}</span>
-                  <div className="font-body-sm text-[0.7rem] text-on-surface-variant">Peak 11:30 - 14:00</div>
+                  <div className="font-body-sm text-[0.68rem] text-on-surface-variant truncate">Peak 11:30-14:00</div>
                 </div>
               </div>
             </div>
@@ -433,23 +433,23 @@ export default function ExplorerWeatherDashboard() {
           <span className="font-label-sm text-xs text-outline">Multi-Model Ensemble</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-space-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-space-xs">
           {weather.daily.map((d, i) => (
             <div
               key={i}
-              className={`p-space-sm rounded-2xl flex flex-col items-center text-center justify-between border ${
+              className={`p-space-sm rounded-2xl flex flex-col items-center text-center justify-between border min-w-0 ${
                 i === 0
                   ? 'bg-surface-container-low border-primary/30 font-bold'
                   : 'bg-surface-container-lowest border-surface-container-high'
               }`}
             >
-              <span className="text-xs font-semibold text-on-surface-variant">
+              <span className="text-xs font-semibold text-on-surface-variant truncate w-full">
                 {language === 'hi' ? d.dayNameHi : d.dayNameEn}
               </span>
-              <span className="material-symbols-outlined text-[2rem] my-2 text-primary">
+              <span className="material-symbols-outlined text-[1.75rem] sm:text-[2rem] my-2 text-primary shrink-0">
                 {d.icon}
               </span>
-              <span className="text-xs text-on-surface-variant">
+              <span className="text-xs text-on-surface-variant truncate w-full">
                 {language === 'hi' ? d.conditionHi : d.conditionEn}
               </span>
               <div className="flex items-center gap-1 mt-2 text-xs">
@@ -457,7 +457,7 @@ export default function ExplorerWeatherDashboard() {
                 <span className="text-outline">/</span>
                 <span className="text-on-surface-variant">{d.tempMin}°</span>
               </div>
-              <span className="text-[0.65rem] text-secondary font-semibold mt-1">
+              <span className="text-[0.65rem] text-secondary font-semibold mt-1 truncate">
                 {d.precipitationProbability}% {language === 'hi' ? 'वर्षा' : 'precip'}
               </span>
             </div>
@@ -466,55 +466,55 @@ export default function ExplorerWeatherDashboard() {
       </section>
 
       {/* Quick Navigation Cards to Explorer Tools */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
         <div
           onClick={() => setActiveExplorerTab('trends')}
-          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group"
+          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group min-w-0"
         >
           <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-[1.375rem]">monitoring</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-headline-sm text-sm font-bold text-on-surface">{t.detailedTrends}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-headline-sm text-sm font-bold text-on-surface truncate">{t.detailedTrends}</span>
             <span className="text-xs text-on-surface-variant line-clamp-1">Multi-decadal trends & soil physics</span>
           </div>
         </div>
 
         <div
           onClick={() => setActiveExplorerTab('journey')}
-          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group"
+          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group min-w-0"
         >
           <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-[1.375rem]">route</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-headline-sm text-sm font-bold text-on-surface">{t.journeyPlanner}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-headline-sm text-sm font-bold text-on-surface truncate">{t.journeyPlanner}</span>
             <span className="text-xs text-on-surface-variant line-clamp-1">Point A to Point B corridor weather</span>
           </div>
         </div>
 
         <div
           onClick={() => setActiveExplorerTab('work-safety')}
-          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group"
+          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group min-w-0"
         >
           <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-[1.375rem]">health_and_safety</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-headline-sm text-sm font-bold text-on-surface">{t.workSafety}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-headline-sm text-sm font-bold text-on-surface truncate">{t.workSafety}</span>
             <span className="text-xs text-on-surface-variant line-clamp-1">WBGT thermal strain & safer labor windows</span>
           </div>
         </div>
 
         <div
           onClick={() => setActiveExplorerTab('climate-ai')}
-          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group"
+          className="cursor-pointer bg-surface-container-lowest hover:bg-surface-container-low p-space-md rounded-2xl shadow-sm border border-surface-container-high flex items-center gap-space-sm transition-all group min-w-0"
         >
           <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-[1.375rem]">psychology</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-headline-sm text-sm font-bold text-on-surface">{t.climateAI}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-headline-sm text-sm font-bold text-on-surface truncate">{t.climateAI}</span>
             <span className="text-xs text-on-surface-variant line-clamp-1">Agronomic conversational copilot</span>
           </div>
         </div>
