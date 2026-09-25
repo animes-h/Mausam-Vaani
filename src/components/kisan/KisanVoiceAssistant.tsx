@@ -6,6 +6,17 @@ import { translations } from '@/lib/translations';
 import { SpeechHandler, detectQueryLanguage } from '@/lib/speechService';
 import { askClimateCopilot, askClimateCopilotWithAudio } from '@/lib/aiCopilotService';
 
+function getDynamicWindow() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const dayNameEn = d.toLocaleDateString('en-US', { weekday: 'long' });
+  const dayNameHi = d.toLocaleDateString('hi-IN', { weekday: 'long' });
+  return {
+    bestWindowHi: `कल (${dayNameHi}) सुबह 6:30 से 10:00 बजे तक`,
+    bestWindowEn: `Tomorrow (${dayNameEn}) morning 06:30 to 10:00 IST`,
+  };
+}
+
 export default function KisanVoiceAssistant() {
   const {
     language,
@@ -32,15 +43,18 @@ export default function KisanVoiceAssistant() {
   const [timerSeconds, setTimerSeconds] = useState(6);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const [solution, setSolution] = useState({
-    titleHi: 'कल सुबह छिड़काव बिल्कुल न करें!',
-    titleEn: 'Do NOT spray tomorrow morning (High Washout Risk)',
-    descriptionHi: 'दोपहर 12 बजे के बाद 70% तेज वर्षा और 28 किमी/घंटा हवा चलने का अनुमान है। कीटनाशक बह जाएगा और पैसा व्यर्थ होगा।',
-    descriptionEn: 'Heavy rain (>70% chance) and 28 km/h wind squalls post-noon will wash off chemical sprays.',
-    bestWindowHi: 'परसों (गुरुवार) सुबह 6:30 से 10:00 बजे तक',
-    bestWindowEn: 'Thursday early morning 06:30 to 10:00 IST',
-    bestWindowDetailHi: 'हवा शांत (6 किमी/घंटा) रहेगी और दिनभर खिली धूप रहेगी।',
-    bestWindowDetailEn: 'Winds will be calm (6 km/h) with clear sunshine.',
+  const [solution, setSolution] = useState(() => {
+    const dyn = getDynamicWindow();
+    return {
+      titleHi: 'कल सुबह छिड़काव बिल्कुल न करें!',
+      titleEn: 'Do NOT spray tomorrow morning (High Washout Risk)',
+      descriptionHi: 'दोपहर 12 बजे के बाद 70% तेज वर्षा और 28 किमी/घंटा हवा चलने का अनुमान है। कीटनाशक बह जाएगा और पैसा व्यर्थ होगा।',
+      descriptionEn: 'Heavy rain (>70% chance) and 28 km/h wind squalls post-noon will wash off chemical sprays.',
+      bestWindowHi: dyn.bestWindowHi,
+      bestWindowEn: dyn.bestWindowEn,
+      bestWindowDetailHi: 'हवा शांत (6 किमी/घंटा) रहेगी और दिनभर खिली धूप रहेगी।',
+      bestWindowDetailEn: 'Winds will be calm (6 km/h) with clear sunshine.',
+    };
   });
 
   useEffect(() => {
@@ -130,13 +144,14 @@ export default function KisanVoiceAssistant() {
             const isHi = detected === 'hi';
 
             if (voiceResult.message.verdictCallout) {
+              const dynWindow = getDynamicWindow();
               setSolution({
                 titleHi: voiceResult.message.verdictCallout.titleHi || (isHi ? voiceResult.message.verdictCallout.title : '') || 'मौसम व कृषि सलाह',
                 titleEn: voiceResult.message.verdictCallout.titleEn || (!isHi ? voiceResult.message.verdictCallout.title : '') || 'Weather & Crop Advisory',
                 descriptionHi: voiceResult.message.verdictCallout.descriptionHi || voiceResult.message.textHi || (isHi ? voiceResult.message.text : '') || 'मौसम स्थिति अनुसार खेत में कार्य करें।',
                 descriptionEn: voiceResult.message.verdictCallout.descriptionEn || voiceResult.message.text || (!isHi ? voiceResult.message.textHi : '') || 'Operations can proceed according to weather.',
-                bestWindowHi: 'परसों (गुरुवार) सुबह 6:30 से 10:00 बजे तक',
-                bestWindowEn: 'Thursday early morning 06:30 to 10:00 IST',
+                bestWindowHi: dynWindow.bestWindowHi,
+                bestWindowEn: dynWindow.bestWindowEn,
                 bestWindowDetailHi: voiceResult.message.verdictCallout.descriptionHi || voiceResult.message.verdictCallout.description,
                 bestWindowDetailEn: voiceResult.message.verdictCallout.descriptionEn || voiceResult.message.verdictCallout.description,
               });
@@ -238,13 +253,14 @@ export default function KisanVoiceAssistant() {
       setQueryLanguage(isHi ? 'hi' : 'en');
 
       if (resp.verdictCallout) {
+        const dynWindow = getDynamicWindow();
         setSolution({
           titleHi: resp.verdictCallout.titleHi || (isHi ? resp.verdictCallout.title : '') || 'कृषि मौसम परामर्श',
           titleEn: resp.verdictCallout.titleEn || (isEn ? resp.verdictCallout.title : '') || 'Agronomic Advisory',
           descriptionHi: resp.verdictCallout.descriptionHi || resp.textHi || (isHi ? resp.text : '') || 'मौसम स्थिति अनुसार खेत में कार्य करें।',
           descriptionEn: resp.verdictCallout.descriptionEn || resp.text || (isEn ? resp.textHi : '') || 'Field operations can proceed according to weather.',
-          bestWindowHi: 'परसों (गुरुवार) सुबह 6:30 से 10:00 बजे तक',
-          bestWindowEn: 'Thursday early morning 06:30 to 10:00 IST',
+          bestWindowHi: dynWindow.bestWindowHi,
+          bestWindowEn: dynWindow.bestWindowEn,
           bestWindowDetailHi: resp.verdictCallout.descriptionHi || resp.verdictCallout.description,
           bestWindowDetailEn: resp.verdictCallout.descriptionEn || resp.verdictCallout.description,
         });
@@ -567,7 +583,7 @@ export default function KisanVoiceAssistant() {
                 </span>
               </div>
               <span className="rounded-full bg-primary/10 px-2 py-0.5 font-label-sm text-[0.7rem] font-bold text-primary">
-                सहमति 96%
+                {language === 'hi' ? 'सहमति 96%' : '96% Consensus'}
               </span>
             </div>
 

@@ -385,7 +385,7 @@ export default function KisanLandSetup() {
               </div>
               <div className="flex flex-col">
                 <h4 className="font-headline-sm text-base font-bold text-on-surface">
-                  {language === 'hi' ? 'खरीफ सीज़न 2025' : 'Kharif Season 2025'}
+                  {language === 'hi' ? `खरीफ सीज़न ${new Date().getFullYear()}` : `Kharif Season ${new Date().getFullYear()}`}
                 </h4>
                 <span className="font-body-sm text-xs text-on-surface-variant">
                   {language === 'hi' ? 'मानसून आगमन: 12-16 जून (अपेक्षित)' : 'Monsoon Arrival: 12-16 June'}
@@ -400,7 +400,7 @@ export default function KisanLandSetup() {
                   {language === 'hi' ? 'ज़मीनी आर्द्रता' : 'Soil Wetness'}
                 </span>
                 <span className="font-label-sm text-xs text-primary font-bold">
-                  {soilConfig.moisturePercentage}% सामान्य
+                  {soilConfig.moisturePercentage}% {language === 'hi' ? 'सामान्य' : 'Optimal'}
                 </span>
               </div>
               <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">

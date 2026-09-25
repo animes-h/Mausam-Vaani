@@ -242,12 +242,18 @@ export default function KisanCropAdvisory() {
 
           <div className="flex items-center justify-between pt-1 border-t border-surface-container">
             <div className="flex flex-col">
-              <span className="text-[0.7rem] text-on-surface-variant">पीएच मान (pH Level)</span>
-              <span className="font-bold text-sm text-on-surface">{soilConfig.phValue} (सामान्य)</span>
+              <span className="text-[0.7rem] text-on-surface-variant">
+                {language === 'hi' ? 'पीएच मान (pH Level)' : 'Soil pH Level'}
+              </span>
+              <span className="font-bold text-sm text-on-surface">
+                {soilConfig.phValue} ({language === 'hi' ? 'सामान्य' : 'Optimal'})
+              </span>
             </div>
             <div className="h-6 w-px bg-outline-variant/40"></div>
             <div className="flex flex-col text-right">
-              <span className="text-[0.7rem] text-on-surface-variant">मृदा स्वास्थ्य (SHC)</span>
+              <span className="text-[0.7rem] text-on-surface-variant">
+                {language === 'hi' ? 'मृदा स्वास्थ्य (SHC)' : 'Soil Health (SHC)'}
+              </span>
               <span className="font-bold text-xs text-primary">{soilConfig.nitrogenStatus || 'Medium N'} • {soilConfig.organicCarbonPct ? `${soilConfig.organicCarbonPct}% OC` : '0.76% OC'}</span>
             </div>
           </div>

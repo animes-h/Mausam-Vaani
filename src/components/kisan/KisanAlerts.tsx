@@ -155,7 +155,7 @@ export default function KisanAlerts() {
             </div>
             <div className="flex items-center gap-space-xs bg-surface-container-lowest/15 px-space-md py-1 rounded-full backdrop-blur-md text-xs font-medium">
               <span className="material-symbols-outlined text-[1.125rem]">schedule</span>
-              <span>{language === 'hi' ? 'समय सीमा: दोपहर 2:30 बजे से शाम 6:30 बजे तक' : 'Valid: 14:30 to 18:30 IST'}</span>
+              <span>{language === 'hi' ? `समय सीमा: ${primaryAlert.validFrom} से ${primaryAlert.validTo}` : `Valid: ${primaryAlert.validFrom} to ${primaryAlert.validTo}`}</span>
             </div>
           </div>
 

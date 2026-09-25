@@ -139,7 +139,7 @@ Respond ONLY with a valid JSON object matching:
         detectedLang === 'hi'
           ? (parsed.spokenResponse && /[\u0900-\u097F]/.test(parsed.spokenResponse)
               ? parsed.spokenResponse
-              : (hindiReply || 'इंदौर क्षेत्र में आज मौसम सामान्य है। कृषि कार्य सुरक्षित रूप से कर सकते हैं।'))
+              : (hindiReply || `${location?.nameHi || location?.name || 'आपके क्षेत्र'} में आज मौसम सामान्य है। कृषि कार्य सुरक्षित रूप से कर सकते हैं।`))
           : (parsed.spokenResponse || englishReply || parsed.text);
 
       return NextResponse.json({

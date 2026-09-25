@@ -161,6 +161,17 @@ export default function Home() {
             </button>
 
             <button
+              onClick={() => setActiveExplorerTab('alerts-center')}
+              className={`flex flex-col items-center gap-0.5 min-w-[56px] min-h-[48px] justify-center ${
+                activeExplorerTab === 'alerts-center' ? 'text-primary font-bold' : 'text-on-surface-variant'
+              }`}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[1.5rem]">warning</span>
+              <span className="text-[0.65rem]">{language === 'hi' ? 'अलर्ट' : 'Alerts'}</span>
+            </button>
+
+            <button
               onClick={() => setActiveExplorerTab('work-safety')}
               className={`flex flex-col items-center gap-0.5 min-w-[56px] min-h-[48px] justify-center ${
                 activeExplorerTab === 'work-safety' ? 'text-primary font-bold' : 'text-on-surface-variant'

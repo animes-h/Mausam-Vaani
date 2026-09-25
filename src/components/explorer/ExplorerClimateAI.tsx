@@ -149,10 +149,17 @@ export default function ExplorerClimateAI() {
               weather.current,
               language
             );
-            if (voiceResult.transcription) {
-              setInputQuery(voiceResult.transcription);
-            }
-            const hasDevanagari = /[\u0900-\u097F]/.test(voiceResult.transcription || '');
+            const userSpokenText = voiceResult.transcription || (language === 'hi' ? 'वॉयस प्रश्न' : 'Voice Query');
+            const userMsg: ChatMessage = {
+              id: `user-${Date.now()}`,
+              sender: 'user',
+              timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+              text: userSpokenText,
+            };
+            setMessages(prev => [...prev, userMsg, voiceResult.message]);
+            setInputQuery('');
+
+            const hasDevanagari = /[\u0900-\u097F]/.test(userSpokenText);
             const isHi = language === 'en' ? hasDevanagari : true;
             const speechText = (isHi
               ? (voiceResult.message.spokenResponse && /[\u0900-\u097F]/.test(voiceResult.message.spokenResponse)

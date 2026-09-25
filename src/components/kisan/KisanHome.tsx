@@ -569,7 +569,9 @@ export default function KisanHome() {
           </div>
           <div className="flex items-baseline justify-between my-2">
             <div>
-              <span className="font-headline-lg text-2xl font-bold text-on-surface">40%</span>
+              <span className="font-headline-lg text-2xl font-bold text-on-surface">
+                {weather.daily[0]?.precipitationProbability ?? 20}%
+              </span>
               <span className="font-body-sm text-xs text-on-surface-variant block">
                 {language === 'hi' ? 'वर्षा संभावना' : 'Rain Chance'}
               </span>
@@ -579,7 +581,7 @@ export default function KisanHome() {
                 {weather.current.windSpeed} km/h
               </span>
               <span className="font-body-sm text-xs text-on-surface-variant block">
-                {weather.current.windCompass} ({language === 'hi' ? 'पछुआ हवा' : 'WNW'})
+                {weather.current.windCompass} ({language === 'hi' ? (weather.current.windCompass.includes('W') ? 'पछुआ हवा' : weather.current.windCompass.includes('E') ? 'पुरवाई' : 'हवा दिशा') : weather.current.windCompass})
               </span>
             </div>
           </div>

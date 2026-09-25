@@ -260,10 +260,10 @@ export default function ExplorerWeatherDashboard() {
                   <span className="font-headline-lg text-2xl text-outline font-semibold mt-1">°C</span>
                 </div>
                 <div className="flex items-center gap-space-xs text-on-surface font-headline-sm text-sm sm:text-base font-bold">
-                  <span>{weather.current.conditionEn}</span>
+                  <span>{language === 'hi' ? weather.current.conditionHi : weather.current.conditionEn}</span>
                   <span className="text-outline">•</span>
                   <span className="font-body-md text-on-surface-variant font-normal">
-                    RealFeel {weather.current.apparentTemperature}°C
+                    {language === 'hi' ? 'महसूस' : 'RealFeel'} {weather.current.apparentTemperature}°C
                   </span>
                 </div>
                 <span className="font-body-sm text-xs text-on-surface-variant mt-1">
@@ -444,19 +444,21 @@ export default function ExplorerWeatherDashboard() {
               }`}
             >
               <span className="text-xs font-semibold text-on-surface-variant">
-                {d.dayNameEn}
+                {language === 'hi' ? d.dayNameHi : d.dayNameEn}
               </span>
               <span className="material-symbols-outlined text-[2rem] my-2 text-primary">
                 {d.icon}
               </span>
-              <span className="text-xs text-on-surface-variant">{d.conditionEn}</span>
+              <span className="text-xs text-on-surface-variant">
+                {language === 'hi' ? d.conditionHi : d.conditionEn}
+              </span>
               <div className="flex items-center gap-1 mt-2 text-xs">
                 <span className="font-bold text-on-surface">{d.tempMax}°</span>
                 <span className="text-outline">/</span>
                 <span className="text-on-surface-variant">{d.tempMin}°</span>
               </div>
               <span className="text-[0.65rem] text-secondary font-semibold mt-1">
-                {d.precipitationProbability}% precip
+                {d.precipitationProbability}% {language === 'hi' ? 'वर्षा' : 'precip'}
               </span>
             </div>
           ))}

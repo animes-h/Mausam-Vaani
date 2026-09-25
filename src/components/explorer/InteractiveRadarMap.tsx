@@ -269,7 +269,7 @@ export default function InteractiveRadarMap() {
         mapInstanceRef.current = null;
       }
     };
-  }, [mapTheme, showRadarRings, isTouchDevice, isTouchLocked, isFullscreen]);
+  }, [mapTheme, showRadarRings, isTouchDevice]);
 
   // Synchronize mobile gesture locking to prevent page scrolling interception
   useEffect(() => {
